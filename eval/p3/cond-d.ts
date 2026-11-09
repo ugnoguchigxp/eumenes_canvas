@@ -1,6 +1,8 @@
 // 条件 D：直接生成。製品の ModelPort の入力をそのまま 1 回の推論に渡し、作品の JSON を受け取る。
+// system は短い前置き＋制作手順（docs/maker-skill.md）。P3 の記録で使った system は DIRECT_SYSTEM_P3。
 import type { GenerationInput, GenerationOutput, ModelPort } from "../../src/core/model-port";
 import { ModelError } from "../../src/core/model-port";
+import { loadMakerSkill, makerSystemPrompt, type MakerSkill } from "../../src/core/maker-skill";
 import type { FileChannel, Validate } from "./channel";
 
 export const ARTWORK_OUTPUT_SCHEMA = {
@@ -41,13 +43,26 @@ export const validateArtwork: Validate<GenerationOutput> = (v) => {
   };
 };
 
-export const DIRECT_SYSTEM = [
+/** P3（commit 79839f6 まで）の条件 D が使った system。記録の再現用に残す。 */
+export const DIRECT_SYSTEM_P3 = [
   "あなたは Canvas 2D の作品（ゲーム・可視化）を作る制作担当です。利用者の依頼に沿って作品を作る、または基準の作品を直します。",
   "- 作品は「公開された実行契約」に従う JavaScript 一つです。契約にない API・外部通信・外部コードの読み込みは使えません。",
   "- 基準の作品があるときは、依頼された点だけを変え、それ以外の動き・見た目は保ちます。",
   "- 前の候補とホスト観測があるときは、観測を基に直します。ホスト観測は起動・実行時エラー・単色でないか・時間や入力で描画が変わるかだけを確かめます。",
   "- 返すのは指定の JSON 一つです（title・entry・changes・unconfirmed・reply、データを使うときだけ dataRef）。",
 ].join("\n");
+
+/** 役割と応答の形だけの短い前置き。振る舞いの規則は docs/maker-skill.md（制作手順）に置く。 */
+export const DIRECT_PREAMBLE = [
+  "あなたは Canvas 2D の作品（ゲーム・シミュレーション・可視化）を作る制作担当です。次の制作手順と、要求に含まれる公開された実行契約に従います。",
+  "返すのは指定の JSON 一つです（title・entry・changes・unconfirmed・reply、データを使うときだけ dataRef）。",
+].join("\n");
+
+/** 直接生成の system：前置き＋制作手順（docs/maker-skill.md を読む）。 */
+export function directSystem(skill: MakerSkill = loadMakerSkill()): string {
+  return makerSystemPrompt(skill, DIRECT_PREAMBLE);
+}
+export const DIRECT_SYSTEM = directSystem();
 
 export function directPrompt(input: GenerationInput): string {
   const parts: string[] = [];
@@ -66,10 +81,10 @@ export function directPrompt(input: GenerationInput): string {
 
 export class DirectModel implements ModelPort {
   readonly label = "p3-direct(stand-in: Grok Bot responder)";
-  constructor(private ch: FileChannel) {}
+  constructor(private ch: FileChannel, private system: string = DIRECT_SYSTEM) {}
   async generate(input: GenerationInput, signal: AbortSignal): Promise<GenerationOutput> {
     try {
-      return await this.ch.complete({ purpose: "direct", system: DIRECT_SYSTEM, prompt: directPrompt(input), outputSchema: ARTWORK_OUTPUT_SCHEMA }, validateArtwork, signal);
+      return await this.ch.complete({ purpose: "direct", system: this.system, prompt: directPrompt(input), outputSchema: ARTWORK_OUTPUT_SCHEMA }, validateArtwork, signal);
     } catch (e) {
       throw new ModelError((e as Error).message);
     }
