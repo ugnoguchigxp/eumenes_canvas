@@ -1,0 +1,22 @@
+{
+  "name": "eumenes-canvas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.4",
+  "scripts": {
+    "dev": "bun src/server/main.ts",
+    "test:unit": "bun test tests/unit",
+    "test:e2e": "playwright test",
+    "verify": "bun run typecheck && bun test tests/unit && playwright test",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "eval:p2": "bun eval/runner.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@types/bun": "1.4.4",
+    "@types/pngjs": "6.0.5",
+    "pngjs": "7.0.0",
+    "typescript": "5.9.3"
+  }
+}
