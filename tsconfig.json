@@ -11,5 +11,5 @@
     "types": ["bun"],
     "lib": ["ES2022", "DOM"]
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "eval/**/*.ts", "playwright.config.ts"]
+  "include": ["src/**/*.ts", "tests/**/*.ts", "eval/**/*.ts", "scripts/**/*.ts", "playwright.config.ts"]
 }

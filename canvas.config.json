@@ -3,7 +3,7 @@
   "previewPort": 4301,
   "dataDir": ".data",
   "runTimeoutMs": 180000,
-  "model": { "provider": "recorded", "label": "p1-fixtures", "files": ["fixtures/p1/recordings.json"] },
+  "model": { "provider": "recorded", "label": "p1-fixtures+demo", "files": ["fixtures/p1/recordings.json", "fixtures/demo/recordings.json"] },
   "datasets": [
     { "ref": "synthetic-sales", "description": "地域（北・中・南）× 月（1〜6 月）の合成売上。{ title, months, categories: [{ name, color }], values: { 地域: number[] } }", "file": "fixtures/data/synthetic-sales.json" }
   ]
