@@ -1,0 +1,1143 @@
+{
+ "suite": "general-v1",
+ "gradedAt": "2026-11-09T23:26:53.084Z",
+ "environment": "chromium 141.0.7390.37",
+ "partial": [],
+ "runs": {
+  "D-r1": {
+   "suite": "general",
+   "observer": "host-smoke/2",
+   "contractDigest": "sha256:9a6c6a4b6896a467e5e899c249647da27ebf77878b968947d35c857a76eb3386",
+   "makerSkillDigest": "sha256:df18c19ec3a8c1194a2ac584b8b29cd0bdb3fa081a2eefbbce5e223743563f5d",
+   "cond": "D",
+   "startedAt": "2026-11-09T23:16:21.207Z",
+   "stand_in": "Grok Bot responder（Luna／Haiku ではない）",
+   "records": [
+    {
+     "task": "G-N1-throw",
+     "group": "new",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:125cf379d53f4fbac0fd69419534f9c76092ccda2713ed6f56f023d2e1b9b5a9",
+     "error": null,
+     "hostMs": [
+      2746
+     ],
+     "wallMs": [
+      73857
+     ]
+    },
+    {
+     "task": "G-N2-platforms",
+     "group": "new",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:d054053818fc2c0393969f43fdefb10d105e8a491def06044e6ccc2bf9bec613",
+     "error": null,
+     "hostMs": [
+      2260
+     ],
+     "wallMs": [
+      33331
+     ]
+    },
+    {
+     "task": "G-N3-memory",
+     "group": "new",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:ea4e09954fa1c94277af83c7cb7be019ed67b52ef3a4d07bc3e02a47f9f718ac",
+     "error": null,
+     "hostMs": [
+      2424
+     ],
+     "wallMs": [
+      22486
+     ]
+    },
+    {
+     "task": "G-N4-turret",
+     "group": "new",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:ca24632e57345eeadc7de453ea789940ac67fe59150982c3fc490742e881f952",
+     "error": null,
+     "hostMs": [
+      2094
+     ],
+     "wallMs": [
+      29180
+     ]
+    },
+    {
+     "task": "G-M1-breakout",
+     "group": "modify",
+     "presented": true,
+     "submissions": 2,
+     "calls": 2,
+     "finalDigest": "sha256:60a3ca6f9832b15059a9c04d355e216724b30842019a3c5577d24e21a92296c9",
+     "error": null,
+     "hostMs": [
+      1994,
+      2011
+     ],
+     "wallMs": [
+      24048,
+      10034
+     ]
+    },
+    {
+     "task": "G-M2-balls",
+     "group": "modify",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:6a480b27eda2698ece330b6c3436bbd22f4e4cae1a8d4bdc9cda1b8848c8cf18",
+     "error": null,
+     "hostMs": [
+      2365
+     ],
+     "wallMs": [
+      17404
+     ]
+    },
+    {
+     "task": "G-M3-paint",
+     "group": "modify",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:f176aae83b91e6407f18452edceb907d5efec1de7eb665cd0cf5a8084cb858a2",
+     "error": null,
+     "hostMs": [
+      2447
+     ],
+     "wallMs": [
+      21498
+     ]
+    },
+    {
+     "task": "G-R1-pause",
+     "group": "repair",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:7014a8d3eeaafe11e29e4d26d9073ae88fc7ace7c2fc23a80e4df7629d169360",
+     "error": null,
+     "hostMs": [
+      2092
+     ],
+     "wallMs": [
+      22651
+     ]
+    },
+    {
+     "task": "G-R2-drag",
+     "group": "repair",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:fa55d59110edac5dfb4e0dc7952ef803dcc8999246d9e01798cb8ec31e321d5b",
+     "error": null,
+     "hostMs": [
+      2194
+     ],
+     "wallMs": [
+      24252
+     ]
+    },
+    {
+     "task": "G-V1-chart",
+     "group": "nongame",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:de46a1d098e35123ef0701598194e4a00598120a2d660283c80e18df8c930029",
+     "error": null,
+     "hostMs": [
+      1957
+     ],
+     "wallMs": [
+      35034
+     ]
+    }
+   ],
+   "usage": [
+    {
+     "at": "2026-11-09T23:17:32.323Z",
+     "cond": "D",
+     "task": "G-N1-throw",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0001",
+     "purpose": "direct",
+     "promptChars": 6082,
+     "responseChars": 4785,
+     "waitMs": 71111,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:18:06.160Z",
+     "cond": "D",
+     "task": "G-N2-platforms",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0003",
+     "purpose": "direct",
+     "promptChars": 6063,
+     "responseChars": 4537,
+     "waitMs": 31071,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:18:28.496Z",
+     "cond": "D",
+     "task": "G-N3-memory",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0005",
+     "purpose": "direct",
+     "promptChars": 5953,
+     "responseChars": 3325,
+     "waitMs": 20062,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:18:58.023Z",
+     "cond": "D",
+     "task": "G-N4-turret",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0007",
+     "purpose": "direct",
+     "promptChars": 6060,
+     "responseChars": 4723,
+     "waitMs": 27086,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:19:24.339Z",
+     "cond": "D",
+     "task": "G-M1-breakout",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0009",
+     "purpose": "direct",
+     "promptChars": 8387,
+     "responseChars": 3662,
+     "waitMs": 22054,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:19:34.357Z",
+     "cond": "D",
+     "task": "G-M1-breakout",
+     "turn": 1,
+     "role": "gen",
+     "id": "gen-0010",
+     "purpose": "direct",
+     "promptChars": 8675,
+     "responseChars": 3399,
+     "waitMs": 8023,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:19:53.557Z",
+     "cond": "D",
+     "task": "G-M2-balls",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0012",
+     "purpose": "direct",
+     "promptChars": 6750,
+     "responseChars": 2378,
+     "waitMs": 15039,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:20:17.565Z",
+     "cond": "D",
+     "task": "G-M3-paint",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0014",
+     "purpose": "direct",
+     "promptChars": 7585,
+     "responseChars": 3280,
+     "waitMs": 19051,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:20:42.756Z",
+     "cond": "D",
+     "task": "G-R1-pause",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0016",
+     "purpose": "direct",
+     "promptChars": 8225,
+     "responseChars": 3686,
+     "waitMs": 20559,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:21:09.157Z",
+     "cond": "D",
+     "task": "G-R2-drag",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0018",
+     "purpose": "direct",
+     "promptChars": 7979,
+     "responseChars": 3195,
+     "waitMs": 22058,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:21:46.542Z",
+     "cond": "D",
+     "task": "G-V1-chart",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0020",
+     "purpose": "direct",
+     "promptChars": 7417,
+     "responseChars": 5107,
+     "waitMs": 33077,
+     "status": "ok"
+    }
+   ]
+  },
+  "D-r2": {
+   "suite": "general",
+   "observer": "host-smoke/2",
+   "contractDigest": "sha256:9a6c6a4b6896a467e5e899c249647da27ebf77878b968947d35c857a76eb3386",
+   "makerSkillDigest": "sha256:df18c19ec3a8c1194a2ac584b8b29cd0bdb3fa081a2eefbbce5e223743563f5d",
+   "cond": "D",
+   "startedAt": "2026-11-09T23:16:21.204Z",
+   "stand_in": "Grok Bot responder（Luna／Haiku ではない）",
+   "records": [
+    {
+     "task": "G-N1-throw",
+     "group": "new",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:19353ee821ca867f648adfb63ce111f8ec7366421b756dde363925e81b32e069",
+     "error": null,
+     "hostMs": [
+      2423
+     ],
+     "wallMs": [
+      76538
+     ]
+    },
+    {
+     "task": "G-N2-platforms",
+     "group": "new",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:39f45b06c9a6778e837b1fe56c45f979455e9338d9d91197227ff8c12ea63f6d",
+     "error": null,
+     "hostMs": [
+      2288
+     ],
+     "wallMs": [
+      36873
+     ]
+    },
+    {
+     "task": "G-N3-memory",
+     "group": "new",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:201b87aea0f217900e2edf4feb8d112bbe906baea2d96c3bacce235bcde8c414",
+     "error": null,
+     "hostMs": [
+      2422
+     ],
+     "wallMs": [
+      21482
+     ]
+    },
+    {
+     "task": "G-N4-turret",
+     "group": "new",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:6bc960ad54ff49ba87e36f1e104f1349e58e3b5fecbf8b3a081ed0cca543eb7e",
+     "error": null,
+     "hostMs": [
+      2118
+     ],
+     "wallMs": [
+      28184
+     ]
+    },
+    {
+     "task": "G-M1-breakout",
+     "group": "modify",
+     "presented": true,
+     "submissions": 2,
+     "calls": 2,
+     "finalDigest": "sha256:60a3ca6f9832b15059a9c04d355e216724b30842019a3c5577d24e21a92296c9",
+     "error": null,
+     "hostMs": [
+      2018,
+      2003
+     ],
+     "wallMs": [
+      26546,
+      10016
+     ]
+    },
+    {
+     "task": "G-M2-balls",
+     "group": "modify",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:fb8644ae989047fac267e2b8136afe39363be4adbd138f704250cc90a0c22b8c",
+     "error": null,
+     "hostMs": [
+      2365
+     ],
+     "wallMs": [
+      19904
+     ]
+    },
+    {
+     "task": "G-M3-paint",
+     "group": "modify",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:551b16f2e91fdbed991497697ec4bd09893686195da758387bc1928fc079aaa6",
+     "error": null,
+     "hostMs": [
+      2468
+     ],
+     "wallMs": [
+      25015
+     ]
+    },
+    {
+     "task": "G-R1-pause",
+     "group": "repair",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:38e30d9323b3ef7f83feed7884e471650f296df88095be644953e8a0db927858",
+     "error": null,
+     "hostMs": [
+      2095
+     ],
+     "wallMs": [
+      27116
+     ]
+    },
+    {
+     "task": "G-R2-drag",
+     "group": "repair",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:fa55d59110edac5dfb4e0dc7952ef803dcc8999246d9e01798cb8ec31e321d5b",
+     "error": null,
+     "hostMs": [
+      2179
+     ],
+     "wallMs": [
+      21737
+     ]
+    },
+    {
+     "task": "G-V1-chart",
+     "group": "nongame",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:b7967825525de58b6801ec98804e3f8053353ff5fdb5a35508014d8382d5d445",
+     "error": null,
+     "hostMs": [
+      1946
+     ],
+     "wallMs": [
+      44499
+     ]
+    }
+   ],
+   "usage": [
+    {
+     "at": "2026-11-09T23:17:35.326Z",
+     "cond": "D",
+     "task": "G-N1-throw",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0001",
+     "purpose": "direct",
+     "promptChars": 6082,
+     "responseChars": 4789,
+     "waitMs": 74115,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:18:12.349Z",
+     "cond": "D",
+     "task": "G-N2-platforms",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0003",
+     "purpose": "direct",
+     "promptChars": 6063,
+     "responseChars": 4100,
+     "waitMs": 34585,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:18:33.714Z",
+     "cond": "D",
+     "task": "G-N3-memory",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0005",
+     "purpose": "direct",
+     "promptChars": 5953,
+     "responseChars": 3483,
+     "waitMs": 19060,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:19:02.217Z",
+     "cond": "D",
+     "task": "G-N4-turret",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0007",
+     "purpose": "direct",
+     "promptChars": 6060,
+     "responseChars": 4714,
+     "waitMs": 26067,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:19:31.013Z",
+     "cond": "D",
+     "task": "G-M1-breakout",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0009",
+     "purpose": "direct",
+     "promptChars": 8387,
+     "responseChars": 3669,
+     "waitMs": 24528,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:19:41.045Z",
+     "cond": "D",
+     "task": "G-M1-breakout",
+     "turn": 1,
+     "role": "gen",
+     "id": "gen-0010",
+     "purpose": "direct",
+     "promptChars": 8665,
+     "responseChars": 3485,
+     "waitMs": 8013,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:20:02.724Z",
+     "cond": "D",
+     "task": "G-M2-balls",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0012",
+     "purpose": "direct",
+     "promptChars": 6750,
+     "responseChars": 2377,
+     "waitMs": 17539,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:20:30.247Z",
+     "cond": "D",
+     "task": "G-M3-paint",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0014",
+     "purpose": "direct",
+     "promptChars": 7585,
+     "responseChars": 3668,
+     "waitMs": 22547,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:20:59.952Z",
+     "cond": "D",
+     "task": "G-R1-pause",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0016",
+     "purpose": "direct",
+     "promptChars": 8225,
+     "responseChars": 3648,
+     "waitMs": 25021,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:21:23.853Z",
+     "cond": "D",
+     "task": "G-R2-drag",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0018",
+     "purpose": "direct",
+     "promptChars": 7979,
+     "responseChars": 3120,
+     "waitMs": 19558,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:22:10.650Z",
+     "cond": "D",
+     "task": "G-V1-chart",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0020",
+     "purpose": "direct",
+     "promptChars": 7417,
+     "responseChars": 5766,
+     "waitMs": 42553,
+     "status": "ok"
+    }
+   ]
+  },
+  "D-r3": {
+   "suite": "general",
+   "observer": "host-smoke/2",
+   "contractDigest": "sha256:9a6c6a4b6896a467e5e899c249647da27ebf77878b968947d35c857a76eb3386",
+   "makerSkillDigest": "sha256:df18c19ec3a8c1194a2ac584b8b29cd0bdb3fa081a2eefbbce5e223743563f5d",
+   "cond": "D",
+   "startedAt": "2026-11-09T23:16:21.207Z",
+   "stand_in": "Grok Bot responder（Luna／Haiku ではない）",
+   "records": [
+    {
+     "task": "G-N1-throw",
+     "group": "new",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:37697cc935399d66c40194a4dc4e3a37ea4c65d48f37743eabfc17dd850a61d0",
+     "error": null,
+     "hostMs": [
+      2573
+     ],
+     "wallMs": [
+      75686
+     ]
+    },
+    {
+     "task": "G-N2-platforms",
+     "group": "new",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:06c2177e2b29bf70ef7b8d53bd60de0de3b113135cdf525f72dfbf09cc8b4aa2",
+     "error": null,
+     "hostMs": [
+      2222
+     ],
+     "wallMs": [
+      32296
+     ]
+    },
+    {
+     "task": "G-N3-memory",
+     "group": "new",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:9d8d3faaa57572a2ee1141fdce9766ef1bd932984fcd6f9ceaac72830e23ba1b",
+     "error": null,
+     "hostMs": [
+      2411
+     ],
+     "wallMs": [
+      21469
+     ]
+    },
+    {
+     "task": "G-N4-turret",
+     "group": "new",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:8dbbd0bd57b3fc5d6d75789abc2c828c3fc6a76d4e0a97d75ab96d1ebdfcad63",
+     "error": null,
+     "hostMs": [
+      2148
+     ],
+     "wallMs": [
+      27215
+     ]
+    },
+    {
+     "task": "G-M1-breakout",
+     "group": "modify",
+     "presented": true,
+     "submissions": 2,
+     "calls": 2,
+     "finalDigest": "sha256:60a3ca6f9832b15059a9c04d355e216724b30842019a3c5577d24e21a92296c9",
+     "error": null,
+     "hostMs": [
+      2054,
+      1998
+     ],
+     "wallMs": [
+      21601,
+      10030
+     ]
+    },
+    {
+     "task": "G-M2-balls",
+     "group": "modify",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:271a3a73fa76619d2de908b5d31392c9235c383ee027d0880a44c45fc1bb9c2e",
+     "error": null,
+     "hostMs": [
+      2370
+     ],
+     "wallMs": [
+      19417
+     ]
+    },
+    {
+     "task": "G-M3-paint",
+     "group": "modify",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:8a3a6ffa0c0dbcf6d2153d3409a8ef729288cb59cf50683eb00d5b57788e7c6a",
+     "error": null,
+     "hostMs": [
+      2464
+     ],
+     "wallMs": [
+      21998
+     ]
+    },
+    {
+     "task": "G-R1-pause",
+     "group": "repair",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:6529327739a0992937e6d5d6d720b55b7a7c48ae8cd1d13db26b84c7fc0a867c",
+     "error": null,
+     "hostMs": [
+      2110
+     ],
+     "wallMs": [
+      22667
+     ]
+    },
+    {
+     "task": "G-R2-drag",
+     "group": "repair",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:fa55d59110edac5dfb4e0dc7952ef803dcc8999246d9e01798cb8ec31e321d5b",
+     "error": null,
+     "hostMs": [
+      2156
+     ],
+     "wallMs": [
+      19700
+     ]
+    },
+    {
+     "task": "G-V1-chart",
+     "group": "nongame",
+     "presented": true,
+     "submissions": 1,
+     "calls": 1,
+     "finalDigest": "sha256:dc728f615200cf51e44596beb0ea703b8623b323af62ea7775e3310f96303c33",
+     "error": null,
+     "hostMs": [
+      1950
+     ],
+     "wallMs": [
+      36034
+     ]
+    }
+   ],
+   "usage": [
+    {
+     "at": "2026-11-09T23:17:34.325Z",
+     "cond": "D",
+     "task": "G-N1-throw",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0001",
+     "purpose": "direct",
+     "promptChars": 6082,
+     "responseChars": 4206,
+     "waitMs": 73113,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:18:06.983Z",
+     "cond": "D",
+     "task": "G-N2-platforms",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0003",
+     "purpose": "direct",
+     "promptChars": 6063,
+     "responseChars": 3855,
+     "waitMs": 30073,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:18:28.277Z",
+     "cond": "D",
+     "task": "G-N3-memory",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0005",
+     "purpose": "direct",
+     "promptChars": 5953,
+     "responseChars": 3284,
+     "waitMs": 19058,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:18:55.770Z",
+     "cond": "D",
+     "task": "G-N4-turret",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0007",
+     "purpose": "direct",
+     "promptChars": 6060,
+     "responseChars": 3935,
+     "waitMs": 25067,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:19:19.631Z",
+     "cond": "D",
+     "task": "G-M1-breakout",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0009",
+     "purpose": "direct",
+     "promptChars": 8387,
+     "responseChars": 3582,
+     "waitMs": 19547,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:19:29.718Z",
+     "cond": "D",
+     "task": "G-M1-breakout",
+     "turn": 1,
+     "role": "gen",
+     "id": "gen-0010",
+     "purpose": "direct",
+     "promptChars": 8625,
+     "responseChars": 3405,
+     "waitMs": 8032,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:19:50.879Z",
+     "cond": "D",
+     "task": "G-M2-balls",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0012",
+     "purpose": "direct",
+     "promptChars": 6750,
+     "responseChars": 2244,
+     "waitMs": 17046,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:20:15.368Z",
+     "cond": "D",
+     "task": "G-M3-paint",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0014",
+     "purpose": "direct",
+     "promptChars": 7585,
+     "responseChars": 3294,
+     "waitMs": 19534,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:20:40.571Z",
+     "cond": "D",
+     "task": "G-R1-pause",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0016",
+     "purpose": "direct",
+     "promptChars": 8225,
+     "responseChars": 3668,
+     "waitMs": 20557,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:21:02.507Z",
+     "cond": "D",
+     "task": "G-R2-drag",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0018",
+     "purpose": "direct",
+     "promptChars": 7979,
+     "responseChars": 3131,
+     "waitMs": 17544,
+     "status": "ok"
+    },
+    {
+     "at": "2026-11-09T23:21:40.784Z",
+     "cond": "D",
+     "task": "G-V1-chart",
+     "turn": 0,
+     "role": "gen",
+     "id": "gen-0020",
+     "purpose": "direct",
+     "promptChars": 7417,
+     "responseChars": 5193,
+     "waitMs": 34084,
+     "status": "ok"
+    }
+   ]
+  }
+ },
+ "groups": {
+  "new": {
+   "pass": 12,
+   "n": 12
+  },
+  "modify": {
+   "pass": 9,
+   "n": 9
+  },
+  "repair": {
+   "pass": 6,
+   "n": 6
+  },
+  "nongame": {
+   "pass": 3,
+   "n": 3
+  }
+ },
+ "games": {
+  "pass": 27,
+  "n": 27
+ },
+ "perTask": [
+  {
+   "task": "G-N1-throw",
+   "group": "new",
+   "pass": 3,
+   "presented": 3,
+   "n": 3,
+   "failedChecks": {}
+  },
+  {
+   "task": "G-N2-platforms",
+   "group": "new",
+   "pass": 3,
+   "presented": 3,
+   "n": 3,
+   "failedChecks": {}
+  },
+  {
+   "task": "G-N3-memory",
+   "group": "new",
+   "pass": 3,
+   "presented": 3,
+   "n": 3,
+   "failedChecks": {}
+  },
+  {
+   "task": "G-N4-turret",
+   "group": "new",
+   "pass": 3,
+   "presented": 3,
+   "n": 3,
+   "failedChecks": {}
+  },
+  {
+   "task": "G-M1-breakout",
+   "group": "modify",
+   "pass": 3,
+   "presented": 3,
+   "n": 3,
+   "failedChecks": {}
+  },
+  {
+   "task": "G-M2-balls",
+   "group": "modify",
+   "pass": 3,
+   "presented": 3,
+   "n": 3,
+   "failedChecks": {}
+  },
+  {
+   "task": "G-M3-paint",
+   "group": "modify",
+   "pass": 3,
+   "presented": 3,
+   "n": 3,
+   "failedChecks": {}
+  },
+  {
+   "task": "G-R1-pause",
+   "group": "repair",
+   "pass": 3,
+   "presented": 3,
+   "n": 3,
+   "failedChecks": {}
+  },
+  {
+   "task": "G-R2-drag",
+   "group": "repair",
+   "pass": 3,
+   "presented": 3,
+   "n": 3,
+   "failedChecks": {}
+  },
+  {
+   "task": "G-V1-chart",
+   "group": "nongame",
+   "pass": 3,
+   "presented": 3,
+   "n": 3,
+   "failedChecks": {}
+  }
+ ],
+ "byGroupUsage": {
+  "new": {
+   "pass": 12,
+   "n": 12,
+   "submissionsTotal": 12,
+   "submissionsMedian": 1.0,
+   "submissionsP90": 1,
+   "callsTotal": 12,
+   "callsMedian": 1.0,
+   "hostMsP50": 2349.5,
+   "hostMsP90": 2573,
+   "chars": 122210,
+   "estTokensChars4": 30552
+  },
+  "modify": {
+   "pass": 9,
+   "n": 9,
+   "submissionsTotal": 12,
+   "submissionsMedian": 1,
+   "submissionsP90": 2,
+   "callsTotal": 12,
+   "callsMedian": 1,
+   "hostMsP50": 2209.5,
+   "hostMsP90": 2464,
+   "chars": 132574,
+   "estTokensChars4": 33144
+  },
+  "repair": {
+   "pass": 6,
+   "n": 6,
+   "submissionsTotal": 6,
+   "submissionsMedian": 1.0,
+   "submissionsP90": 1,
+   "callsTotal": 6,
+   "callsMedian": 1.0,
+   "hostMsP50": 2133.0,
+   "hostMsP90": 2194,
+   "chars": 69060,
+   "estTokensChars4": 17265
+  },
+  "nongame": {
+   "pass": 3,
+   "n": 3,
+   "submissionsTotal": 3,
+   "submissionsMedian": 1,
+   "submissionsP90": 1,
+   "callsTotal": 3,
+   "callsMedian": 1,
+   "hostMsP50": 1950,
+   "hostMsP90": 1957,
+   "chars": 38317,
+   "estTokensChars4": 9579
+  }
+ },
+ "byTask": {
+  "G-N1-throw": {
+   "group": "new",
+   "pass": 3,
+   "n": 3
+  },
+  "G-N2-platforms": {
+   "group": "new",
+   "pass": 3,
+   "n": 3
+  },
+  "G-N3-memory": {
+   "group": "new",
+   "pass": 3,
+   "n": 3
+  },
+  "G-N4-turret": {
+   "group": "new",
+   "pass": 3,
+   "n": 3
+  },
+  "G-M1-breakout": {
+   "group": "modify",
+   "pass": 3,
+   "n": 3
+  },
+  "G-M2-balls": {
+   "group": "modify",
+   "pass": 3,
+   "n": 3
+  },
+  "G-M3-paint": {
+   "group": "modify",
+   "pass": 3,
+   "n": 3
+  },
+  "G-R1-pause": {
+   "group": "repair",
+   "pass": 3,
+   "n": 3
+  },
+  "G-R2-drag": {
+   "group": "repair",
+   "pass": 3,
+   "n": 3
+  },
+  "G-V1-chart": {
+   "group": "nongame",
+   "pass": 3,
+   "n": 3
+  }
+ },
+ "tokenNote": "estTokensChars4 は (promptChars+responseChars)/4 の推定。実トークンは未測定"
+}

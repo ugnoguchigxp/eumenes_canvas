@@ -109,3 +109,6 @@ bash eval/general/start-runs.sh /workspace/canvas_general       # 実行器を�
 bun eval/general/grade.ts --root /workspace/canvas_general      # 全反復の DONE の後に判定（grade/ に出力）
 ```
 
+## 結果
+
+[docs/general-v1-results.md](../general-v1-results.md)（D×3 回、30/30 合格、2026-11-10）。集計は `docs/eval/general-v1-summary.json`、判定の記録は `docs/eval/general-v1/`。

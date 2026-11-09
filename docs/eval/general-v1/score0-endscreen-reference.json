@@ -1,0 +1,53 @@
+{
+ "purpose": "G-N1/G-N4 の得点 0 の終了画面（応答者が unconfirmed に書いた単色との衝突）の実測。判定・観測には含まれない参考測定",
+ "harness": "EvalEnv 480x360 DPR1、grade と同じ seed（N1=51, N4=54）",
+ "procedure": {
+  "G-N1-throw": "Space を 30ms 押して離し 1500ms 待つ×5（的に届かない）",
+  "G-N4-turret": "撃たずに 20500ms 進める"
+ },
+ "measuredAt": "2026-11-10 JST",
+ "results": [
+  {
+   "run": "D-r1",
+   "task": "G-N1-throw",
+   "isGameOver": true,
+   "scoreSquares": 0,
+   "pixelsNot400000": 0
+  },
+  {
+   "run": "D-r1",
+   "task": "G-N4-turret",
+   "isGameOver": true,
+   "scoreSquares": 0,
+   "pixelsNot400000": 0
+  },
+  {
+   "run": "D-r2",
+   "task": "G-N1-throw",
+   "isGameOver": true,
+   "scoreSquares": 0,
+   "pixelsNot400000": 927
+  },
+  {
+   "run": "D-r2",
+   "task": "G-N4-turret",
+   "isGameOver": true,
+   "scoreSquares": 0,
+   "pixelsNot400000": 927
+  },
+  {
+   "run": "D-r3",
+   "task": "G-N1-throw",
+   "isGameOver": true,
+   "scoreSquares": 0,
+   "pixelsNot400000": 0
+  },
+  {
+   "run": "D-r3",
+   "task": "G-N4-turret",
+   "isGameOver": true,
+   "scoreSquares": 0,
+   "pixelsNot400000": 0
+  }
+ ]
+}
