@@ -21,6 +21,18 @@ bun run eval:p2            # P2 の評価（記録済み推論）。結果は ev
 
 別の設定で起動するときは `bun src/server/main.ts <設定ファイル>`（例 `bun src/server/main.ts /tmp/canvas.local.json`）。`canvas.config.json` のプレビューは 4301 番を使う。
 
+### デモ（テトリス・オセロ・インベーダーゲーム・ソリティア）
+
+既定の設定は `fixtures/demo/recordings.json` も読むので、次の 4 つの依頼にはそのまま答える：「テトリスを作って」「オセロを作って」「インベーダーゲームを作って」「ソリティアを作って」（Grok Bot が制作担当を代行して作った固定応答）。
+
+入力せずに作品一覧へ入れるときは、検証ホストを起動したまま：
+
+```sh
+bun scripts/seed-demo.ts [設定ファイル] [--owner <canvas_owner cookie の値>]
+```
+
+所有者 cookie（HttpOnly。ブラウザの開発者ツールの Application → Cookies で見られる）を渡すと、そのブラウザの作品一覧に入る。渡さなければ新しい所有者に入れ、その値を表示する。同じ題名の作品があれば飛ばす。
+
 ### 診断ログ
 
 検証ホストは `<dataDir>/logs/` に JSON Lines を追記する（既定の設定では `.data/logs/`。`.data/` は git の対象外）。設定の `logDir` で場所を変えられる。各 5 MB を超えると `.1` に移して 1 世代だけ残す。
