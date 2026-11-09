@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Canvas 検証ホスト</title>
 <link rel="stylesheet" href="/app.css">
+<script type="module" src="/client-log.js"></script>
 <script type="module" src="/app.js"></script>
 </head>
 <body>
@@ -19,7 +20,7 @@
   <section class="chat" aria-label="会話">
     <div id="current" class="current">新規の作品</div>
     <ol id="messages"></ol>
-    <form id="composer">
+    <form id="composer" method="dialog">
       <textarea id="message" rows="3" aria-label="依頼" placeholder="例：落ち物ゲームを作って"></textarea>
       <div class="row"><button id="send" type="submit">送信</button><button id="cancel" type="button" disabled>取消</button><span id="run-status" role="status"></span></div>
     </form>

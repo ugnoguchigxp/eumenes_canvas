@@ -1,8 +1,10 @@
 // 検証ホストの画面。会話・作品一覧・プレビュー・3 表示モード・候補の保存と復元。
+import { clog } from "/client-log.js";
 import { PreviewController, PreviewConnectError } from "/preview-client.js";
 
 const $ = (id) => document.getElementById(id);
 const cfg = await (await fetch("/api/config")).json();
+clog("config", { previewOrigin: cfg.previewOrigin, hostOrigin: cfg.hostOrigin, pageOrigin: location.origin });
 
 function rid(n = 12) {
   const a = new Uint8Array(n);
@@ -27,13 +29,23 @@ const state = {
   returnFocus: null,
 };
 
-async function api(path, { method = "GET", body } = {}) {
-  const r = await fetch(path, {
-    method,
-    headers: { "content-type": "application/json", "x-canvas-session": session },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+// quiet: 定期の状態確認など。成功は記録せず、失敗だけ残す
+async function api(path, { method = "GET", body, quiet = false } = {}) {
+  const t0 = performance.now();
+  if (!quiet) clog("api.start", { method, path });
+  let r;
+  try {
+    r = await fetch(path, {
+      method,
+      headers: { "content-type": "application/json", "x-canvas-session": session },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch (err) {
+    clog("api.end", { method, path, status: 0, ms: Math.round(performance.now() - t0), error: err });
+    throw err;
+  }
   const j = await r.json().catch(() => ({}));
+  if (!quiet || !r.ok) clog("api.end", { method, path, status: r.status, ms: Math.round(performance.now() - t0), error: r.ok ? undefined : j.error || r.statusText });
   if (!r.ok) {
     const e = new Error(j.error || r.statusText);
     e.status = r.status;
@@ -47,6 +59,7 @@ const host = $("preview-host");
 const ctl = new PreviewController($("preview-frame"), {
   previewOrigin: cfg.previewOrigin,
   onEvent: (m) => {
+    if (m.type === "error" || m.type === "violation") clog("preview.event", { kind: m.type, message: m.message });
     if (m.type === "error") notice("作品のエラー: " + m.message);
     if (m.type === "violation") notice("作品を停止しました（" + m.message + "）");
     if (m.type === "escape") exitMode();
@@ -75,6 +88,7 @@ function connectFailureText(err) {
 
 function showConnection(st, err) {
   document.body.dataset.preview = st;
+  clog("preview.connection", { state: st, code: err?.code, timeoutMs: err?.timeoutMs, previewOrigin: cfg.previewOrigin });
   const box = $("preview-error");
   if (st === "failed") {
     $("preview-error-text").textContent = connectFailureText(err);
@@ -170,8 +184,10 @@ async function showPreview(source, label) {
     if (!(err instanceof PreviewConnectError)) throw err;
     host.dataset.ready = "0";
     notice("プレビューに接続できないため表示できません。上の「再接続」を試してください。");
+    clog("preview.start", { result: "connect-failed", label });
     return { type: "connect-failed", message: err.message };
   }
+  clog("preview.start", { result: r.type, message: r.message, label });
   host.dataset.ready = r.type === "ready" ? "1" : "0";
   if (r.type !== "ready") notice("起動できませんでした: " + (r.message || r.type));
   return r;
@@ -195,6 +211,7 @@ function setRunStatus(t) {
 $("composer").addEventListener("submit", async (e) => {
   e.preventDefault();
   const text = $("message").value.trim();
+  clog("ui.submit", { length: text.length });
   if (!text) return;
   $("message").value = "";
   addMessage("user", text);
@@ -208,12 +225,14 @@ $("composer").addEventListener("submit", async (e) => {
   }
   state.conversation.push({ role: "user", text });
   state.runId = run.id;
+  clog("run.state", { runId: run.id, state: run.state, attempts: run.attempts });
   $("cancel").disabled = false;
   setRunStatus("生成中…");
   pollRun(run.id);
 });
 
 $("message").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") clog("ui.enter", { meta: e.metaKey, ctrl: e.ctrlKey, shift: e.shiftKey, composing: e.isComposing });
   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) $("composer").requestSubmit();
 });
 
@@ -225,14 +244,21 @@ $("cancel").addEventListener("click", async () => {
 const STATE_TEXT = { failed: "失敗しました", cancelled: "取り消しました", expired: "期限を過ぎました", superseded: "新しい依頼に置き換えました" };
 
 async function pollRun(id) {
+  let last = "running";
+  let lastAttempts = 0;
   for (;;) {
     await new Promise((r) => setTimeout(r, 250));
     if (state.runId !== id) return;
     let run;
     try {
-      run = await api(`/api/runs/${id}`);
+      run = await api(`/api/runs/${id}`, { quiet: true });
     } catch {
       continue;
+    }
+    if (run.state !== last || run.attempts !== lastAttempts) {
+      clog("run.state", { runId: id, state: run.state, attempts: run.attempts, failureHead: run.failure ? run.failure.split(":")[0].slice(0, 80) : undefined }); // 失敗の詳細は依頼の一部を含みうるため、見出しだけ
+      last = run.state;
+      lastAttempts = run.attempts;
     }
     if (run.state === "running") {
       setRunStatus(`生成中…（試行 ${run.attempts}）`);
@@ -385,3 +411,4 @@ try {
   notice("作品一覧を読めませんでした: " + err.message);
 }
 document.body.dataset.ready = "1";
+clog("page.ready");

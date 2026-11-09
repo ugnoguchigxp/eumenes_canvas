@@ -19,4 +19,17 @@ bun run verify             # 型検査 → 部分・結合 → Playwright
 bun run eval:p2            # P2 の評価（記録済み推論）。結果は eval/out/ に出る
 ```
 
+別の設定で起動するときは `bun src/server/main.ts <設定ファイル>`（例 `bun src/server/main.ts /tmp/canvas.local.json`）。`canvas.config.json` のプレビューは 4301 番を使う。
+
+### 診断ログ
+
+検証ホストは `<dataDir>/logs/` に JSON Lines を追記する（既定の設定では `.data/logs/`。`.data/` は git の対象外）。設定の `logDir` で場所を変えられる。各 5 MB を超えると `.1` に移して 1 世代だけ残す。
+
+- `.data/logs/server.log`：ホストとプレビューの全要求（時刻・`server`・`pid`・待ち受け・メソッド・パス・状態・所要ミリ秒・`origin`・`sec-fetch-*`・拒否理由、500 のときはスタック）。本文・cookie・session・トークンは書かない。
+- `.data/logs/client.log`：ホスト画面の診断イベント（例外、`console.error`、プレビュー接続、送信ボタン・`submit`・Enter、API の結果、実行状態、プレビュー起動）。依頼の本文は書かない（長さだけ）。
+
+```sh
+tail -f .data/logs/server.log .data/logs/client.log
+```
+
 検証ホストは `canvas.config.json` を読む。モデルの提供者は設定の `model` で選ぶ。現在は記録済み推論（`recorded`）だけを実装している。

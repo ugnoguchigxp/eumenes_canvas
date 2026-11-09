@@ -17,6 +17,7 @@ export interface CanvasAppOptions {
   hostPort: number;
   previewPort: number;
   devHarness?: boolean;
+  logDir?: string | null;
   makeService: (deps: { tokens: PreviewTokens; hostOrigin: string }) => CanvasService;
 }
 
@@ -27,6 +28,7 @@ export function startCanvasApp(o: CanvasAppOptions) {
     hostPort: o.hostPort,
     previewPort: o.previewPort,
     devHarness: o.devHarness,
+    logDir: o.logDir,
     tokens,
     onPage: (req): Record<string, string> => (cookieOwner(req) ? {} : { "set-cookie": `${OWNER_COOKIE}=${randomBytes(18).toString("base64url")}; Path=/; HttpOnly; SameSite=Strict` }),
     extraRoutes: async (req, url) => {

@@ -12,6 +12,8 @@ export interface CanvasConfig {
   hostPort: number;
   previewPort: number;
   dataDir: string | null;
+  /** 診断ログの置き場所。既定は <dataDir>/logs。 */
+  logDir?: string | null;
   runTimeoutMs?: number;
   devHarness?: boolean;
   model: { provider: "recorded"; label: string; files: string[]; ignoreLatency?: boolean; deliverAfterAbort?: boolean };
@@ -38,6 +40,7 @@ export function runFromConfig(cfg: CanvasConfig, root: string) {
     hostPort: cfg.hostPort,
     previewPort: cfg.previewPort,
     devHarness: cfg.devHarness,
+    logDir: cfg.logDir ? resolve(root, cfg.logDir) : cfg.dataDir ? resolve(root, cfg.dataDir, "logs") : null,
     makeService: ({ tokens, hostOrigin }) =>
       new CanvasService({
         store: new Store(cfg.dataDir ? resolve(root, cfg.dataDir) : null),
@@ -57,4 +60,5 @@ if (import.meta.main) {
   const cfg = JSON.parse(readFileSync(file, "utf8")) as CanvasConfig;
   const app = runFromConfig(cfg, root);
   console.log(`検証ホスト ${app.hostOrigin}（プレビュー ${app.previewOrigin}）`);
+  console.log(app.logDir ? `診断ログ ${app.logDir}/server.log・client.log` : "診断ログ なし（dataDir・logDir が未設定）");
 }
