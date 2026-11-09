@@ -50,3 +50,7 @@
 bun eval/runner.ts --self-test   # 対照
 bun eval/runner.ts --run         # 13 課題 × 3 試行
 ```
+
+## 凍結後の変更
+
+- 評価版 v2：`eval/checks/heldout.ts` の N3 の判定だけを変更（敵の速度を 1 フレームでなく 160ms 以上の区間で推定）。v1 の結果を見た後の変更なので、v2 の数は正式な合格数に混ぜない。v1 の判定は commit `0edd712` で再現できる。

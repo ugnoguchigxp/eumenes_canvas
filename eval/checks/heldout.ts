@@ -152,15 +152,18 @@ const shooter: Check = async (env, entry, data, seed) => {
     return [ok, `dx=${(a.cx - b.cx).toFixed(1)} bullet=${bl1.box ? bl1.cy.toFixed(0) + "→" + bl2.cy.toFixed(0) : "なし"}`];
   }));
   out.push(await fresh(env, entry, data, seed, "hit-then-ammo-gameover-restart", "retain", async () => {
-    let presses = 0, prev: { cx: number } | null = null, score = 0;
+    // v2：敵の速度は 1 フレームの差ではなく 160ms 以上の区間で測る（v1 は画素の丸めで 25% ずれた）
+    let presses = 0, hist: { cx: number; t: number }[] = [], score = 0;
     const p0 = blob(await env.shot(), GREEN);
     if (!p0.box) return [false, "自機なし"];
     while (env.t < 8000 && score < 1 && presses < 5) {
       const s = await env.shot();
       score = scoreSquares(s);
       const e = blob(s, RED, 30), bul = blob(s, WHITE, 30, { x: 0, y: 20, w: 480, h: p0.box!.y - 20 });
+      if (e.box && hist.length && (hist.at(-1)!.cx - hist[0].cx) * (e.cx - hist.at(-1)!.cx) < 0) hist = []; // 折り返し
+      const prev = hist.length && env.t - hist[0].t >= 160 ? hist[0] : null;
       if (e.box && prev && !bul.box) {
-        const vx = (e.cx - prev.cx) / 16;
+        const vx = (e.cx - prev.cx) / (env.t - prev.t);
         const T = (p0.box!.y - e.cy) / 0.4;
         const pred = e.cx + vx * T;
         if (Math.abs(pred - p0.cx) < 8 && pred > 20 && pred < 460) {
@@ -168,11 +171,11 @@ const shooter: Check = async (env, entry, data, seed) => {
           presses++;
           await env.advance(Math.ceil(T) + 100);
           score = scoreSquares(await env.shot());
-          prev = null;
+          hist = [];
           continue;
         }
       }
-      prev = e.box ? { cx: e.cx } : null;
+      if (e.box) { hist.push({ cx: e.cx, t: env.t }); if (hist.length > 30) hist.shift(); } else hist = [];
       await env.advance(16);
     }
     if (score < 1) return [false, `${presses} 発で命中なし`];

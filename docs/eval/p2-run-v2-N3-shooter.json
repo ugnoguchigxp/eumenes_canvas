@@ -1,0 +1,102 @@
+{
+  "environment": "chromium 141.0.7390.37",
+  "samples": 3,
+  "records": [
+    {
+      "task": "N3-shooter",
+      "group": "new",
+      "sample": 0,
+      "pass": true,
+      "turns": [
+        {
+          "request": "シューティングゲームを作って。背景は黒 #000000。自機は画面の下端から 30px の位置にある 30×12 の緑 #00ff00 で、←→ キーで毎秒 250px 動く。Space で白 #ffffff の 4×10 の弾を自機の中央から真上へ毎秒 400px で撃つ（画面上の弾は 1 発まで）。敵は 24×16 の赤 #ff0000 で、上端から 50〜70px の高さを左右に毎秒 100px で往復する。弾が敵に当たったら 1 点で、敵は別の横位置に出直す。得点は左上に黄色 #ffff00 の 8×8 の四角を 1 点につき 1 個、10px 間隔で並べる。弾は全部で 10 発で、撃ち尽くして最後の弾が消えたら画面全体を #400000 で塗ってゲームオーバーにし、R キーでやり直す。",
+          "state": "presented",
+          "inferences": 1,
+          "latencyMs": 1386,
+          "failure": null,
+          "observerFailures": []
+        }
+      ],
+      "inferences": 1,
+      "finalDigest": "sha256:166626203c76c20608e53a389027392c6ac4d2b2296393f5c977c42ae7f3624b",
+      "checks": [
+        {
+          "id": "move-and-fire",
+          "kind": "start",
+          "pass": true,
+          "detail": "dx=50.0 bullet=273→233"
+        },
+        {
+          "id": "hit-then-ammo-gameover-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "命中後の再開"
+        }
+      ]
+    },
+    {
+      "task": "N3-shooter",
+      "group": "new",
+      "sample": 1,
+      "pass": true,
+      "turns": [
+        {
+          "request": "シューティングゲームを作って。背景は黒 #000000。自機は画面の下端から 30px の位置にある 30×12 の緑 #00ff00 で、←→ キーで毎秒 250px 動く。Space で白 #ffffff の 4×10 の弾を自機の中央から真上へ毎秒 400px で撃つ（画面上の弾は 1 発まで）。敵は 24×16 の赤 #ff0000 で、上端から 50〜70px の高さを左右に毎秒 100px で往復する。弾が敵に当たったら 1 点で、敵は別の横位置に出直す。得点は左上に黄色 #ffff00 の 8×8 の四角を 1 点につき 1 個、10px 間隔で並べる。弾は全部で 10 発で、撃ち尽くして最後の弾が消えたら画面全体を #400000 で塗ってゲームオーバーにし、R キーでやり直す。",
+          "state": "presented",
+          "inferences": 1,
+          "latencyMs": 1337,
+          "failure": null,
+          "observerFailures": []
+        }
+      ],
+      "inferences": 1,
+      "finalDigest": "sha256:994a75cd4358feefffac78834f2874e86f729b2bbbdb67a584158800e3c987fb",
+      "checks": [
+        {
+          "id": "move-and-fire",
+          "kind": "start",
+          "pass": true,
+          "detail": "dx=50.0 bullet=273→233"
+        },
+        {
+          "id": "hit-then-ammo-gameover-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "命中後の再開"
+        }
+      ]
+    },
+    {
+      "task": "N3-shooter",
+      "group": "new",
+      "sample": 2,
+      "pass": true,
+      "turns": [
+        {
+          "request": "シューティングゲームを作って。背景は黒 #000000。自機は画面の下端から 30px の位置にある 30×12 の緑 #00ff00 で、←→ キーで毎秒 250px 動く。Space で白 #ffffff の 4×10 の弾を自機の中央から真上へ毎秒 400px で撃つ（画面上の弾は 1 発まで）。敵は 24×16 の赤 #ff0000 で、上端から 50〜70px の高さを左右に毎秒 100px で往復する。弾が敵に当たったら 1 点で、敵は別の横位置に出直す。得点は左上に黄色 #ffff00 の 8×8 の四角を 1 点につき 1 個、10px 間隔で並べる。弾は全部で 10 発で、撃ち尽くして最後の弾が消えたら画面全体を #400000 で塗ってゲームオーバーにし、R キーでやり直す。",
+          "state": "presented",
+          "inferences": 1,
+          "latencyMs": 1365,
+          "failure": null,
+          "observerFailures": []
+        }
+      ],
+      "inferences": 1,
+      "finalDigest": "sha256:7970077788c807b8c76e66858549235c07c8f4532bd64335cb9215746551746c",
+      "checks": [
+        {
+          "id": "move-and-fire",
+          "kind": "start",
+          "pass": true,
+          "detail": "dx=50.0 bullet=273→233"
+        },
+        {
+          "id": "hit-then-ammo-gameover-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "命中後の再開"
+        }
+      ]
+    }
+  ]
+}
