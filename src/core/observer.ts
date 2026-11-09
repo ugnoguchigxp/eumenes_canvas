@@ -14,7 +14,7 @@ export interface ObserverPort {
   close(): Promise<void>;
 }
 
-/** host-smoke/2（2026-11-10）：固定点のクリックに加えて、作品が描いた領域の代表点もクリックし、段階ごとに画面を比べる。 */
+/** host-smoke/2（2026-11-10）：キーを押し続けて離す、固定点のクリックに加えて作品が描いた領域の代表点もクリックする。段階ごとに画面を比べる。 */
 export const OBSERVER_SUITE = "host-smoke/2";
 /** 描画領域のクリックの上限。 */
 export const PAINTED_CLICKS = 16;
@@ -70,30 +70,42 @@ export class PlaywrightObserver implements ObserverPort {
       await page.evaluate(() => (window as any).harness.advance(1000));
       const s1 = await grab();
       await noteErrors("時間の経過（起動から 1000ms）");
-      // 題材によらない一定の入力列：キー操作と、画面全体に散らした固定点のクリック（座標は観測の文に書かない）
+      // 題材によらない一定の入力列：キーを 1 つずつ押し続けて離す（押している間に進む作品のため）
       await frame.click({ position: { x: 240, y: 180 } });
-      for (const k of ["ArrowLeft", "ArrowRight", "ArrowUp", "Space"]) await page.keyboard.press(k);
+      const keyShots = [s1];
+      for (const k of KEYS) {
+        await page.keyboard.down(k);
+        await page.evaluate((ms: number) => (window as any).harness.advance(ms), KEY_HOLD_MS);
+        keyShots.push(await grab()); // 押している間
+        await page.keyboard.up(k);
+      }
+      const sk = await grab(); // 離した直後
+      keyShots.push(sk);
+      await noteErrors(`キー入力（起動から ${T_KEYS}ms）`);
+      // 画面全体に散らした固定点のクリック（座標は観測の文に書かない）
       for (let gy = 0; gy < 4; gy++) for (let gx = 0; gx < 6; gx++) await frame.click({ position: { x: 40 + gx * 80, y: 45 + gy * 90 } });
       await page.evaluate(() => (window as any).harness.advance(500));
       const s2 = await grab();
-      await noteErrors("キー入力と画面全体のクリック（起動から 1500ms）");
+      await noteErrors(`画面全体のクリック（起動から ${T_GRID}ms）`);
       // 作品が描いた領域（背景色と違う画素のまとまり）の代表点をクリックする
       const targets = paintedTargets(s2, PAINTED_CLICKS);
       for (const p of targets) await frame.click({ position: p });
       await page.evaluate(() => (window as any).harness.advance(500));
       const s3 = await grab();
-      await noteErrors("描画領域のクリック（起動から 2000ms）");
+      await noteErrors(`描画領域のクリック（起動から ${T_END}ms）`);
       const errs = await errors();
-      const d = [diff(s0, s1), diff(s1, s2), diff(s2, s3)];
+      const keyDiff = keyShots.slice(1).reduce((a, x, i) => a + diff(keyShots[i], x), 0);
+      const d = [diff(s0, s1), keyDiff, diff(sk, s2), diff(s2, s3)];
       const changed = d.some((x) => x > 0);
       const varied = colors(s2) > 1;
       const clicked = targets.length ? targets.map((p) => `(${p.x},${p.y})`).join(" ") : "なし（背景以外の描画が見つからない）";
       const staticMsg =
-        `起動から 2000ms 観測したが描画が変わらない。段階ごとの差分画素：` +
-        `時間の経過 1000ms（入力なし）で ${d[0]}、キー入力（← → ↑ Space）と画面全体に散らした ${GRID_CLICKS} 点のクリックのあと 500ms で ${d[1]}、` +
-        `描画のある領域 ${targets.length} 点のクリックのあと 500ms で ${d[2]}。描画領域のクリック座標（CSS px、画面 ${s2.width}×${s2.height}）：${clicked}`;
+        `起動から ${T_END}ms 観測したが描画が変わらない。段階ごとの差分画素（前の段階の画面との比較）：` +
+        `時間の経過 1000ms（入力なし）で ${d[0]}、キー（← → ↑ Space）を 1 つずつ ${KEY_HOLD_MS}ms 押し続けている間と離した直後に ${d[1]}、` +
+        `画面全体に散らした ${GRID_CLICKS} 点のクリックのあと 500ms で ${d[2]}、描画のある領域 ${targets.length} 点のクリックのあと 500ms で ${d[3]}。` +
+        `描画領域のクリック座標（CSS px、画面 ${s2.width}×${s2.height}）：${clicked}`;
       if (errs.length) observations.push({ kind: "runtime-error", message: `${firstErrorPhase ? `[${firstErrorPhase}の段階で発生] ` : ""}${errs.map((e) => e.message).join(" / ")}`.slice(0, 1000) });
-      if (!varied) observations.push({ kind: "blank", message: `キー入力と画面全体のクリックのあと（起動から 1500ms）の画面が単色 ${hexAt(s2, 0)} のまま` });
+      if (!varied) observations.push({ kind: "blank", message: `キー入力と画面全体のクリックのあと（起動から ${T_GRID}ms）の画面が単色 ${hexAt(s2, 0)} のまま` });
       if (!changed) observations.push({ kind: "static", message: staticMsg });
       checks.push({ id: "no-runtime-error", level: "operated", pass: errs.length === 0, detail: errs[0]?.message });
       checks.push({ id: "not-blank", level: "operated", pass: varied });
@@ -124,6 +136,11 @@ function colors(a: { data: Buffer }) {
 }
 
 const GRID_CLICKS = 24;
+const KEYS = ["ArrowLeft", "ArrowRight", "ArrowUp", "Space"];
+const KEY_HOLD_MS = 150;
+const T_KEYS = 1000 + KEYS.length * KEY_HOLD_MS;
+const T_GRID = T_KEYS + 500;
+const T_END = T_GRID + 500;
 
 function hexAt(a: { data: Buffer }, i: number) {
   return "#" + [a.data[i * 4], a.data[i * 4 + 1], a.data[i * 4 + 2]].map((v) => v.toString(16).padStart(2, "0")).join("");

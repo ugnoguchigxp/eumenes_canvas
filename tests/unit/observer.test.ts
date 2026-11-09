@@ -56,6 +56,27 @@ const STATIC = `canvasApp.start((api) => ({
   },
 }));`;
 
+// 押している間だけ表示が変わり、離すと元に戻る（溜めて離す型）。一瞬の押下では観測にかからない。
+const HOLD_ONLY = `canvasApp.start((api) => {
+  let held = false;
+  return {
+    frame() {
+      const c = api.ctx;
+      c.fillStyle = "#000000"; c.fillRect(0, 0, api.width, api.height);
+      c.fillStyle = "#808080"; c.fillRect(20, 300, 440, 4);
+      if (held) { c.fillStyle = "#ffffff"; c.fillRect(20, 320, 100, 8); }
+    },
+    input(ev) {
+      if (ev.code === "Space" || ev.key === " ") held = ev.type === "keydown";
+    },
+  };
+});`;
+
+test("押している間だけ変わる作品も、キーを押し続ける段階で responds が合格する", async () => {
+  const r = await observer.observe({ title: "t", entry: HOLD_ONLY }, null, sig());
+  expect(r.checks.find((c) => c.id === "responds")?.pass).toBe(true);
+}, 60_000);
+
 test("suite は host-smoke/2", () => {
   expect(observer.suite).toBe(OBSERVER_SUITE);
   expect(OBSERVER_SUITE).toBe("host-smoke/2");
@@ -73,7 +94,8 @@ test("静止した作品は responds が不合格。観測の文に経過時間�
   const r = await observer.observe({ title: "t", entry: STATIC }, null, sig());
   expect(r.checks.find((c) => c.id === "responds")?.pass).toBe(false);
   const st = r.observations.find((o) => o.kind === "static")!;
-  expect(st.message).toContain("2000ms");
+  expect(st.message).toContain("2600ms");
+  expect(st.message).toContain("押し続けている間と離した直後");
   expect(st.message).toContain("1000ms");
   expect(st.message).toContain("描画のある領域 1 点");
   expect(st.message).toMatch(/\((1[0-4]\d),(1[0-2]\d)\)/); // 白い四角の内側の点
@@ -92,5 +114,5 @@ test("単色の作品は not-blank と responds が不合格（描画領域は�
 test("実行時エラーは最初に出た段階を付けて返す", async () => {
   const r = await observer.observe({ title: "t", entry: `canvasApp.start((api) => ({ frame(t) { api.ctx.fillStyle = "#000"; api.ctx.fillRect(0,0,api.width,api.height); api.ctx.fillStyle = "#fff"; api.ctx.fillRect(t / 10, 10, 10, 10); }, input(ev) { if (ev.type === "keydown") throw new Error("boom"); } }));` }, null, sig());
   expect(r.checks.find((c) => c.id === "no-runtime-error")?.pass).toBe(false);
-  expect(r.observations.find((o) => o.kind === "runtime-error")?.message).toContain("キー入力と画面全体のクリック");
+  expect(r.observations.find((o) => o.kind === "runtime-error")?.message).toContain("キー入力（起動から 1600ms）");
 }, 60_000);

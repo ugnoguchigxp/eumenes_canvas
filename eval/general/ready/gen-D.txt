@@ -1,0 +1,6 @@
+
+条件 D（直接生成）の道具:
+- tools/art.sh <id> <title> <work/のentry.js> "<変更内容の説明>" [dataRef] ['["未確認の点",...]']
+  例: tools/art.sh gen-0001 "へびゲーム" @DIR@/work/snake.js "移動間隔を 250ms にした"
+- 形を自分で全部書くときは tools/write.sh gen <id> <file.json>。
+ホストの観測に落ちると、同じターンで「前の候補」と「ホスト観測」つきの要求が来ます（1 ターン 3 回まで）。

@@ -3,7 +3,8 @@
   "include": [
     "./**/*.ts",
     "../lib/**/*.ts",
-    "../checks/**/*.ts"
+    "../checks/**/*.ts",
+    "../general/**/*.ts"
   ],
   "exclude": [],
   "compilerOptions": {

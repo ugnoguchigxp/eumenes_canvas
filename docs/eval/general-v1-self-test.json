@@ -1,0 +1,918 @@
+{
+  "suite": "general-v1",
+  "environment": "chromium 141.0.7390.37",
+  "at": "2026-11-09T23:12:03.466Z",
+  "mismatches": 0,
+  "rows": [
+    {
+      "task": "G-N1-throw",
+      "name": "黒一色",
+      "expect": "all-fail",
+      "ok": true,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": false,
+          "detail": "自機 null 地面 null 的 false"
+        },
+        {
+          "id": "charge-bar",
+          "kind": "start",
+          "pass": false,
+          "detail": "0.5 秒 null 1.5 秒 null"
+        },
+        {
+          "id": "throw-trajectory",
+          "kind": "retain",
+          "pass": false,
+          "detail": "球 false false"
+        },
+        {
+          "id": "hit-score-gameover-restart",
+          "kind": "retain",
+          "pass": false,
+          "detail": "的が見つからない"
+        }
+      ]
+    },
+    {
+      "task": "G-N1-throw",
+      "name": "参照 gold/general/G-N1-throw.js",
+      "expect": "all-pass",
+      "ok": true,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": true,
+          "detail": "自機 {\"x\":40,\"y\":288,\"w\":16,\"h\":32} 地面 {\"x\":0,\"y\":320,\"w\":480,\"h\":4} 的 true"
+        },
+        {
+          "id": "charge-bar",
+          "kind": "start",
+          "pass": true,
+          "detail": "0.5 秒 {\"x\":40,\"y\":332,\"w\":100,\"h\":8} 1.5 秒 {\"x\":40,\"y\":332,\"w\":200,\"h\":8}"
+        },
+        {
+          "id": "throw-trajectory",
+          "kind": "retain",
+          "pass": true,
+          "detail": "0.1 秒 (97.9,248.5) 0.2 秒の移動 (85.0,-59.7)"
+        },
+        {
+          "id": "hit-score-gameover-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "得点 1、R で再開"
+        }
+      ]
+    },
+    {
+      "task": "G-N2-platforms",
+      "name": "黒一色",
+      "expect": "all-fail",
+      "ok": true,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": false,
+          "detail": "自機 null 足場  地面 false"
+        },
+        {
+          "id": "walk-160",
+          "kind": "retain",
+          "pass": false,
+          "detail": "右 NaN 左 NaN"
+        },
+        {
+          "id": "jump-apex",
+          "kind": "retain",
+          "pass": false,
+          "detail": "上昇 NaN 着地 NaN"
+        },
+        {
+          "id": "platform-from-below-and-fall",
+          "kind": "retain",
+          "pass": false,
+          "detail": "A の下へ行けない"
+        },
+        {
+          "id": "climb-to-star",
+          "kind": "retain",
+          "pass": false,
+          "detail": "A の下へ行けない"
+        }
+      ]
+    },
+    {
+      "task": "G-N2-platforms",
+      "name": "参照 gold/general/G-N2-platforms.js",
+      "expect": "all-pass",
+      "ok": true,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": true,
+          "detail": "自機 {\"x\":30,\"y\":306,\"w\":16,\"h\":24} 足場 110,260,100 250,190,100 360,120,90 地面 true"
+        },
+        {
+          "id": "walk-160",
+          "kind": "retain",
+          "pass": true,
+          "detail": "右 80.0 左 -40.0"
+        },
+        {
+          "id": "jump-apex",
+          "kind": "retain",
+          "pass": true,
+          "detail": "上昇 93.0 着地 330.0"
+        },
+        {
+          "id": "platform-from-below-and-fall",
+          "kind": "retain",
+          "pass": true,
+          "detail": "A 260.0 → 端から出て 330.0"
+        },
+        {
+          "id": "climb-to-star",
+          "kind": "retain",
+          "pass": true,
+          "detail": "C 120.0 得点 1 星 159.5,230"
+        }
+      ]
+    },
+    {
+      "task": "G-N3-memory",
+      "name": "黒一色",
+      "expect": "all-fail",
+      "ok": true,
+      "checks": [
+        {
+          "id": "layout-face-down",
+          "kind": "start",
+          "pass": false,
+          "detail": "裏 0 枚"
+        },
+        {
+          "id": "flip-shows-color",
+          "kind": "retain",
+          "pass": false,
+          "detail": "表 null"
+        },
+        {
+          "id": "mismatch-back-and-lock",
+          "kind": "retain",
+          "pass": false,
+          "detail": "表にならない null null"
+        },
+        {
+          "id": "match-all-clear-restart",
+          "kind": "retain",
+          "pass": false,
+          "detail": "カード 0 が表にならない"
+        }
+      ]
+    },
+    {
+      "task": "G-N3-memory",
+      "name": "参照 gold/general/G-N3-memory.js",
+      "expect": "all-pass",
+      "ok": true,
+      "checks": [
+        {
+          "id": "layout-face-down",
+          "kind": "start",
+          "pass": true,
+          "detail": "裏 12 枚"
+        },
+        {
+          "id": "flip-shows-color",
+          "kind": "retain",
+          "pass": true,
+          "detail": "表 1"
+        },
+        {
+          "id": "mismatch-back-and-lock",
+          "kind": "retain",
+          "pass": true,
+          "detail": "違う色 5・1 が 1 秒後に裏"
+        },
+        {
+          "id": "match-all-clear-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "6 組そろえてクリア、クリックで並べ直し"
+        }
+      ]
+    },
+    {
+      "task": "G-N4-turret",
+      "name": "黒一色",
+      "expect": "all-fail",
+      "ok": true,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": false,
+          "detail": "砲台 null バー null 敵 undefined"
+        },
+        {
+          "id": "aim-and-speed",
+          "kind": "retain",
+          "pass": false,
+          "detail": "弾 false false"
+        },
+        {
+          "id": "cooldown",
+          "kind": "retain",
+          "pass": false,
+          "detail": "直後 0 連射不可 true 0.4 秒 undefined 0.85 秒で再射 false"
+        },
+        {
+          "id": "hit-score",
+          "kind": "retain",
+          "pass": false,
+          "detail": "敵なし"
+        },
+        {
+          "id": "timeup-gameover-restart",
+          "kind": "retain",
+          "pass": false,
+          "detail": "敵なし"
+        }
+      ]
+    },
+    {
+      "task": "G-N4-turret",
+      "name": "参照 gold/general/G-N4-turret.js",
+      "expect": "all-pass",
+      "ok": true,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": true,
+          "detail": "砲台 {\"x\":225,\"y\":334,\"w\":30,\"h\":16} バー {\"x\":190,\"y\":356,\"w\":100,\"h\":4} 敵 {\"x\":144,\"y\":120,\"w\":23,\"h\":23}"
+        },
+        {
+          "id": "aim-and-speed",
+          "kind": "retain",
+          "pass": true,
+          "detail": "0.1 秒 (219.0,299.0) 0.2 秒の移動 (-41.0,-68.5)"
+        },
+        {
+          "id": "cooldown",
+          "kind": "retain",
+          "pass": true,
+          "detail": "直後 6 連射不可 true 0.4 秒 50 0.85 秒で再射 true"
+        },
+        {
+          "id": "hit-score",
+          "kind": "retain",
+          "pass": true,
+          "detail": "得点 1"
+        },
+        {
+          "id": "timeup-gameover-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "時間切れと R で再開"
+        }
+      ]
+    },
+    {
+      "task": "G-M1-breakout",
+      "name": "黒一色",
+      "expect": "all-fail",
+      "ok": true,
+      "checks": [
+        {
+          "id": "rows-4",
+          "kind": "change",
+          "pass": false,
+          "detail": "各段 0,0,0,0 青 0"
+        },
+        {
+          "id": "ball-speed-x1.5",
+          "kind": "change",
+          "pass": false,
+          "detail": "ボールなし"
+        },
+        {
+          "id": "paddle-follows-pointer",
+          "kind": "retain",
+          "pass": false,
+          "detail": "NaN NaN"
+        },
+        {
+          "id": "break-block-score",
+          "kind": "retain",
+          "pass": false,
+          "detail": "得点しない"
+        },
+        {
+          "id": "miss-gameover-restart",
+          "kind": "retain",
+          "pass": false,
+          "detail": "取り逃してもゲームオーバーにならない"
+        }
+      ]
+    },
+    {
+      "task": "G-M1-breakout",
+      "name": "元作品 bases/breakout.js",
+      "expect": "change-fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "rows-4",
+          "kind": "change",
+          "pass": false,
+          "detail": "各段 8,8,8,0 青 0"
+        },
+        {
+          "id": "ball-speed-x1.5",
+          "kind": "change",
+          "pass": false,
+          "detail": "0.2 秒で 48.1px"
+        },
+        {
+          "id": "paddle-follows-pointer",
+          "kind": "retain",
+          "pass": true,
+          "detail": "99.5 379.5"
+        },
+        {
+          "id": "break-block-score",
+          "kind": "retain",
+          "pass": true,
+          "detail": "ブロック 24→23 得点 1"
+        },
+        {
+          "id": "miss-gameover-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "取り逃して終了、クリックで再開"
+        }
+      ]
+    },
+    {
+      "task": "G-M1-breakout",
+      "name": "参照 gold/general/G-M1-breakout.js",
+      "expect": "all-pass",
+      "ok": true,
+      "checks": [
+        {
+          "id": "rows-4",
+          "kind": "change",
+          "pass": true,
+          "detail": "各段 8,8,8,8 青 0"
+        },
+        {
+          "id": "ball-speed-x1.5",
+          "kind": "change",
+          "pass": true,
+          "detail": "0.2 秒で 72.0px"
+        },
+        {
+          "id": "paddle-follows-pointer",
+          "kind": "retain",
+          "pass": true,
+          "detail": "99.5 379.5"
+        },
+        {
+          "id": "break-block-score",
+          "kind": "retain",
+          "pass": true,
+          "detail": "ブロック 32→31 得点 1"
+        },
+        {
+          "id": "miss-gameover-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "取り逃して終了、クリックで再開"
+        }
+      ]
+    },
+    {
+      "task": "G-M2-balls",
+      "name": "黒一色",
+      "expect": "all-fail",
+      "ok": true,
+      "checks": [
+        {
+          "id": "gravity-half",
+          "kind": "change",
+          "pass": false,
+          "detail": "0.3 秒で NaNpx"
+        },
+        {
+          "id": "click-adds-ball",
+          "kind": "change",
+          "pass": false,
+          "detail": "直後 0 個 0.3 秒後 "
+        },
+        {
+          "id": "max-10-oldest-removed",
+          "kind": "change",
+          "pass": false,
+          "detail": "0 個、最も左 NaN"
+        },
+        {
+          "id": "initial-balls",
+          "kind": "retain",
+          "pass": false,
+          "detail": "false,false,false"
+        },
+        {
+          "id": "floor-bounce",
+          "kind": "retain",
+          "pass": false,
+          "detail": "赤いボールが消えた"
+        }
+      ]
+    },
+    {
+      "task": "G-M2-balls",
+      "name": "元作品 bases/balls.js",
+      "expect": "change-fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "gravity-half",
+          "kind": "change",
+          "pass": false,
+          "detail": "0.3 秒で 38.0px"
+        },
+        {
+          "id": "click-adds-ball",
+          "kind": "change",
+          "pass": false,
+          "detail": "直後 0 個 0.3 秒後 "
+        },
+        {
+          "id": "max-10-oldest-removed",
+          "kind": "change",
+          "pass": false,
+          "detail": "0 個、最も左 NaN"
+        },
+        {
+          "id": "initial-balls",
+          "kind": "retain",
+          "pass": true,
+          "detail": "true,true,true"
+        },
+        {
+          "id": "floor-bounce",
+          "kind": "retain",
+          "pass": true,
+          "detail": "最も低い 346.3 はね返り 202.0"
+        }
+      ]
+    },
+    {
+      "task": "G-M2-balls",
+      "name": "参照 gold/general/G-M2-balls.js",
+      "expect": "all-pass",
+      "ok": true,
+      "checks": [
+        {
+          "id": "gravity-half",
+          "kind": "change",
+          "pass": true,
+          "detail": "0.3 秒で 19.0px"
+        },
+        {
+          "id": "click-adds-ball",
+          "kind": "change",
+          "pass": true,
+          "detail": "直後 2 個 0.3 秒後 59.5,240.5 419.5,240.5"
+        },
+        {
+          "id": "max-10-oldest-removed",
+          "kind": "change",
+          "pass": true,
+          "detail": "10 個、最も左 65.5"
+        },
+        {
+          "id": "initial-balls",
+          "kind": "retain",
+          "pass": true,
+          "detail": "true,true,true"
+        },
+        {
+          "id": "floor-bounce",
+          "kind": "retain",
+          "pass": true,
+          "detail": "最も低い 346.8 はね返り 203.5"
+        }
+      ]
+    },
+    {
+      "task": "G-M3-paint",
+      "name": "黒一色",
+      "expect": "all-fail",
+      "ok": true,
+      "checks": [
+        {
+          "id": "thick-12",
+          "kind": "change",
+          "pass": false,
+          "detail": "太さ 60"
+        },
+        {
+          "id": "eraser",
+          "kind": "change",
+          "pass": false,
+          "detail": "消す前 40 消した範囲の黒 2100 範囲外 40"
+        },
+        {
+          "id": "color-cancels-eraser",
+          "kind": "change",
+          "pass": false,
+          "detail": "赤の太さ 0 消しゴムのボタン false"
+        },
+        {
+          "id": "thin-black-default",
+          "kind": "retain",
+          "pass": false,
+          "detail": "太さ 80"
+        },
+        {
+          "id": "select-blue",
+          "kind": "retain",
+          "pass": false,
+          "detail": "青 0"
+        }
+      ]
+    },
+    {
+      "task": "G-M3-paint",
+      "name": "元作品 bases/paint.js",
+      "expect": "change-fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "thick-12",
+          "kind": "change",
+          "pass": false,
+          "detail": "太さ 4"
+        },
+        {
+          "id": "eraser",
+          "kind": "change",
+          "pass": false,
+          "detail": "消す前 4 消した範囲の黒 280 範囲外 4"
+        },
+        {
+          "id": "color-cancels-eraser",
+          "kind": "change",
+          "pass": false,
+          "detail": "赤の太さ 4 消しゴムのボタン false"
+        },
+        {
+          "id": "thin-black-default",
+          "kind": "retain",
+          "pass": true,
+          "detail": "太さ 4"
+        },
+        {
+          "id": "select-blue",
+          "kind": "retain",
+          "pass": true,
+          "detail": "青 4"
+        }
+      ]
+    },
+    {
+      "task": "G-M3-paint",
+      "name": "参照 gold/general/G-M3-paint.js",
+      "expect": "all-pass",
+      "ok": true,
+      "checks": [
+        {
+          "id": "thick-12",
+          "kind": "change",
+          "pass": true,
+          "detail": "太さ 12"
+        },
+        {
+          "id": "eraser",
+          "kind": "change",
+          "pass": true,
+          "detail": "消す前 4 消した範囲の黒 0 範囲外 4"
+        },
+        {
+          "id": "color-cancels-eraser",
+          "kind": "change",
+          "pass": true,
+          "detail": "赤の太さ 4 消しゴムのボタン true"
+        },
+        {
+          "id": "thin-black-default",
+          "kind": "retain",
+          "pass": true,
+          "detail": "太さ 4"
+        },
+        {
+          "id": "select-blue",
+          "kind": "retain",
+          "pass": true,
+          "detail": "青 4"
+        }
+      ]
+    },
+    {
+      "task": "G-R1-pause",
+      "name": "黒一色",
+      "expect": "all-fail",
+      "ok": true,
+      "checks": [
+        {
+          "id": "timer-stops-while-paused",
+          "kind": "change",
+          "pass": false,
+          "detail": "1.5 秒 undefined 停止 5 秒後 undefined 再開 0.5 秒後 undefined"
+        },
+        {
+          "id": "no-timeout-from-paused-time",
+          "kind": "change",
+          "pass": false,
+          "detail": "停止 29.5 秒・動作 1.2 秒でバー undefined"
+        },
+        {
+          "id": "pause-freezes-enemies",
+          "kind": "retain",
+          "pass": false,
+          "detail": "停止中 false 印 0 再開で動く false"
+        },
+        {
+          "id": "move-arrows",
+          "kind": "retain",
+          "pass": false,
+          "detail": "NaN"
+        },
+        {
+          "id": "collision-gameover-restart",
+          "kind": "retain",
+          "pass": false,
+          "detail": "敵に当たってもゲームオーバーにならない"
+        }
+      ]
+    },
+    {
+      "task": "G-R1-pause",
+      "name": "元作品 bases/pause-timer-pause-bug.js",
+      "expect": "change-fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "timer-stops-while-paused",
+          "kind": "change",
+          "pass": false,
+          "detail": "1.5 秒 456 停止 5 秒後 376 再開 0.5 秒後 368"
+        },
+        {
+          "id": "no-timeout-from-paused-time",
+          "kind": "change",
+          "pass": false,
+          "detail": "停止 29.5 秒・動作 1.2 秒でバー undefined"
+        },
+        {
+          "id": "pause-freezes-enemies",
+          "kind": "retain",
+          "pass": true,
+          "detail": "停止中 true 印 800 再開で動く true"
+        },
+        {
+          "id": "move-arrows",
+          "kind": "retain",
+          "pass": true,
+          "detail": "60.0"
+        },
+        {
+          "id": "collision-gameover-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "衝突で終了、R で再開"
+        }
+      ]
+    },
+    {
+      "task": "G-R1-pause",
+      "name": "修復済み bases/pause-timer.js",
+      "expect": "all-pass",
+      "ok": true,
+      "checks": [
+        {
+          "id": "timer-stops-while-paused",
+          "kind": "change",
+          "pass": true,
+          "detail": "1.5 秒 456 停止 5 秒後 456 再開 0.5 秒後 448"
+        },
+        {
+          "id": "no-timeout-from-paused-time",
+          "kind": "change",
+          "pass": true,
+          "detail": "停止 29.5 秒・動作 1.2 秒でバー 460"
+        },
+        {
+          "id": "pause-freezes-enemies",
+          "kind": "retain",
+          "pass": true,
+          "detail": "停止中 true 印 800 再開で動く true"
+        },
+        {
+          "id": "move-arrows",
+          "kind": "retain",
+          "pass": true,
+          "detail": "60.0"
+        },
+        {
+          "id": "collision-gameover-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "衝突で終了、R で再開"
+        }
+      ]
+    },
+    {
+      "task": "G-R2-drag",
+      "name": "黒一色",
+      "expect": "all-fail",
+      "ok": true,
+      "checks": [
+        {
+          "id": "fast-drag-follows",
+          "kind": "change",
+          "pass": false,
+          "detail": "1 回目 なし 2 回目 なし"
+        },
+        {
+          "id": "slow-drag-snap",
+          "kind": "retain",
+          "pass": false,
+          "detail": "なし"
+        },
+        {
+          "id": "drop-outside-returns-home",
+          "kind": "retain",
+          "pass": false,
+          "detail": "なし"
+        },
+        {
+          "id": "sort-all-clear-restart",
+          "kind": "retain",
+          "pass": false,
+          "detail": "枠に収まる false クリア背景 0"
+        }
+      ]
+    },
+    {
+      "task": "G-R2-drag",
+      "name": "元作品 bases/sort-boxes-drag-bug.js",
+      "expect": "change-fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "fast-drag-follows",
+          "kind": "change",
+          "pass": false,
+          "detail": "1 回目 239.5,287.5 2 回目 239.5,287.5"
+        },
+        {
+          "id": "slow-drag-snap",
+          "kind": "retain",
+          "pass": true,
+          "detail": "111.5,71.5"
+        },
+        {
+          "id": "drop-outside-returns-home",
+          "kind": "retain",
+          "pass": true,
+          "detail": "367.5,287.5"
+        },
+        {
+          "id": "sort-all-clear-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "3 つそろえてクリア、R で元に戻る"
+        }
+      ]
+    },
+    {
+      "task": "G-R2-drag",
+      "name": "修復済み bases/sort-boxes.js",
+      "expect": "all-pass",
+      "ok": true,
+      "checks": [
+        {
+          "id": "fast-drag-follows",
+          "kind": "change",
+          "pass": true,
+          "detail": "1 回目 369.5,137.5 2 回目 289.5,219.5"
+        },
+        {
+          "id": "slow-drag-snap",
+          "kind": "retain",
+          "pass": true,
+          "detail": "111.5,71.5"
+        },
+        {
+          "id": "drop-outside-returns-home",
+          "kind": "retain",
+          "pass": true,
+          "detail": "367.5,287.5"
+        },
+        {
+          "id": "sort-all-clear-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "3 つそろえてクリア、R で元に戻る"
+        }
+      ]
+    },
+    {
+      "task": "G-V1-chart",
+      "name": "黒一色",
+      "expect": "all-fail",
+      "ok": true,
+      "checks": [
+        {
+          "id": "points-24",
+          "kind": "retain",
+          "pass": false,
+          "detail": "系列 1 0 点 系列 2 0 点 位置 false"
+        },
+        {
+          "id": "hover-guide-tooltip",
+          "kind": "change",
+          "pass": false,
+          "detail": "中 縦線 なし ツールチップ undefined 外 true"
+        },
+        {
+          "id": "brush-zoom-and-reset",
+          "kind": "change",
+          "pass": false,
+          "detail": "拡大 0 点  R 0 点"
+        }
+      ]
+    },
+    {
+      "task": "G-V1-chart",
+      "name": "元作品 bases/linechart.js",
+      "expect": "change-fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "points-24",
+          "kind": "retain",
+          "pass": true,
+          "detail": "系列 1 24 点 系列 2 24 点 位置 true"
+        },
+        {
+          "id": "hover-guide-tooltip",
+          "kind": "change",
+          "pass": false,
+          "detail": "中 縦線 なし ツールチップ undefined 外 true"
+        },
+        {
+          "id": "brush-zoom-and-reset",
+          "kind": "change",
+          "pass": false,
+          "detail": "拡大 24 点 39.5,56.5,74.5,91.5,109.5,126.5,143.5,161.5,178.5,196.5,213.5,230.5,248.5,265.5,282.5,300.5,317.5,335.5,352.5,369.5,387.5,405.4,422.5,439.5 R 24 点"
+        }
+      ]
+    },
+    {
+      "task": "G-V1-chart",
+      "name": "参照 gold/general/G-V1-chart.js",
+      "expect": "all-pass",
+      "ok": true,
+      "checks": [
+        {
+          "id": "points-24",
+          "kind": "retain",
+          "pass": true,
+          "detail": "系列 1 24 点 系列 2 24 点 位置 true"
+        },
+        {
+          "id": "hover-guide-tooltip",
+          "kind": "change",
+          "pass": true,
+          "detail": "中 縦線 214.0 ツールチップ {\"x\":222,\"y\":122,\"w\":110,\"h\":40} 外 true"
+        },
+        {
+          "id": "brush-zoom-and-reset",
+          "kind": "change",
+          "pass": true,
+          "detail": "拡大 7 点 39.5,106.5,172.5,239.5,306.5,372.5,439.5 R 24 点"
+        }
+      ]
+    }
+  ]
+}

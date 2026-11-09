@@ -1,5 +1,6 @@
 // P3 の実行器（評価担当）。1 つの条件・1 回の反復を、13 課題について順に行う。判定はしない（grade.ts で全条件の制作が終わってから行う）。
 //   bun eval/p3/run.ts --cond D|C|P --run-dir /workspace/canvas_p3/<cond>-r<k> --host-port <port> [--tasks ID,ID]
+//   bun eval/p3/run.ts --suite general --cond D --run-dir /workspace/canvas_general/D-r<k> --host-port <port>   汎用課題 general-v1（docs/eval/general-v1.md）
 // 制作は製品と同じ CanvasService（契約検査・ホスト観測・修正 2 回まで・保存）を通す。制作担当は run-dir の solo/ のファイル応答で答える。
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -16,6 +17,9 @@ import { CollaborationModel } from "./cond-c";
 import { DirectModel } from "./cond-d";
 import { PursuitModel } from "./cond-p";
 import { SUBMISSIONS_PER_TASK, SubmissionBudget } from "./common";
+import { createHash } from "node:crypto";
+import { GENERAL_DATASETS, GENERAL_TASKS } from "../general/suite";
+import { OBSERVER_SUITE } from "../../src/core/observer";
 
 const ROOT = resolve(import.meta.dir, "../..");
 const EVAL = resolve(import.meta.dir, "..");
@@ -74,9 +78,14 @@ export interface TaskRecord {
 }
 
 async function main() {
-  const { values } = parseArgs({ options: { cond: { type: "string" }, "run-dir": { type: "string" }, "host-port": { type: "string" }, tasks: { type: "string" } } });
+  const { values } = parseArgs({ options: { cond: { type: "string" }, "run-dir": { type: "string" }, "host-port": { type: "string" }, tasks: { type: "string" }, suite: { type: "string" } } });
+  const suite = (values.suite ?? "heldout") as "heldout" | "general";
+  if (!["heldout", "general"].includes(suite)) throw new Error("--suite heldout|general");
   const cond = values.cond as "D" | "C" | "P";
   if (!["D", "C", "P"].includes(cond)) throw new Error("--cond D|C|P");
+  if (suite === "general" && cond !== "D") throw new Error("general-v1 は直接生成（D）だけで回す（docs/eval/general-v1.md）");
+  const SUITE_TASKS: Task[] = suite === "general" ? GENERAL_TASKS.map(({ fixed: _f, ...t }) => t) : TASKS;
+  const SUITE_DATASETS = suite === "general" ? GENERAL_DATASETS : DATASETS;
   const runDir = resolve(values["run-dir"]!);
   const runName = runDir.split("/").pop()!;
   const port = Number(values["host-port"]);
@@ -84,17 +93,18 @@ async function main() {
   mkdirSync(join(hostDir, "final"), { recursive: true });
   const usage = join(hostDir, "usage.jsonl");
   const only = values.tasks ? new Set(values.tasks.split(",")) : null;
-  const tasks = TASKS.filter((t) => !only || only.has(t.id));
+  const tasks = SUITE_TASKS.filter((t) => !only || only.has(t.id));
 
   const app = startApp({ hostPort: port, previewPort: port + 1, devHarness: true });
   const contract = readFileSync(join(ROOT, "docs/artwork-contract-v1.md"), "utf8");
-  const datasets = new Map(DATASETS.map((d) => [d.ref, d.data]));
+  const datasets = new Map(SUITE_DATASETS.map((d) => [d.ref, d.data]));
   const gen = new FileChannel(join(runDir, "solo/gen"), "gen", usage, cond);
   const rev = cond === "P" ? new FileChannel(join(runDir, "solo/rev"), "rev", usage, cond) : null;
   const channels = [gen, ...(rev ? [rev] : [])];
   const resultsFile = join(hostDir, "results.json");
   const done: TaskRecord[] = existsSync(resultsFile) ? JSON.parse(readFileSync(resultsFile, "utf8")).records : [];
-  writeFileSync(join(hostDir, "run.json"), JSON.stringify({ cond, run: runName, startedAt: new Date().toISOString(), tasks: tasks.map((t) => t.id), deps: JSON.parse(readFileSync(join(import.meta.dir, "deps.json"), "utf8")), stand_in: "Grok Bot responder（Luna／Haiku ではない）" }, null, 2));
+  const sha = (f: string) => "sha256:" + createHash("sha256").update(readFileSync(join(ROOT, f))).digest("hex");
+  writeFileSync(join(hostDir, "run.json"), JSON.stringify({ suite, observer: OBSERVER_SUITE, contractDigest: sha("docs/artwork-contract-v1.md"), makerSkillDigest: cond === "D" ? sha("docs/maker-skill.md") : null, cond, run: runName, startedAt: new Date().toISOString(), tasks: tasks.map((t) => t.id), deps: JSON.parse(readFileSync(join(import.meta.dir, "deps.json"), "utf8")), stand_in: "Grok Bot responder（Luna／Haiku ではない）" }, null, 2));
 
   try {
     for (const t of tasks) {
@@ -107,7 +117,7 @@ async function main() {
       if (cond === "D") model = new DirectModel(gen);
       else if (cond === "C") model = collab = new CollaborationModel(gen);
       else model = pm = new PursuitModel({ gen, rev: rev!, observer, datasets, budget, ledgerPath: join(hostDir, `ledger-${t.id}.sqlite`), runName });
-      const svc = new CanvasService({ store: new Store(null), model: new SeedingModel(model, baseBody(t)), observer, contract, datasets: DATASETS, runTimeoutMs: RUN_TIMEOUT_MS });
+      const svc = new CanvasService({ store: new Store(null), model: new SeedingModel(model, baseBody(t)), observer, contract, datasets: SUITE_DATASETS, runTimeoutMs: RUN_TIMEOUT_MS });
       const owner = "p3-owner", session = `p3-${runName}-${t.id}`;
       const rec: TaskRecord = { cond, run: runName, task: t.id, group: t.group, presented: false, submissions: 0, calls: 0, turns: [], final: null, finalDigest: null, error: null };
       let artworkId: string | null = null, revision = 0, n = 0;
