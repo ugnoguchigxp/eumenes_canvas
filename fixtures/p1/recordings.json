@@ -1,0 +1,41 @@
+{
+  "author": "Grok Bot（P1 の固定モデル応答。実モデルの出力ではない）",
+  "recordings": [
+    {
+      "note": "新規",
+      "input": { "request": "落ち物ゲームを作って", "conversation": [], "attempt": 0 },
+      "output": { "title": "落ち物ゲーム", "entryFile": "artworks/falling-block.js", "changes": "10×20 の盤面で 7 種のピースが落ちる。←→ 移動、↑ 回転、↓ 1 段、Space 即落下、R 再開。", "unconfirmed": ["落下の速さが好みに合うか"], "reply": "落ち物ゲームを作りました。" }
+    },
+    {
+      "note": "部分修正（落下周期）",
+      "input": { "request": "落下の間隔を長くして", "conversation": ["user:落ち物ゲームを作って", "assistant:落ち物ゲームを作りました。"], "attempt": 0, "baseFrom": { "title": "落ち物ゲーム", "entryFile": "artworks/falling-block.js" } },
+      "output": { "title": "落ち物ゲーム", "entryFile": "artworks/falling-block-slow.js", "changes": "落下の間隔を 800ms から 1600ms にした。操作・得点・再開は変えていない。", "unconfirmed": ["どの程度長くしたいか（2 倍にした）"], "reply": "落下の間隔を 2 倍にしました。" }
+    },
+    {
+      "note": "部分修正（背景色）。競合の試験で使う",
+      "input": { "request": "背景を紺色にして", "conversation": ["user:落ち物ゲームを作って", "assistant:落ち物ゲームを作りました。"], "attempt": 0, "baseFrom": { "title": "落ち物ゲーム", "entryFile": "artworks/falling-block.js" } },
+      "output": { "title": "落ち物ゲーム", "entryFile": "artworks/falling-block-navy.js", "changes": "盤面の外側の背景を #000040 にした。", "unconfirmed": [], "reply": "背景を紺色にしました。" }
+    },
+    {
+      "note": "失敗→修正。初回は打ち出し後に ReferenceError",
+      "input": { "request": "ブロック崩しを作って", "conversation": [], "attempt": 0 },
+      "output": { "title": "ブロック崩し", "entryFile": "artworks/breakout-broken.js", "changes": "パドル、ボール、5 段のブロック。", "unconfirmed": [], "reply": "ブロック崩しを作りました。" }
+    },
+    {
+      "note": "観測（bal is not defined）を受けた修正",
+      "input": { "request": "ブロック崩しを作って", "conversation": [], "attempt": 1, "previousFrom": { "title": "ブロック崩し", "entryFile": "artworks/breakout-broken.js" } },
+      "output": { "title": "ブロック崩し", "entryFile": "artworks/breakout.js", "changes": "ボールの移動で未定義の変数 bal を参照していたのを ball に直した。", "unconfirmed": [], "reply": "起動後のエラーを直しました。" }
+    },
+    {
+      "note": "取消の試験用。応答が遅い",
+      "input": { "request": "回避ゲームを作って", "conversation": [], "attempt": 0 },
+      "latencyMs": 4000,
+      "output": { "title": "回避ゲーム", "entryFile": "artworks/breakout.js", "changes": "（取消の試験用）", "unconfirmed": [], "reply": "（取消の試験用）" }
+    },
+    {
+      "note": "非ゲーム可視化",
+      "input": { "request": "合成データの売上を棒グラフにして、凡例のクリックで地域を絞り込めるようにして", "conversation": [], "attempt": 0 },
+      "output": { "title": "地域別の売上", "entryFile": "artworks/viz-filter.js", "dataRef": "synthetic-sales", "changes": "月別・地域別の棒グラフ。凡例のクリックで地域の表示を切り替える。", "unconfirmed": ["縦軸を絞り込み後の最大値に合わせて伸縮させた"], "reply": "棒グラフを作りました。" }
+    }
+  ]
+}

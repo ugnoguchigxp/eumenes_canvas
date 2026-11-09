@@ -12,7 +12,10 @@ export interface AppOptions {
   hostName?: string; // 既定 localhost
   previewName?: string; // 既定 127.0.0.1（別サイトにする）
   devHarness?: boolean;
-  extraRoutes?: (req: Request, url: URL) => Promise<Response | null> | Response | null;
+  extraRoutes?: (req: Request, url: URL, ctx: { tokens: PreviewTokens; hostOrigin: string; previewOrigin: string }) => Promise<Response | null> | Response | null;
+  tokens?: PreviewTokens;
+  /** HTML を返すときに追加するヘッダー（所有者 cookie の発行など）。 */
+  onPage?: (req: Request) => Record<string, string>;
 }
 
 export function hostCsp(previewOrigin: string): string {
@@ -72,8 +75,9 @@ export function startApp(opts: AppOptions) {
   const previewName = opts.previewName ?? "127.0.0.1";
   const hostOrigin = `http://${hostName}:${opts.hostPort}`;
   const previewOrigin = `http://${previewName}:${opts.previewPort}`;
-  const tokens = new PreviewTokens();
-  const files = { ...HOST_FILES, ...(opts.devHarness ? HARNESS_FILES : {}) };
+  const tokens = opts.tokens ?? new PreviewTokens();
+  // ハーネスはホスト側の観測（PlaywrightObserver）でも使う。作品を直接登録する /api/dev/preview は devHarness のときだけ開く。
+  const files = { ...HOST_FILES, ...HARNESS_FILES };
   const securityHeaders = {
     "content-security-policy": hostCsp(previewOrigin),
     "x-content-type-options": "nosniff",
@@ -97,7 +101,9 @@ export function startApp(opts: AppOptions) {
         const file = files[url.pathname];
         if (file && req.method === "GET") {
           const ext = file.slice(file.lastIndexOf("."));
-          return new Response(readFileSync(join(SRC, file), "utf8"), { headers: { ...securityHeaders, "content-type": TYPES[ext] ?? "text/plain", "cache-control": "no-store" } });
+          const headers: Record<string, string> = { ...securityHeaders, "content-type": TYPES[ext] ?? "text/plain", "cache-control": "no-store" };
+          if (ext === ".html" && opts.onPage) Object.assign(headers, opts.onPage(req));
+          return new Response(readFileSync(join(SRC, file), "utf8"), { headers });
         }
         if (url.pathname === "/api/config") return json({ previewOrigin, hostOrigin });
         if (opts.devHarness && url.pathname === "/api/dev/preview" && req.method === "POST") {
@@ -107,7 +113,7 @@ export function startApp(opts: AppOptions) {
           return json({ token: tokens.issue(body as { title: string; entry: string }) });
         }
         if (opts.extraRoutes) {
-          const r = await opts.extraRoutes(req, url);
+          const r = await opts.extraRoutes(req, url, { tokens, hostOrigin, previewOrigin });
           if (r) return r;
         }
         return json({ error: "not found" }, 404);

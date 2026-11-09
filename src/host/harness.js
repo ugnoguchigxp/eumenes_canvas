@@ -22,6 +22,7 @@ window.harness = {
     if (!r.ok) return { type: "rejected", errors: j.errors };
     return ctl.start({ token: j.token, data, seed, clock });
   },
+  startToken: ({ token, data = null, seed = 1, clock = "manual" }) => ctl.start({ token, data, seed, clock }),
   advance: (ms) => ctl.advance(ms),
   stop: () => ctl.stop(),
   focus: () => ctl.focus(),

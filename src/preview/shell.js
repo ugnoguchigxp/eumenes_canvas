@@ -114,6 +114,7 @@ function start(m) {
 
   canvas.addEventListener("pointerdown", (e) => {
     canvas.focus();
+    flushMove();
     toWorker({ type: "input", ev: pointerEv("pointerdown", e) });
   });
   canvas.addEventListener("pointerup", (e) => toWorker({ type: "input", ev: pointerEv("pointerup", e) }));
@@ -149,7 +150,12 @@ function flushMove() {
 
 for (const type of ["keydown", "keyup"]) {
   window.addEventListener(type, (e) => {
-    if (!worker || PASS_KEYS.has(e.key)) return;
+    if (!worker) return;
+    if (PASS_KEYS.has(e.key)) {
+      // Esc は作品へ渡さず、ホストに表示モードの退出を知らせる（利用者の操作だけが起点）
+      if (e.key === "Escape" && type === "keydown" && e.isTrusted && runId) send({ type: "escape", runId });
+      return;
+    }
     if (PREVENT_KEYS.has(e.code)) e.preventDefault();
     if (e.repeat && type === "keydown") return;
     toWorker({ type: "input", ev: { type, code: String(e.code).slice(0, 32), key: String(e.key).slice(0, 32) } });

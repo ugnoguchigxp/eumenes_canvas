@@ -7,7 +7,10 @@ export const MAX_TITLE_CHARS = 80;
 export interface ArtworkBody {
   title: string;
   entry: string;
+  /** ホストが登録した読み取り専用データの参照（任意）。 */
+  dataRef?: string;
 }
+const DATA_REF = /^[a-z0-9][a-z0-9-]{0,39}$/;
 
 export interface ContractResult {
   ok: boolean;
@@ -29,7 +32,8 @@ export function checkArtwork(body: unknown): ContractResult {
   const errors: string[] = [];
   if (!body || typeof body !== "object") return { ok: false, errors: ["作品はオブジェクトでなければならない"] };
   const b = body as Record<string, unknown>;
-  const extra = Object.keys(b).filter((k) => k !== "title" && k !== "entry");
+  const extra = Object.keys(b).filter((k) => k !== "title" && k !== "entry" && k !== "dataRef");
+  if (b.dataRef !== undefined && (typeof b.dataRef !== "string" || !DATA_REF.test(b.dataRef))) errors.push("dataRef の形式が不正");
   if (extra.length) errors.push(`未定義の項目: ${extra.join(", ")}`);
   if (typeof b.title !== "string" || b.title.trim() === "") errors.push("title は空でない文字列");
   else if ([...b.title].length > MAX_TITLE_CHARS) errors.push(`title は ${MAX_TITLE_CHARS} 文字以内`);
@@ -68,7 +72,7 @@ export function checkData(data: unknown): ContractResult {
 
 /** ホストが保存した実体と契約の版から digest を計算する。 */
 export async function artworkDigest(body: ArtworkBody): Promise<string> {
-  const canonical = JSON.stringify({ contract: CONTRACT_VERSION, title: body.title, entry: body.entry });
+  const canonical = JSON.stringify({ contract: CONTRACT_VERSION, title: body.title, entry: body.entry, dataRef: body.dataRef ?? null });
   const h = await crypto.subtle.digest("SHA-256", enc.encode(canonical));
   return "sha256:" + Buffer.from(h).toString("hex");
 }

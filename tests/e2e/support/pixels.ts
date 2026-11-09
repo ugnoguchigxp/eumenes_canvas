@@ -85,3 +85,23 @@ export function diffRatio(a: Shot, b: Shot, tol = 16): number {
     if (Math.abs(a.data[i] - b.data[i]) > tol || Math.abs(a.data[i + 1] - b.data[i + 1]) > tol || Math.abs(a.data[i + 2] - b.data[i + 2]) > tol) d++;
   return d / (a.width * a.height);
 }
+
+/** 条件に合う画素の数・重心・外接矩形（CSS px）。 */
+export function findWhere(s: Shot, pred: (r: number, g: number, b: number) => boolean, region?: Rect) {
+  const r = region ?? { x: 0, y: 0, w: s.width / s.scale, h: s.height / s.scale };
+  const x0 = Math.max(0, Math.floor(r.x * s.scale)), y0 = Math.max(0, Math.floor(r.y * s.scale));
+  const x1 = Math.min(s.width, Math.ceil((r.x + r.w) * s.scale)), y1 = Math.min(s.height, Math.ceil((r.y + r.h) * s.scale));
+  let n = 0, sx = 0, sy = 0, minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (let y = y0; y < y1; y++)
+    for (let x = x0; x < x1; x++) {
+      const i = (y * s.width + x) * 4;
+      if (pred(s.data[i], s.data[i + 1], s.data[i + 2])) {
+        n++; sx += x; sy += y;
+        if (x < minX) minX = x; if (y < minY) minY = y; if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+      }
+    }
+  const k = s.scale;
+  return { count: n / (k * k), cx: n ? sx / n / k : NaN, cy: n ? sy / n / k : NaN, box: n ? { x: minX / k, y: minY / k, w: (maxX - minX + 1) / k, h: (maxY - minY + 1) / k } : null };
+}
+
+export const saturated = (r: number, g: number, b: number) => Math.max(r, g, b) - Math.min(r, g, b) > 120;

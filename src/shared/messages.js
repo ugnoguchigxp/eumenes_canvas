@@ -71,6 +71,7 @@ export function checkShellToHost(m, expectedRunId) {
   switch (m.type) {
     case "ready":
     case "stopped":
+    case "escape":
       return onlyKeys(m, ["type", "runId"]) ? m : null;
     case "advanced":
       return onlyKeys(m, ["type", "runId", "seq"]) && Number.isInteger(m.seq) ? m : null;
