@@ -87,10 +87,11 @@ export function startApp(opts: AppOptions) {
 
   const preview = Bun.serve({ port: opts.previewPort, hostname: previewName, fetch: previewHandler({ hostOrigin, tokens }) });
 
-  const host = Bun.serve({
-    port: opts.hostPort,
-    hostname: hostName,
-    async fetch(req) {
+  // "localhost" は実装により ::1 だけに解決されることがある（Bun は ::1 のみで待ち受けた）。
+  // ブラウザがどちらのループバックへ接続しても届くよう、IPv4・IPv6 の両方で待ち受ける。origin は http://localhost:<port> のまま。
+  const hostNames = hostName === "localhost" ? ["127.0.0.1", "::1"] : [hostName];
+  const handler = {
+    async fetch(req: Request) {
       const url = new URL(req.url);
       try {
         // 変更系 API は同一オリジンからの要求だけを受ける
@@ -123,14 +124,15 @@ export function startApp(opts: AppOptions) {
         return json({ error: "internal" }, 500);
       }
     },
-  });
+  };
+  const hosts = hostNames.map((hostname) => Bun.serve({ port: opts.hostPort, hostname, ...handler }));
 
   return {
     hostOrigin,
     previewOrigin,
     tokens,
     stop() {
-      host.stop(true);
+      for (const h of hosts) h.stop(true);
       preview.stop(true);
     },
   };
