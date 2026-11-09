@@ -36,6 +36,8 @@ export interface Recording {
   /** 応答までの模擬遅延（取消・期限の試験用）。 */
   latencyMs?: number;
   note?: string;
+  /** 同じ入力に対する別の試行（評価で 3 回試すため）。既定 0。 */
+  sample?: number;
 }
 
 export interface RecordedInputKey {
@@ -46,8 +48,8 @@ export interface RecordedInputKey {
   previousDigest: string | null;
 }
 
-export async function keyOf(k: RecordedInputKey): Promise<string> {
-  return sha256Hex(JSON.stringify([k.request, k.conversation, k.baseDigest, k.attempt, k.previousDigest]));
+export async function keyOf(k: RecordedInputKey, sample = 0): Promise<string> {
+  return sha256Hex(JSON.stringify([k.request, k.conversation, k.baseDigest, k.attempt, k.previousDigest, sample]));
 }
 
 export function inputKey(input: GenerationInput): RecordedInputKey {
@@ -79,6 +81,8 @@ export class RecordedProvider implements ModelPort {
   ignoreLatency = false;
   /** 遅延後でも取消を無視して結果を返す（遅れて届いた結果の破棄を試すため）。 */
   deliverAfterAbort = false;
+  /** 引く試行の番号（記録の sample と照合する）。 */
+  sample = 0;
   constructor(files: string[], label = "recorded") {
     this.label = label;
     this.ready = this.load(files);
@@ -99,7 +103,7 @@ export class RecordedProvider implements ModelPort {
           baseDigest: i.baseFrom ? await digestOf(i.baseFrom) : (i.baseDigest ?? null),
           previousDigest: i.previousFrom ? await digestOf(i.previousFrom) : (i.previousDigest ?? null),
         };
-        const k = await keyOf(key);
+        const k = await keyOf(key, rec.sample ?? 0);
         if (this.byKey.has(k)) throw new Error(`同じ入力の記録が重複: ${f} ${i.request}`);
         this.byKey.set(k, { rec, entry });
       }
@@ -108,8 +112,8 @@ export class RecordedProvider implements ModelPort {
   async generate(input: GenerationInput, signal: AbortSignal): Promise<GenerationOutput> {
     await this.ready;
     const k = inputKey(input);
-    const hit = this.byKey.get(await keyOf(k));
-    if (!hit) throw new ModelError("記録にない入力: " + JSON.stringify({ request: k.request, attempt: k.attempt, baseDigest: k.baseDigest?.slice(0, 19) }));
+    const hit = this.byKey.get(await keyOf(k, this.sample));
+    if (!hit) throw new ModelError("記録にない入力: " + JSON.stringify({ request: k.request.slice(0, 40), attempt: k.attempt, sample: this.sample, baseDigest: k.baseDigest?.slice(0, 19), previousDigest: k.previousDigest?.slice(0, 19) }));
     if (hit.rec.latencyMs && !this.ignoreLatency) {
       try {
         await sleep(hit.rec.latencyMs, signal);
