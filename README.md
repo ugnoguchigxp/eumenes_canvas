@@ -28,10 +28,14 @@ bun run eval:p2            # P2 の評価（記録済み推論）。結果は ev
 入力せずに作品一覧へ入れるときは、検証ホストを起動したまま：
 
 ```sh
-bun scripts/seed-demo.ts [設定ファイル] [--owner <canvas_owner cookie の値>]
+bun scripts/seed-demo.ts [設定ファイル]
 ```
 
-所有者 cookie（HttpOnly。ブラウザの開発者ツールの Application → Cookies で見られる）を渡すと、そのブラウザの作品一覧に入る。渡さなければ新しい所有者に入れ、その値を表示する。同じ題名の作品があれば飛ばす。
+同じ題名の作品があれば飛ばす。
+
+### 作品一覧の共有（`singleUser`）
+
+既定の設定（`"singleUser": true`、項目が無い場合も同じ）では、ブラウザごとに作品を分けない。`http://localhost:<hostPort>` を開いたどのブラウザにも `dataDir` の全作品が並ぶ。以前の版で別のブラウザから保存した作品も、再起動すれば一覧に出る。所有者ごとに分ける試験（plan.md の「別所有者による参照」）では `"singleUser": false` にする。
 
 ### 診断ログ
 
