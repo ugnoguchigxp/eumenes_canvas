@@ -1,0 +1,120 @@
+{
+  "note": "参考: V1 で host-smoke(responds) に落ちた最初の候補を判定 v1 に当てた結果。正式の数には入れない。",
+  "at": "2026-11-09T16:23:06.183Z",
+  "out": [
+    {
+      "run": "D-r1",
+      "id": "gen-0027",
+      "pass": true,
+      "checks": [
+        {
+          "id": "legend-right-vertical",
+          "kind": "change",
+          "pass": true,
+          "detail": "x=373,373,373 y=66,90,114"
+        },
+        {
+          "id": "filter-by-legend",
+          "kind": "retain",
+          "pass": true,
+          "detail": "点 21,25,24"
+        }
+      ]
+    },
+    {
+      "run": "D-r2",
+      "id": "gen-0027",
+      "pass": true,
+      "checks": [
+        {
+          "id": "legend-right-vertical",
+          "kind": "change",
+          "pass": true,
+          "detail": "x=377,377,377 y=63,87,111"
+        },
+        {
+          "id": "filter-by-legend",
+          "kind": "retain",
+          "pass": true,
+          "detail": "点 21,25,24"
+        }
+      ]
+    },
+    {
+      "run": "D-r3",
+      "id": "gen-0028",
+      "pass": true,
+      "checks": [
+        {
+          "id": "legend-right-vertical",
+          "kind": "change",
+          "pass": true,
+          "detail": "x=377,377,377 y=66,90,114"
+        },
+        {
+          "id": "filter-by-legend",
+          "kind": "retain",
+          "pass": true,
+          "detail": "点 21,25,24"
+        }
+      ]
+    },
+    {
+      "run": "C-r1",
+      "id": "gen-0027",
+      "pass": true,
+      "checks": [
+        {
+          "id": "legend-right-vertical",
+          "kind": "change",
+          "pass": true,
+          "detail": "x=377,377,377 y=36,60,84"
+        },
+        {
+          "id": "filter-by-legend",
+          "kind": "retain",
+          "pass": true,
+          "detail": "点 21,25,24"
+        }
+      ]
+    },
+    {
+      "run": "C-r2",
+      "id": "gen-0028",
+      "pass": true,
+      "checks": [
+        {
+          "id": "legend-right-vertical",
+          "kind": "change",
+          "pass": true,
+          "detail": "x=372,372,372 y=66,90,114"
+        },
+        {
+          "id": "filter-by-legend",
+          "kind": "retain",
+          "pass": true,
+          "detail": "点 21,25,24"
+        }
+      ]
+    },
+    {
+      "run": "C-r3",
+      "id": "gen-0028",
+      "pass": true,
+      "checks": [
+        {
+          "id": "legend-right-vertical",
+          "kind": "change",
+          "pass": true,
+          "detail": "x=377,377,377 y=66,90,114"
+        },
+        {
+          "id": "filter-by-legend",
+          "kind": "retain",
+          "pass": true,
+          "detail": "点 21,25,24"
+        }
+      ]
+    }
+  ]
+}

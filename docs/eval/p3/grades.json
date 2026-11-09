@@ -1,0 +1,3958 @@
+{
+  "environment": "chromium 141.0.7390.37",
+  "gradedAt": "2026-11-09T16:06:53.175Z",
+  "partial": [],
+  "grades": [
+    {
+      "cond": "C",
+      "run": "C-r1",
+      "task": "N1-runner",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "start-player-on-ground",
+            "kind": "start",
+            "pass": true,
+            "detail": "cx=69.5 bottom=320"
+          },
+          {
+            "id": "obstacle-moves-left-200",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=40.0 h=30"
+          },
+          {
+            "id": "jump-space",
+            "kind": "retain",
+            "pass": false,
+            "detail": "y0=309.5 y1=309.5 y2=309.5"
+          },
+          {
+            "id": "score-by-jumping",
+            "kind": "retain",
+            "pass": false,
+            "detail": "ゲームオーバー（得点 0）"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開後"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r1",
+      "task": "N2-coins",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "arrow-move-200",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=60.0 dy=40.0"
+          },
+          {
+            "id": "collect-coins-timer-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r1",
+      "task": "N3-shooter",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=50.0 bullet=273→233"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": false,
+            "detail": "1 発で命中なし"
+          }
+        ]
+      },
+      "v2": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=50.0 bullet=273→233"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "命中後の再開"
+          }
+        ]
+      }
+    },
+    {
+      "cond": "C",
+      "run": "C-r1",
+      "task": "N4-catch",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "basket-follows-pointer",
+            "kind": "start",
+            "pass": true,
+            "detail": "a=99.5 b=299.5"
+          },
+          {
+            "id": "catch-miss-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r1",
+      "task": "M1-snake-slow",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "step-250ms",
+            "kind": "change",
+            "pass": true,
+            "detail": "2.5 秒で 10.00 マス"
+          },
+          {
+            "id": "turn-with-arrow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "下へ 4.0 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 1"
+          },
+          {
+            "id": "wall-gameover-restart-colors",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開・色"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r1",
+      "task": "M2-pong-paddle",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "left-paddle-90",
+            "kind": "change",
+            "pass": true,
+            "detail": "左 90"
+          },
+          {
+            "id": "right-paddle-60-and-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "右 60 上へ 90"
+          },
+          {
+            "id": "rally",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r1",
+      "task": "M3-dodge-multiturn",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "player-green-not-blue",
+            "kind": "change",
+            "pass": true,
+            "detail": "緑 400 青 0"
+          },
+          {
+            "id": "enemy-speed-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "0.300 px/ms"
+          },
+          {
+            "id": "pointer-follow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "99.5,379.5"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r1",
+      "task": "M4-target-timer",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "radius-12",
+            "kind": "change",
+            "pass": true,
+            "detail": "23×24"
+          },
+          {
+            "id": "time-20s-bar-restart",
+            "kind": "change",
+            "pass": true,
+            "detail": "再開"
+          },
+          {
+            "id": "click-scores",
+            "kind": "retain",
+            "pass": true,
+            "detail": "3/3"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r1",
+      "task": "R1-snake-restart",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "speed-before-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "10.00 マス"
+          },
+          {
+            "id": "speed-after-restart-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "1 回目 10.00・2 回目 10.00 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 1"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r1",
+      "task": "R2-dodge-narrow",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "narrow-pointer",
+            "kind": "change",
+            "pass": true,
+            "detail": "59.5,179.5"
+          },
+          {
+            "id": "wide-pointer",
+            "kind": "retain",
+            "pass": true,
+            "detail": "299.5"
+          },
+          {
+            "id": "enemy-speed-kept",
+            "kind": "retain",
+            "pass": true,
+            "detail": "0.150 px/ms"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r1",
+      "task": "R3-pong-collision",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "bounce-near-paddle-edge-up",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-near-paddle-edge-down",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-center",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          },
+          {
+            "id": "paddle-60-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "左 60"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r1",
+      "task": "R4-target-hit",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "center-click-scores",
+            "kind": "change",
+            "pass": true,
+            "detail": "5/5"
+          },
+          {
+            "id": "miss-no-score-radius-20",
+            "kind": "retain",
+            "pass": true,
+            "detail": "半径 20"
+          },
+          {
+            "id": "time-30s-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r1",
+      "task": "V1-scatter-legend",
+      "group": "nongame",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "legend-right-vertical",
+            "kind": "change",
+            "pass": true,
+            "detail": "x=377,377,377 y=36,60,84"
+          },
+          {
+            "id": "filter-by-legend",
+            "kind": "retain",
+            "pass": true,
+            "detail": "点 21,25,24"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r2",
+      "task": "N1-runner",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "start-player-on-ground",
+            "kind": "start",
+            "pass": true,
+            "detail": "cx=69.5 bottom=320"
+          },
+          {
+            "id": "obstacle-moves-left-200",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=40.0 h=30"
+          },
+          {
+            "id": "jump-space",
+            "kind": "retain",
+            "pass": false,
+            "detail": "y0=309.5 y1=309.5 y2=309.5"
+          },
+          {
+            "id": "score-by-jumping",
+            "kind": "retain",
+            "pass": false,
+            "detail": "ゲームオーバー（得点 0）"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開後"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r2",
+      "task": "N2-coins",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "arrow-move-200",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=60.0 dy=40.0"
+          },
+          {
+            "id": "collect-coins-timer-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r2",
+      "task": "N3-shooter",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=50.0 bullet=273→233"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": false,
+            "detail": "1 発で命中なし"
+          }
+        ]
+      },
+      "v2": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=50.0 bullet=273→233"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "命中後の再開"
+          }
+        ]
+      }
+    },
+    {
+      "cond": "C",
+      "run": "C-r2",
+      "task": "N4-catch",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "basket-follows-pointer",
+            "kind": "start",
+            "pass": true,
+            "detail": "a=99.5 b=299.5"
+          },
+          {
+            "id": "catch-miss-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r2",
+      "task": "M1-snake-slow",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "step-250ms",
+            "kind": "change",
+            "pass": true,
+            "detail": "2.5 秒で 10.00 マス"
+          },
+          {
+            "id": "turn-with-arrow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "下へ 4.0 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 1"
+          },
+          {
+            "id": "wall-gameover-restart-colors",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開・色"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r2",
+      "task": "M2-pong-paddle",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "left-paddle-90",
+            "kind": "change",
+            "pass": true,
+            "detail": "左 90"
+          },
+          {
+            "id": "right-paddle-60-and-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "右 60 上へ 90"
+          },
+          {
+            "id": "rally",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r2",
+      "task": "M3-dodge-multiturn",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "player-green-not-blue",
+            "kind": "change",
+            "pass": true,
+            "detail": "緑 400 青 0"
+          },
+          {
+            "id": "enemy-speed-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "0.300 px/ms"
+          },
+          {
+            "id": "pointer-follow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "99.5,379.5"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r2",
+      "task": "M4-target-timer",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "radius-12",
+            "kind": "change",
+            "pass": true,
+            "detail": "23×24"
+          },
+          {
+            "id": "time-20s-bar-restart",
+            "kind": "change",
+            "pass": true,
+            "detail": "再開"
+          },
+          {
+            "id": "click-scores",
+            "kind": "retain",
+            "pass": true,
+            "detail": "3/3"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r2",
+      "task": "R1-snake-restart",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "speed-before-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "10.00 マス"
+          },
+          {
+            "id": "speed-after-restart-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "1 回目 10.00・2 回目 10.00 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": false,
+            "detail": "例外: screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#frame')\n    - locator resolved to visible <div id=\"frame\">…</div>\n"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r2",
+      "task": "R2-dodge-narrow",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "narrow-pointer",
+            "kind": "change",
+            "pass": true,
+            "detail": "59.5,179.5"
+          },
+          {
+            "id": "wide-pointer",
+            "kind": "retain",
+            "pass": true,
+            "detail": "299.5"
+          },
+          {
+            "id": "enemy-speed-kept",
+            "kind": "retain",
+            "pass": true,
+            "detail": "0.150 px/ms"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r2",
+      "task": "R3-pong-collision",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "bounce-near-paddle-edge-up",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-near-paddle-edge-down",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-center",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          },
+          {
+            "id": "paddle-60-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "左 60"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r2",
+      "task": "R4-target-hit",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "center-click-scores",
+            "kind": "change",
+            "pass": true,
+            "detail": "5/5"
+          },
+          {
+            "id": "miss-no-score-radius-20",
+            "kind": "retain",
+            "pass": true,
+            "detail": "半径 20"
+          },
+          {
+            "id": "time-30s-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r2",
+      "task": "V1-scatter-legend",
+      "group": "nongame",
+      "presented": false,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "presented",
+            "kind": "start",
+            "pass": false,
+            "detail": "提示・保存に至らない: 生成に失敗: このターンの推論の上限（3 回）に達した"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r3",
+      "task": "N1-runner",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "start-player-on-ground",
+            "kind": "start",
+            "pass": true,
+            "detail": "cx=69.5 bottom=320"
+          },
+          {
+            "id": "obstacle-moves-left-200",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=40.0 h=30"
+          },
+          {
+            "id": "jump-space",
+            "kind": "retain",
+            "pass": false,
+            "detail": "y0=309.5 y1=309.5 y2=309.5"
+          },
+          {
+            "id": "score-by-jumping",
+            "kind": "retain",
+            "pass": false,
+            "detail": "ゲームオーバー（得点 0）"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開後"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r3",
+      "task": "N2-coins",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "arrow-move-200",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=60.0 dy=40.0"
+          },
+          {
+            "id": "collect-coins-timer-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r3",
+      "task": "N3-shooter",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": false,
+            "detail": "dx=50.0 bullet=285→245"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": false,
+            "detail": "1 発で命中なし"
+          }
+        ]
+      },
+      "v2": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": false,
+            "detail": "dx=50.0 bullet=285→245"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "命中後の再開"
+          }
+        ]
+      }
+    },
+    {
+      "cond": "C",
+      "run": "C-r3",
+      "task": "N4-catch",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "basket-follows-pointer",
+            "kind": "start",
+            "pass": false,
+            "detail": "a=99.5 b=299.5"
+          },
+          {
+            "id": "catch-miss-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r3",
+      "task": "M1-snake-slow",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "step-250ms",
+            "kind": "change",
+            "pass": true,
+            "detail": "2.5 秒で 10.00 マス"
+          },
+          {
+            "id": "turn-with-arrow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "下へ 4.0 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 1"
+          },
+          {
+            "id": "wall-gameover-restart-colors",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開・色"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r3",
+      "task": "M2-pong-paddle",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "left-paddle-90",
+            "kind": "change",
+            "pass": true,
+            "detail": "左 90"
+          },
+          {
+            "id": "right-paddle-60-and-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "右 60 上へ 90"
+          },
+          {
+            "id": "rally",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r3",
+      "task": "M3-dodge-multiturn",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "player-green-not-blue",
+            "kind": "change",
+            "pass": true,
+            "detail": "緑 400 青 0"
+          },
+          {
+            "id": "enemy-speed-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "0.300 px/ms"
+          },
+          {
+            "id": "pointer-follow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "99.5,379.5"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r3",
+      "task": "M4-target-timer",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "radius-12",
+            "kind": "change",
+            "pass": true,
+            "detail": "23×24"
+          },
+          {
+            "id": "time-20s-bar-restart",
+            "kind": "change",
+            "pass": true,
+            "detail": "再開"
+          },
+          {
+            "id": "click-scores",
+            "kind": "retain",
+            "pass": true,
+            "detail": "3/3"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r3",
+      "task": "R1-snake-restart",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "speed-before-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "10.00 マス"
+          },
+          {
+            "id": "speed-after-restart-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "1 回目 10.00・2 回目 10.00 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 1"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r3",
+      "task": "R2-dodge-narrow",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "narrow-pointer",
+            "kind": "change",
+            "pass": true,
+            "detail": "59.5,179.5"
+          },
+          {
+            "id": "wide-pointer",
+            "kind": "retain",
+            "pass": true,
+            "detail": "299.5"
+          },
+          {
+            "id": "enemy-speed-kept",
+            "kind": "retain",
+            "pass": true,
+            "detail": "0.150 px/ms"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r3",
+      "task": "R3-pong-collision",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "bounce-near-paddle-edge-up",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-near-paddle-edge-down",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-center",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          },
+          {
+            "id": "paddle-60-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "左 60"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r3",
+      "task": "R4-target-hit",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "center-click-scores",
+            "kind": "change",
+            "pass": true,
+            "detail": "5/5"
+          },
+          {
+            "id": "miss-no-score-radius-20",
+            "kind": "retain",
+            "pass": true,
+            "detail": "半径 20"
+          },
+          {
+            "id": "time-30s-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "C",
+      "run": "C-r3",
+      "task": "V1-scatter-legend",
+      "group": "nongame",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "legend-right-vertical",
+            "kind": "change",
+            "pass": true,
+            "detail": "x=377,377,377 y=36,60,84"
+          },
+          {
+            "id": "filter-by-legend",
+            "kind": "retain",
+            "pass": true,
+            "detail": "点 21,25,24"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r1",
+      "task": "N1-runner",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "start-player-on-ground",
+            "kind": "start",
+            "pass": true,
+            "detail": "cx=69.5 bottom=320"
+          },
+          {
+            "id": "obstacle-moves-left-200",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=40.0 h=30"
+          },
+          {
+            "id": "jump-space",
+            "kind": "retain",
+            "pass": false,
+            "detail": "y0=309.5 y1=309.5 y2=309.5"
+          },
+          {
+            "id": "score-by-jumping",
+            "kind": "retain",
+            "pass": false,
+            "detail": "ゲームオーバー（得点 0）"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開後"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r1",
+      "task": "N2-coins",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "arrow-move-200",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=60.0 dy=40.0"
+          },
+          {
+            "id": "collect-coins-timer-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r1",
+      "task": "N3-shooter",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=50.0 bullet=273→233"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": false,
+            "detail": "1 発で命中なし"
+          }
+        ]
+      },
+      "v2": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=50.0 bullet=273→233"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "命中後の再開"
+          }
+        ]
+      }
+    },
+    {
+      "cond": "D",
+      "run": "D-r1",
+      "task": "N4-catch",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "basket-follows-pointer",
+            "kind": "start",
+            "pass": true,
+            "detail": "a=99.5 b=299.5"
+          },
+          {
+            "id": "catch-miss-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r1",
+      "task": "M1-snake-slow",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "step-250ms",
+            "kind": "change",
+            "pass": true,
+            "detail": "2.5 秒で 10.00 マス"
+          },
+          {
+            "id": "turn-with-arrow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "下へ 4.0 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 1"
+          },
+          {
+            "id": "wall-gameover-restart-colors",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開・色"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r1",
+      "task": "M2-pong-paddle",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "left-paddle-90",
+            "kind": "change",
+            "pass": true,
+            "detail": "左 90"
+          },
+          {
+            "id": "right-paddle-60-and-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "右 60 上へ 90"
+          },
+          {
+            "id": "rally",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r1",
+      "task": "M3-dodge-multiturn",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "player-green-not-blue",
+            "kind": "change",
+            "pass": true,
+            "detail": "緑 400 青 0"
+          },
+          {
+            "id": "enemy-speed-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "0.300 px/ms"
+          },
+          {
+            "id": "pointer-follow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "99.5,379.5"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r1",
+      "task": "M4-target-timer",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "radius-12",
+            "kind": "change",
+            "pass": true,
+            "detail": "23×24"
+          },
+          {
+            "id": "time-20s-bar-restart",
+            "kind": "change",
+            "pass": true,
+            "detail": "再開"
+          },
+          {
+            "id": "click-scores",
+            "kind": "retain",
+            "pass": true,
+            "detail": "3/3"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r1",
+      "task": "R1-snake-restart",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "speed-before-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "10.00 マス"
+          },
+          {
+            "id": "speed-after-restart-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "1 回目 10.00・2 回目 10.00 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 1"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r1",
+      "task": "R2-dodge-narrow",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "narrow-pointer",
+            "kind": "change",
+            "pass": true,
+            "detail": "59.5,179.5"
+          },
+          {
+            "id": "wide-pointer",
+            "kind": "retain",
+            "pass": true,
+            "detail": "299.5"
+          },
+          {
+            "id": "enemy-speed-kept",
+            "kind": "retain",
+            "pass": true,
+            "detail": "0.150 px/ms"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r1",
+      "task": "R3-pong-collision",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "bounce-near-paddle-edge-up",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-near-paddle-edge-down",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-center",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          },
+          {
+            "id": "paddle-60-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "左 60"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r1",
+      "task": "R4-target-hit",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "center-click-scores",
+            "kind": "change",
+            "pass": true,
+            "detail": "5/5"
+          },
+          {
+            "id": "miss-no-score-radius-20",
+            "kind": "retain",
+            "pass": true,
+            "detail": "半径 20"
+          },
+          {
+            "id": "time-30s-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r1",
+      "task": "V1-scatter-legend",
+      "group": "nongame",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "legend-right-vertical",
+            "kind": "change",
+            "pass": true,
+            "detail": "x=373,373,373 y=36,60,84"
+          },
+          {
+            "id": "filter-by-legend",
+            "kind": "retain",
+            "pass": true,
+            "detail": "点 21,25,24"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r2",
+      "task": "N1-runner",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "start-player-on-ground",
+            "kind": "start",
+            "pass": true,
+            "detail": "cx=69.5 bottom=320"
+          },
+          {
+            "id": "obstacle-moves-left-200",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=40.0 h=30"
+          },
+          {
+            "id": "jump-space",
+            "kind": "retain",
+            "pass": false,
+            "detail": "y0=309.5 y1=309.5 y2=309.5"
+          },
+          {
+            "id": "score-by-jumping",
+            "kind": "retain",
+            "pass": false,
+            "detail": "ゲームオーバー（得点 0）"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開後"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r2",
+      "task": "N2-coins",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "arrow-move-200",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=60.0 dy=40.0"
+          },
+          {
+            "id": "collect-coins-timer-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r2",
+      "task": "N3-shooter",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=50.0 bullet=273→233"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": false,
+            "detail": "1 発で命中なし"
+          }
+        ]
+      },
+      "v2": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=50.0 bullet=273→233"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "命中後の再開"
+          }
+        ]
+      }
+    },
+    {
+      "cond": "D",
+      "run": "D-r2",
+      "task": "N4-catch",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "basket-follows-pointer",
+            "kind": "start",
+            "pass": true,
+            "detail": "a=99.5 b=299.5"
+          },
+          {
+            "id": "catch-miss-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r2",
+      "task": "M1-snake-slow",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "step-250ms",
+            "kind": "change",
+            "pass": true,
+            "detail": "2.5 秒で 10.00 マス"
+          },
+          {
+            "id": "turn-with-arrow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "下へ 4.0 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 1"
+          },
+          {
+            "id": "wall-gameover-restart-colors",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開・色"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r2",
+      "task": "M2-pong-paddle",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "left-paddle-90",
+            "kind": "change",
+            "pass": true,
+            "detail": "左 90"
+          },
+          {
+            "id": "right-paddle-60-and-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "右 60 上へ 90"
+          },
+          {
+            "id": "rally",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r2",
+      "task": "M3-dodge-multiturn",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "player-green-not-blue",
+            "kind": "change",
+            "pass": true,
+            "detail": "緑 400 青 0"
+          },
+          {
+            "id": "enemy-speed-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "0.300 px/ms"
+          },
+          {
+            "id": "pointer-follow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "99.5,379.5"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r2",
+      "task": "M4-target-timer",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "radius-12",
+            "kind": "change",
+            "pass": true,
+            "detail": "23×24"
+          },
+          {
+            "id": "time-20s-bar-restart",
+            "kind": "change",
+            "pass": true,
+            "detail": "再開"
+          },
+          {
+            "id": "click-scores",
+            "kind": "retain",
+            "pass": true,
+            "detail": "3/3"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r2",
+      "task": "R1-snake-restart",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "speed-before-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "10.00 マス"
+          },
+          {
+            "id": "speed-after-restart-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "1 回目 10.00・2 回目 10.00 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 1"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r2",
+      "task": "R2-dodge-narrow",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "narrow-pointer",
+            "kind": "change",
+            "pass": true,
+            "detail": "59.5,179.5"
+          },
+          {
+            "id": "wide-pointer",
+            "kind": "retain",
+            "pass": true,
+            "detail": "299.5"
+          },
+          {
+            "id": "enemy-speed-kept",
+            "kind": "retain",
+            "pass": true,
+            "detail": "0.150 px/ms"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r2",
+      "task": "R3-pong-collision",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "bounce-near-paddle-edge-up",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-near-paddle-edge-down",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-center",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          },
+          {
+            "id": "paddle-60-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "左 60"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r2",
+      "task": "R4-target-hit",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "center-click-scores",
+            "kind": "change",
+            "pass": true,
+            "detail": "5/5"
+          },
+          {
+            "id": "miss-no-score-radius-20",
+            "kind": "retain",
+            "pass": true,
+            "detail": "半径 20"
+          },
+          {
+            "id": "time-30s-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r2",
+      "task": "V1-scatter-legend",
+      "group": "nongame",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "legend-right-vertical",
+            "kind": "change",
+            "pass": true,
+            "detail": "x=377,377,377 y=167,191,215"
+          },
+          {
+            "id": "filter-by-legend",
+            "kind": "retain",
+            "pass": true,
+            "detail": "点 21,25,24"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r3",
+      "task": "N1-runner",
+      "group": "new",
+      "presented": false,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "presented",
+            "kind": "start",
+            "pass": false,
+            "detail": "提示・保存に至らない: 修正の上限（初回＋2 回）に達した"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r3",
+      "task": "N2-coins",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "arrow-move-200",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=60.0 dy=40.0"
+          },
+          {
+            "id": "collect-coins-timer-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r3",
+      "task": "N3-shooter",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=50.0 bullet=273→233"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": false,
+            "detail": "1 発で命中なし"
+          }
+        ]
+      },
+      "v2": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=50.0 bullet=273→233"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "命中後の再開"
+          }
+        ]
+      }
+    },
+    {
+      "cond": "D",
+      "run": "D-r3",
+      "task": "N4-catch",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "basket-follows-pointer",
+            "kind": "start",
+            "pass": true,
+            "detail": "a=99.5 b=299.5"
+          },
+          {
+            "id": "catch-miss-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r3",
+      "task": "M1-snake-slow",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "step-250ms",
+            "kind": "change",
+            "pass": true,
+            "detail": "2.5 秒で 10.00 マス"
+          },
+          {
+            "id": "turn-with-arrow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "下へ 4.0 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 1"
+          },
+          {
+            "id": "wall-gameover-restart-colors",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開・色"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r3",
+      "task": "M2-pong-paddle",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "left-paddle-90",
+            "kind": "change",
+            "pass": true,
+            "detail": "左 90"
+          },
+          {
+            "id": "right-paddle-60-and-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "右 60 上へ 90"
+          },
+          {
+            "id": "rally",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r3",
+      "task": "M3-dodge-multiturn",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "player-green-not-blue",
+            "kind": "change",
+            "pass": true,
+            "detail": "緑 400 青 0"
+          },
+          {
+            "id": "enemy-speed-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "0.300 px/ms"
+          },
+          {
+            "id": "pointer-follow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "99.5,379.5"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r3",
+      "task": "M4-target-timer",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "radius-12",
+            "kind": "change",
+            "pass": true,
+            "detail": "23×24"
+          },
+          {
+            "id": "time-20s-bar-restart",
+            "kind": "change",
+            "pass": true,
+            "detail": "再開"
+          },
+          {
+            "id": "click-scores",
+            "kind": "retain",
+            "pass": true,
+            "detail": "3/3"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r3",
+      "task": "R1-snake-restart",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "speed-before-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "10.00 マス"
+          },
+          {
+            "id": "speed-after-restart-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "1 回目 10.00・2 回目 10.00 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 1"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r3",
+      "task": "R2-dodge-narrow",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "narrow-pointer",
+            "kind": "change",
+            "pass": true,
+            "detail": "59.5,179.5"
+          },
+          {
+            "id": "wide-pointer",
+            "kind": "retain",
+            "pass": true,
+            "detail": "299.5"
+          },
+          {
+            "id": "enemy-speed-kept",
+            "kind": "retain",
+            "pass": true,
+            "detail": "0.150 px/ms"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r3",
+      "task": "R3-pong-collision",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "bounce-near-paddle-edge-up",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-near-paddle-edge-down",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-center",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          },
+          {
+            "id": "paddle-60-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "左 60"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r3",
+      "task": "R4-target-hit",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "center-click-scores",
+            "kind": "change",
+            "pass": true,
+            "detail": "5/5"
+          },
+          {
+            "id": "miss-no-score-radius-20",
+            "kind": "retain",
+            "pass": true,
+            "detail": "半径 20"
+          },
+          {
+            "id": "time-30s-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "D",
+      "run": "D-r3",
+      "task": "V1-scatter-legend",
+      "group": "nongame",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "legend-right-vertical",
+            "kind": "change",
+            "pass": true,
+            "detail": "x=377,377,377 y=36,60,84"
+          },
+          {
+            "id": "filter-by-legend",
+            "kind": "retain",
+            "pass": true,
+            "detail": "点 21,25,24"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r1",
+      "task": "N1-runner",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "start-player-on-ground",
+            "kind": "start",
+            "pass": true,
+            "detail": "cx=69.5 bottom=320"
+          },
+          {
+            "id": "obstacle-moves-left-200",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=40.0 h=30"
+          },
+          {
+            "id": "jump-space",
+            "kind": "retain",
+            "pass": true,
+            "detail": "y0=309.5 y1=234.0 y2=309.5"
+          },
+          {
+            "id": "score-by-jumping",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 2"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開後"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r1",
+      "task": "N2-coins",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "arrow-move-200",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=60.0 dy=40.0"
+          },
+          {
+            "id": "collect-coins-timer-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r1",
+      "task": "N3-shooter",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=50.0 bullet=273→233"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": false,
+            "detail": "1 発で命中なし"
+          }
+        ]
+      },
+      "v2": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=50.0 bullet=273→233"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "命中後の再開"
+          }
+        ]
+      }
+    },
+    {
+      "cond": "P",
+      "run": "P-r1",
+      "task": "N4-catch",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "basket-follows-pointer",
+            "kind": "start",
+            "pass": true,
+            "detail": "a=99.5 b=299.5"
+          },
+          {
+            "id": "catch-miss-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r1",
+      "task": "M1-snake-slow",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "step-250ms",
+            "kind": "change",
+            "pass": true,
+            "detail": "2.5 秒で 10.00 マス"
+          },
+          {
+            "id": "turn-with-arrow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "下へ 4.0 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 1"
+          },
+          {
+            "id": "wall-gameover-restart-colors",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開・色"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r1",
+      "task": "M2-pong-paddle",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "left-paddle-90",
+            "kind": "change",
+            "pass": true,
+            "detail": "左 90"
+          },
+          {
+            "id": "right-paddle-60-and-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "右 60 上へ 90"
+          },
+          {
+            "id": "rally",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r1",
+      "task": "M3-dodge-multiturn",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "player-green-not-blue",
+            "kind": "change",
+            "pass": true,
+            "detail": "緑 400 青 0"
+          },
+          {
+            "id": "enemy-speed-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "0.300 px/ms"
+          },
+          {
+            "id": "pointer-follow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "99.5,379.5"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r1",
+      "task": "M4-target-timer",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "radius-12",
+            "kind": "change",
+            "pass": true,
+            "detail": "23×24"
+          },
+          {
+            "id": "time-20s-bar-restart",
+            "kind": "change",
+            "pass": true,
+            "detail": "再開"
+          },
+          {
+            "id": "click-scores",
+            "kind": "retain",
+            "pass": true,
+            "detail": "3/3"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r1",
+      "task": "R1-snake-restart",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "speed-before-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "10.00 マス"
+          },
+          {
+            "id": "speed-after-restart-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "1 回目 10.00・2 回目 10.00 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 1"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r1",
+      "task": "R2-dodge-narrow",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "narrow-pointer",
+            "kind": "change",
+            "pass": true,
+            "detail": "59.5,179.5"
+          },
+          {
+            "id": "wide-pointer",
+            "kind": "retain",
+            "pass": true,
+            "detail": "299.5"
+          },
+          {
+            "id": "enemy-speed-kept",
+            "kind": "retain",
+            "pass": true,
+            "detail": "0.150 px/ms"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r1",
+      "task": "R3-pong-collision",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "bounce-near-paddle-edge-up",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-near-paddle-edge-down",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-center",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          },
+          {
+            "id": "paddle-60-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "左 60"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r1",
+      "task": "R4-target-hit",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "center-click-scores",
+            "kind": "change",
+            "pass": true,
+            "detail": "5/5"
+          },
+          {
+            "id": "miss-no-score-radius-20",
+            "kind": "retain",
+            "pass": true,
+            "detail": "半径 20"
+          },
+          {
+            "id": "time-30s-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r1",
+      "task": "V1-scatter-legend",
+      "group": "nongame",
+      "presented": false,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "presented",
+            "kind": "start",
+            "pass": false,
+            "detail": "提示・保存に至らない: 生成に失敗: Pursuit の中で提出の上限を使い切った（製品の修正ループは使わない）"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r2",
+      "task": "N1-runner",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "start-player-on-ground",
+            "kind": "start",
+            "pass": true,
+            "detail": "cx=69.5 bottom=320"
+          },
+          {
+            "id": "obstacle-moves-left-200",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=40.0 h=30"
+          },
+          {
+            "id": "jump-space",
+            "kind": "retain",
+            "pass": false,
+            "detail": "y0=309.5 y1=309.5 y2=309.5"
+          },
+          {
+            "id": "score-by-jumping",
+            "kind": "retain",
+            "pass": false,
+            "detail": "ゲームオーバー（得点 0）"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開後"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r2",
+      "task": "N2-coins",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "arrow-move-200",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=60.0 dy=40.0"
+          },
+          {
+            "id": "collect-coins-timer-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r2",
+      "task": "N3-shooter",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=50.0 bullet=273→233"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": false,
+            "detail": "1 発で命中なし"
+          }
+        ]
+      },
+      "v2": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=50.0 bullet=273→233"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "命中後の再開"
+          }
+        ]
+      }
+    },
+    {
+      "cond": "P",
+      "run": "P-r2",
+      "task": "N4-catch",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "basket-follows-pointer",
+            "kind": "start",
+            "pass": true,
+            "detail": "a=99.5 b=299.5"
+          },
+          {
+            "id": "catch-miss-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r2",
+      "task": "M1-snake-slow",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "step-250ms",
+            "kind": "change",
+            "pass": true,
+            "detail": "2.5 秒で 10.00 マス"
+          },
+          {
+            "id": "turn-with-arrow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "下へ 4.0 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 1"
+          },
+          {
+            "id": "wall-gameover-restart-colors",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開・色"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r2",
+      "task": "M2-pong-paddle",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "left-paddle-90",
+            "kind": "change",
+            "pass": true,
+            "detail": "左 90"
+          },
+          {
+            "id": "right-paddle-60-and-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "右 60 上へ 90"
+          },
+          {
+            "id": "rally",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r2",
+      "task": "M3-dodge-multiturn",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "player-green-not-blue",
+            "kind": "change",
+            "pass": true,
+            "detail": "緑 400 青 0"
+          },
+          {
+            "id": "enemy-speed-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "0.300 px/ms"
+          },
+          {
+            "id": "pointer-follow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "99.5,379.5"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r2",
+      "task": "M4-target-timer",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "radius-12",
+            "kind": "change",
+            "pass": true,
+            "detail": "23×24"
+          },
+          {
+            "id": "time-20s-bar-restart",
+            "kind": "change",
+            "pass": true,
+            "detail": "再開"
+          },
+          {
+            "id": "click-scores",
+            "kind": "retain",
+            "pass": true,
+            "detail": "3/3"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r2",
+      "task": "R1-snake-restart",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "speed-before-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "10.00 マス"
+          },
+          {
+            "id": "speed-after-restart-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "1 回目 10.00・2 回目 10.00 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 1"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r2",
+      "task": "R2-dodge-narrow",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "narrow-pointer",
+            "kind": "change",
+            "pass": true,
+            "detail": "59.5,179.5"
+          },
+          {
+            "id": "wide-pointer",
+            "kind": "retain",
+            "pass": true,
+            "detail": "299.5"
+          },
+          {
+            "id": "enemy-speed-kept",
+            "kind": "retain",
+            "pass": true,
+            "detail": "0.150 px/ms"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r2",
+      "task": "R3-pong-collision",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "bounce-near-paddle-edge-up",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-near-paddle-edge-down",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-center",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          },
+          {
+            "id": "paddle-60-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "左 60"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r2",
+      "task": "R4-target-hit",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "center-click-scores",
+            "kind": "change",
+            "pass": true,
+            "detail": "5/5"
+          },
+          {
+            "id": "miss-no-score-radius-20",
+            "kind": "retain",
+            "pass": true,
+            "detail": "半径 20"
+          },
+          {
+            "id": "time-30s-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r2",
+      "task": "V1-scatter-legend",
+      "group": "nongame",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "legend-right-vertical",
+            "kind": "change",
+            "pass": true,
+            "detail": "x=372,372,372 y=170,194,218"
+          },
+          {
+            "id": "filter-by-legend",
+            "kind": "retain",
+            "pass": true,
+            "detail": "点 21,25,24"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r3",
+      "task": "N1-runner",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "start-player-on-ground",
+            "kind": "start",
+            "pass": true,
+            "detail": "cx=69.5 bottom=320"
+          },
+          {
+            "id": "obstacle-moves-left-200",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=40.0 h=30"
+          },
+          {
+            "id": "jump-space",
+            "kind": "retain",
+            "pass": false,
+            "detail": "y0=309.5 y1=309.5 y2=309.5"
+          },
+          {
+            "id": "score-by-jumping",
+            "kind": "retain",
+            "pass": false,
+            "detail": "ゲームオーバー（得点 0）"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開後"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r3",
+      "task": "N2-coins",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "arrow-move-200",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=60.0 dy=40.0"
+          },
+          {
+            "id": "collect-coins-timer-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r3",
+      "task": "N3-shooter",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": false,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=50.0 bullet=273→233"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": false,
+            "detail": "例外: screenshot: Timeout 29997.67100000009ms exceeded.\nCall log:\n  - taking element screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n  - attempting scroll into view action\n    - waiting for ele"
+          }
+        ]
+      },
+      "v2": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "move-and-fire",
+            "kind": "start",
+            "pass": true,
+            "detail": "dx=50.0 bullet=273→233"
+          },
+          {
+            "id": "hit-then-ammo-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "命中後の再開"
+          }
+        ]
+      }
+    },
+    {
+      "cond": "P",
+      "run": "P-r3",
+      "task": "N4-catch",
+      "group": "new",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "basket-follows-pointer",
+            "kind": "start",
+            "pass": true,
+            "detail": "a=99.5 b=299.5"
+          },
+          {
+            "id": "catch-miss-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r3",
+      "task": "M1-snake-slow",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "step-250ms",
+            "kind": "change",
+            "pass": true,
+            "detail": "2.5 秒で 10.00 マス"
+          },
+          {
+            "id": "turn-with-arrow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "下へ 4.0 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 1"
+          },
+          {
+            "id": "wall-gameover-restart-colors",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開・色"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r3",
+      "task": "M2-pong-paddle",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "left-paddle-90",
+            "kind": "change",
+            "pass": true,
+            "detail": "左 90"
+          },
+          {
+            "id": "right-paddle-60-and-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "右 60 上へ 90"
+          },
+          {
+            "id": "rally",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r3",
+      "task": "M3-dodge-multiturn",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "player-green-not-blue",
+            "kind": "change",
+            "pass": true,
+            "detail": "緑 400 青 0"
+          },
+          {
+            "id": "enemy-speed-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "0.300 px/ms"
+          },
+          {
+            "id": "pointer-follow",
+            "kind": "retain",
+            "pass": true,
+            "detail": "99.5,379.5"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r3",
+      "task": "M4-target-timer",
+      "group": "modify",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "radius-12",
+            "kind": "change",
+            "pass": true,
+            "detail": "23×24"
+          },
+          {
+            "id": "time-20s-bar-restart",
+            "kind": "change",
+            "pass": true,
+            "detail": "再開"
+          },
+          {
+            "id": "click-scores",
+            "kind": "retain",
+            "pass": true,
+            "detail": "3/3"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r3",
+      "task": "R1-snake-restart",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "speed-before-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "10.00 マス"
+          },
+          {
+            "id": "speed-after-restart-x2",
+            "kind": "change",
+            "pass": true,
+            "detail": "1 回目 10.00・2 回目 10.00 マス"
+          },
+          {
+            "id": "eat-score",
+            "kind": "retain",
+            "pass": true,
+            "detail": "得点 1"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r3",
+      "task": "R2-dodge-narrow",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "narrow-pointer",
+            "kind": "change",
+            "pass": true,
+            "detail": "59.5,179.5"
+          },
+          {
+            "id": "wide-pointer",
+            "kind": "retain",
+            "pass": true,
+            "detail": "299.5"
+          },
+          {
+            "id": "enemy-speed-kept",
+            "kind": "retain",
+            "pass": true,
+            "detail": "0.150 px/ms"
+          },
+          {
+            "id": "collision-gameover-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "ゲームオーバー後に再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r3",
+      "task": "R3-pong-collision",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "bounce-near-paddle-edge-up",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-near-paddle-edge-down",
+            "kind": "change",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "bounce-center",
+            "kind": "retain",
+            "pass": true,
+            "detail": "打ち返した"
+          },
+          {
+            "id": "cpu-scores-on-miss",
+            "kind": "retain",
+            "pass": true,
+            "detail": "CPU の得点表示"
+          },
+          {
+            "id": "paddle-60-w-moves",
+            "kind": "retain",
+            "pass": true,
+            "detail": "左 60"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r3",
+      "task": "R4-target-hit",
+      "group": "repair",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "center-click-scores",
+            "kind": "change",
+            "pass": true,
+            "detail": "5/5"
+          },
+          {
+            "id": "miss-no-score-radius-20",
+            "kind": "retain",
+            "pass": true,
+            "detail": "半径 20"
+          },
+          {
+            "id": "time-30s-restart",
+            "kind": "retain",
+            "pass": true,
+            "detail": "再開"
+          }
+        ]
+      },
+      "v2": null
+    },
+    {
+      "cond": "P",
+      "run": "P-r3",
+      "task": "V1-scatter-legend",
+      "group": "nongame",
+      "presented": true,
+      "v1": {
+        "pass": true,
+        "checks": [
+          {
+            "id": "legend-right-vertical",
+            "kind": "change",
+            "pass": true,
+            "detail": "x=372,372,372 y=36,60,84"
+          },
+          {
+            "id": "filter-by-legend",
+            "kind": "retain",
+            "pass": true,
+            "detail": "点 21,25,24"
+          }
+        ]
+      },
+      "v2": null
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "note": "参考: V1 で host-smoke(responds) に落ちた未提示に終わった試行の候補を判定 v1 に当てた結果。正式の数には入れない。",
+  "at": "2026-11-09T16:24:42.611Z",
+  "out": [
+    {
+      "run": "C-r2",
+      "id": "gen-0029",
+      "pass": true,
+      "checks": [
+        {
+          "id": "legend-right-vertical",
+          "kind": "change",
+          "pass": true,
+          "detail": "x=372,372,372 y=36,60,84"
+        },
+        {
+          "id": "filter-by-legend",
+          "kind": "retain",
+          "pass": true,
+          "detail": "点 21,25,24"
+        }
+      ]
+    },
+    {
+      "run": "P-r1",
+      "id": "gen-0068",
+      "pass": true,
+      "checks": [
+        {
+          "id": "legend-right-vertical",
+          "kind": "change",
+          "pass": true,
+          "detail": "x=377,377,377 y=66,90,114"
+        },
+        {
+          "id": "filter-by-legend",
+          "kind": "retain",
+          "pass": true,
+          "detail": "点 21,25,24"
+        }
+      ]
+    },
+    {
+      "run": "P-r1",
+      "id": "gen-0069",
+      "pass": true,
+      "checks": [
+        {
+          "id": "legend-right-vertical",
+          "kind": "change",
+          "pass": true,
+          "detail": "x=377,377,377 y=36,60,84"
+        },
+        {
+          "id": "filter-by-legend",
+          "kind": "retain",
+          "pass": true,
+          "detail": "点 21,25,24"
+        }
+      ]
+    },
+    {
+      "run": "P-r1",
+      "id": "gen-0070",
+      "pass": true,
+      "checks": [
+        {
+          "id": "legend-right-vertical",
+          "kind": "change",
+          "pass": true,
+          "detail": "x=377,377,377 y=36,60,84"
+        },
+        {
+          "id": "filter-by-legend",
+          "kind": "retain",
+          "pass": true,
+          "detail": "点 21,25,24"
+        }
+      ]
+    }
+  ]
+}

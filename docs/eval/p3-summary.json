@@ -1,0 +1,1148 @@
+{
+  "generatedAt": "2026-11-09T16:26:15.465Z",
+  "runs": [
+    "C-r1",
+    "C-r2",
+    "C-r3",
+    "D-r1",
+    "D-r2",
+    "D-r3",
+    "P-r1",
+    "P-r2",
+    "P-r3"
+  ],
+  "gradesPartial": [],
+  "conditions": {
+    "D": {
+      "trials": 39,
+      "graded": 39,
+      "presented": 38,
+      "groups": {
+        "new": {
+          "name": "新規",
+          "pass": 6,
+          "n": 12,
+          "threshold": [
+            10,
+            12
+          ],
+          "meets": false,
+          "exN3": {
+            "pass": 6,
+            "n": 9
+          }
+        },
+        "modify": {
+          "name": "部分修正",
+          "pass": 12,
+          "n": 12,
+          "threshold": [
+            10,
+            12
+          ],
+          "meets": true
+        },
+        "repair": {
+          "name": "不具合修復",
+          "pass": 12,
+          "n": 12,
+          "threshold": [
+            10,
+            12
+          ],
+          "meets": true
+        },
+        "nongame": {
+          "name": "非ゲーム",
+          "pass": 3,
+          "n": 3,
+          "threshold": [
+            2,
+            3
+          ],
+          "meets": true
+        },
+        "games": {
+          "name": "ゲーム計",
+          "pass": 30,
+          "n": 36,
+          "threshold": [
+            32,
+            36
+          ],
+          "meets": false,
+          "exN3": {
+            "pass": 30,
+            "n": 33
+          }
+        }
+      },
+      "byGroup": {
+        "new": {
+          "pass": 6,
+          "n": 12,
+          "submissions": {
+            "total": 16,
+            "medianAll": 1,
+            "p90All": 2,
+            "medianPassing": 1,
+            "p90Passing": 1
+          },
+          "hostMsPassing": {
+            "p50": 1352,
+            "p90": 1390,
+            "n": 6
+          },
+          "calls": {
+            "total": 16,
+            "perTrialMedian": 1,
+            "perTrialP90": 2
+          },
+          "chars": {
+            "prompt": 45121,
+            "response": 46671,
+            "tokensEstimate": 22948
+          }
+        },
+        "modify": {
+          "pass": 12,
+          "n": 12,
+          "submissions": {
+            "total": 15,
+            "medianAll": 1,
+            "p90All": 2,
+            "medianPassing": 1,
+            "p90Passing": 2
+          },
+          "hostMsPassing": {
+            "p50": 1261,
+            "p90": 2518,
+            "n": 12
+          },
+          "calls": {
+            "total": 15,
+            "perTrialMedian": 1,
+            "perTrialP90": 2
+          },
+          "chars": {
+            "prompt": 61364,
+            "response": 35461,
+            "tokensEstimate": 24207
+          }
+        },
+        "repair": {
+          "pass": 12,
+          "n": 12,
+          "submissions": {
+            "total": 12,
+            "medianAll": 1,
+            "p90All": 1,
+            "medianPassing": 1,
+            "p90Passing": 1
+          },
+          "hostMsPassing": {
+            "p50": 1256,
+            "p90": 1285,
+            "n": 12
+          },
+          "calls": {
+            "total": 12,
+            "perTrialMedian": 1,
+            "perTrialP90": 1
+          },
+          "chars": {
+            "prompt": 49587,
+            "response": 30572,
+            "tokensEstimate": 20040
+          }
+        },
+        "nongame": {
+          "pass": 3,
+          "n": 3,
+          "submissions": {
+            "total": 6,
+            "medianAll": 2,
+            "p90All": 2,
+            "medianPassing": 2,
+            "p90Passing": 2
+          },
+          "hostMsPassing": {
+            "p50": 2571,
+            "p90": 2620,
+            "n": 3
+          },
+          "calls": {
+            "total": 6,
+            "perTrialMedian": 2,
+            "perTrialP90": 2
+          },
+          "chars": {
+            "prompt": 26684,
+            "response": 13146,
+            "tokensEstimate": 9958
+          }
+        },
+        "games": {
+          "pass": 30,
+          "n": 36,
+          "submissions": {
+            "total": 43,
+            "medianAll": 1,
+            "p90All": 2,
+            "medianPassing": 1,
+            "p90Passing": 1
+          },
+          "hostMsPassing": {
+            "p50": 1266,
+            "p90": 1390,
+            "n": 30
+          },
+          "calls": {
+            "total": 43,
+            "perTrialMedian": 1,
+            "perTrialP90": 2
+          },
+          "chars": {
+            "prompt": 156072,
+            "response": 112704,
+            "tokensEstimate": 67194
+          }
+        }
+      },
+      "perTask": [
+        {
+          "task": "N1-runner",
+          "pass": 0,
+          "n": 3,
+          "presented": 2,
+          "meets": false
+        },
+        {
+          "task": "N2-coins",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "N3-shooter",
+          "pass": 0,
+          "n": 3,
+          "v2": 3,
+          "presented": 3,
+          "meets": false
+        },
+        {
+          "task": "N4-catch",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "M1-snake-slow",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "M2-pong-paddle",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "M3-dodge-multiturn",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "M4-target-timer",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "R1-snake-restart",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "R2-dodge-narrow",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "R3-pong-collision",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "R4-target-hit",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "V1-scatter-legend",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        }
+      ],
+      "tasksMeeting": 11,
+      "submissionsToPass": {
+        "median": 1,
+        "p90": 2,
+        "firstSubmissionPasses": 30,
+        "n": 33
+      },
+      "hostMsPassing": {
+        "p50": 1274,
+        "p90": 2529,
+        "max": 2620,
+        "n": 33
+      },
+      "calls": {
+        "total": 49,
+        "perTrialMedian": 1,
+        "perTrialP90": 2,
+        "byPurpose": {
+          "direct": 49
+        },
+        "invalid": 0
+      },
+      "chars": {
+        "prompt": 182756,
+        "response": 125850,
+        "tokensEstimate": 77152
+      },
+      "smokeOkEvalFail": [
+        {
+          "run": "D-r1",
+          "task": "N1-runner",
+          "failed": [
+            "[retain] jump-space: y0=309.5 y1=309.5 y2=309.5",
+            "[retain] score-by-jumping: ゲームオーバー（得点 0）"
+          ]
+        },
+        {
+          "run": "D-r1",
+          "task": "N3-shooter",
+          "failed": [
+            "[retain] hit-then-ammo-gameover-restart: 1 発で命中なし"
+          ]
+        },
+        {
+          "run": "D-r2",
+          "task": "N1-runner",
+          "failed": [
+            "[retain] jump-space: y0=309.5 y1=309.5 y2=309.5",
+            "[retain] score-by-jumping: ゲームオーバー（得点 0）"
+          ]
+        },
+        {
+          "run": "D-r2",
+          "task": "N3-shooter",
+          "failed": [
+            "[retain] hit-then-ammo-gameover-restart: 1 発で命中なし"
+          ]
+        },
+        {
+          "run": "D-r3",
+          "task": "N3-shooter",
+          "failed": [
+            "[retain] hit-then-ammo-gameover-restart: 1 発で命中なし"
+          ]
+        }
+      ],
+      "notPresented": [
+        {
+          "run": "D-r3",
+          "task": "N1-runner",
+          "why": "修正の上限（初回＋2 回）に達した"
+        }
+      ]
+    },
+    "C": {
+      "trials": 39,
+      "graded": 39,
+      "presented": 38,
+      "groups": {
+        "new": {
+          "name": "新規",
+          "pass": 5,
+          "n": 12,
+          "threshold": [
+            10,
+            12
+          ],
+          "meets": false,
+          "exN3": {
+            "pass": 5,
+            "n": 9
+          }
+        },
+        "modify": {
+          "name": "部分修正",
+          "pass": 12,
+          "n": 12,
+          "threshold": [
+            10,
+            12
+          ],
+          "meets": true
+        },
+        "repair": {
+          "name": "不具合修復",
+          "pass": 11,
+          "n": 12,
+          "threshold": [
+            10,
+            12
+          ],
+          "meets": true
+        },
+        "nongame": {
+          "name": "非ゲーム",
+          "pass": 2,
+          "n": 3,
+          "threshold": [
+            2,
+            3
+          ],
+          "meets": true
+        },
+        "games": {
+          "name": "ゲーム計",
+          "pass": 28,
+          "n": 36,
+          "threshold": [
+            32,
+            36
+          ],
+          "meets": false,
+          "exN3": {
+            "pass": 28,
+            "n": 33
+          }
+        }
+      },
+      "byGroup": {
+        "new": {
+          "pass": 5,
+          "n": 12,
+          "submissions": {
+            "total": 15,
+            "medianAll": 1,
+            "p90All": 2,
+            "medianPassing": 1,
+            "p90Passing": 1
+          },
+          "hostMsPassing": {
+            "p50": 1367,
+            "p90": 1414,
+            "n": 5
+          },
+          "calls": {
+            "total": 17,
+            "perTrialMedian": 1,
+            "perTrialP90": 2
+          },
+          "chars": {
+            "prompt": 117105,
+            "response": 54341,
+            "tokensEstimate": 42862
+          }
+        },
+        "modify": {
+          "pass": 12,
+          "n": 12,
+          "submissions": {
+            "total": 15,
+            "medianAll": 1,
+            "p90All": 2,
+            "medianPassing": 1,
+            "p90Passing": 2
+          },
+          "hostMsPassing": {
+            "p50": 1275,
+            "p90": 2526,
+            "n": 12
+          },
+          "calls": {
+            "total": 15,
+            "perTrialMedian": 1,
+            "perTrialP90": 2
+          },
+          "chars": {
+            "prompt": 115511,
+            "response": 35431,
+            "tokensEstimate": 37736
+          }
+        },
+        "repair": {
+          "pass": 11,
+          "n": 12,
+          "submissions": {
+            "total": 12,
+            "medianAll": 1,
+            "p90All": 1,
+            "medianPassing": 1,
+            "p90Passing": 1
+          },
+          "hostMsPassing": {
+            "p50": 1260,
+            "p90": 1271,
+            "n": 11
+          },
+          "calls": {
+            "total": 12,
+            "perTrialMedian": 1,
+            "perTrialP90": 1
+          },
+          "chars": {
+            "prompt": 92817,
+            "response": 29702,
+            "tokensEstimate": 30630
+          }
+        },
+        "nongame": {
+          "pass": 2,
+          "n": 3,
+          "submissions": {
+            "total": 6,
+            "medianAll": 2,
+            "p90All": 2,
+            "medianPassing": 2,
+            "p90Passing": 2
+          },
+          "hostMsPassing": {
+            "p50": 2571,
+            "p90": 2649,
+            "n": 2
+          },
+          "calls": {
+            "total": 7,
+            "perTrialMedian": 2,
+            "perTrialP90": 3
+          },
+          "chars": {
+            "prompt": 58138,
+            "response": 12191,
+            "tokensEstimate": 17583
+          }
+        },
+        "games": {
+          "pass": 28,
+          "n": 36,
+          "submissions": {
+            "total": 42,
+            "medianAll": 1,
+            "p90All": 2,
+            "medianPassing": 1,
+            "p90Passing": 2
+          },
+          "hostMsPassing": {
+            "p50": 1269,
+            "p90": 2499,
+            "n": 28
+          },
+          "calls": {
+            "total": 44,
+            "perTrialMedian": 1,
+            "perTrialP90": 2
+          },
+          "chars": {
+            "prompt": 325433,
+            "response": 119474,
+            "tokensEstimate": 111227
+          }
+        }
+      },
+      "perTask": [
+        {
+          "task": "N1-runner",
+          "pass": 0,
+          "n": 3,
+          "presented": 3,
+          "meets": false
+        },
+        {
+          "task": "N2-coins",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "N3-shooter",
+          "pass": 0,
+          "n": 3,
+          "v2": 2,
+          "presented": 3,
+          "meets": false
+        },
+        {
+          "task": "N4-catch",
+          "pass": 2,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "M1-snake-slow",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "M2-pong-paddle",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "M3-dodge-multiturn",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "M4-target-timer",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "R1-snake-restart",
+          "pass": 2,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "R2-dodge-narrow",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "R3-pong-collision",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "R4-target-hit",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "V1-scatter-legend",
+          "pass": 2,
+          "n": 3,
+          "presented": 2,
+          "meets": true
+        }
+      ],
+      "tasksMeeting": 11,
+      "submissionsToPass": {
+        "median": 1,
+        "p90": 2,
+        "firstSubmissionPasses": 28,
+        "n": 30
+      },
+      "hostMsPassing": {
+        "p50": 1271,
+        "p90": 2526,
+        "max": 2649,
+        "n": 30
+      },
+      "calls": {
+        "total": 51,
+        "perTrialMedian": 1,
+        "perTrialP90": 2,
+        "byPurpose": {
+          "collaboration": 49,
+          "collaboration-correction": 2
+        },
+        "invalid": 0
+      },
+      "chars": {
+        "prompt": 383571,
+        "response": 131665,
+        "tokensEstimate": 128809
+      },
+      "smokeOkEvalFail": [
+        {
+          "run": "C-r1",
+          "task": "N1-runner",
+          "failed": [
+            "[retain] jump-space: y0=309.5 y1=309.5 y2=309.5",
+            "[retain] score-by-jumping: ゲームオーバー（得点 0）"
+          ]
+        },
+        {
+          "run": "C-r1",
+          "task": "N3-shooter",
+          "failed": [
+            "[retain] hit-then-ammo-gameover-restart: 1 発で命中なし"
+          ]
+        },
+        {
+          "run": "C-r2",
+          "task": "N1-runner",
+          "failed": [
+            "[retain] jump-space: y0=309.5 y1=309.5 y2=309.5",
+            "[retain] score-by-jumping: ゲームオーバー（得点 0）"
+          ]
+        },
+        {
+          "run": "C-r2",
+          "task": "N3-shooter",
+          "failed": [
+            "[retain] hit-then-ammo-gameover-restart: 1 発で命中なし"
+          ]
+        },
+        {
+          "run": "C-r2",
+          "task": "R1-snake-restart",
+          "failed": [
+            "[retain] eat-score: 例外: screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#frame')\n    - locator resolved to visible <div id=\"frame\">…</div>\n"
+          ]
+        },
+        {
+          "run": "C-r3",
+          "task": "N1-runner",
+          "failed": [
+            "[retain] jump-space: y0=309.5 y1=309.5 y2=309.5",
+            "[retain] score-by-jumping: ゲームオーバー（得点 0）"
+          ]
+        },
+        {
+          "run": "C-r3",
+          "task": "N3-shooter",
+          "failed": [
+            "[start] move-and-fire: dx=50.0 bullet=285→245",
+            "[retain] hit-then-ammo-gameover-restart: 1 発で命中なし"
+          ]
+        },
+        {
+          "run": "C-r3",
+          "task": "N4-catch",
+          "failed": [
+            "[start] basket-follows-pointer: a=99.5 b=299.5"
+          ]
+        }
+      ],
+      "notPresented": [
+        {
+          "run": "C-r2",
+          "task": "V1-scatter-legend",
+          "why": "生成に失敗: このターンの推論の上限（3 回）に達した"
+        }
+      ],
+      "extraVsD": {
+        "callsRatio": 1.04,
+        "tokensRatio": 1.67,
+        "extraCalls": 2,
+        "extraTokensEstimate": 51657
+      }
+    },
+    "P": {
+      "trials": 39,
+      "graded": 39,
+      "presented": 38,
+      "groups": {
+        "new": {
+          "name": "新規",
+          "pass": 7,
+          "n": 12,
+          "threshold": [
+            10,
+            12
+          ],
+          "meets": false,
+          "exN3": {
+            "pass": 7,
+            "n": 9
+          }
+        },
+        "modify": {
+          "name": "部分修正",
+          "pass": 12,
+          "n": 12,
+          "threshold": [
+            10,
+            12
+          ],
+          "meets": true
+        },
+        "repair": {
+          "name": "不具合修復",
+          "pass": 12,
+          "n": 12,
+          "threshold": [
+            10,
+            12
+          ],
+          "meets": true
+        },
+        "nongame": {
+          "name": "非ゲーム",
+          "pass": 2,
+          "n": 3,
+          "threshold": [
+            2,
+            3
+          ],
+          "meets": true
+        },
+        "games": {
+          "name": "ゲーム計",
+          "pass": 31,
+          "n": 36,
+          "threshold": [
+            32,
+            36
+          ],
+          "meets": false,
+          "exN3": {
+            "pass": 31,
+            "n": 33
+          }
+        }
+      },
+      "byGroup": {
+        "new": {
+          "pass": 7,
+          "n": 12,
+          "submissions": {
+            "total": 14,
+            "medianAll": 1,
+            "p90All": 2,
+            "medianPassing": 1,
+            "p90Passing": 1
+          },
+          "hostMsPassing": {
+            "p50": 3938,
+            "p90": 4363,
+            "n": 7
+          },
+          "calls": {
+            "total": 50,
+            "perTrialMedian": 4,
+            "perTrialP90": 5
+          },
+          "chars": {
+            "prompt": 485748,
+            "response": 69461,
+            "tokensEstimate": 138803
+          }
+        },
+        "modify": {
+          "pass": 12,
+          "n": 12,
+          "submissions": {
+            "total": 16,
+            "medianAll": 1,
+            "p90All": 2,
+            "medianPassing": 1,
+            "p90Passing": 2
+          },
+          "hostMsPassing": {
+            "p50": 3832,
+            "p90": 7678,
+            "n": 12
+          },
+          "calls": {
+            "total": 61,
+            "perTrialMedian": 4,
+            "perTrialP90": 8
+          },
+          "chars": {
+            "prompt": 690890,
+            "response": 71904,
+            "tokensEstimate": 190699
+          }
+        },
+        "repair": {
+          "pass": 12,
+          "n": 12,
+          "submissions": {
+            "total": 12,
+            "medianAll": 1,
+            "p90All": 1,
+            "medianPassing": 1,
+            "p90Passing": 1
+          },
+          "hostMsPassing": {
+            "p50": 3815,
+            "p90": 3853,
+            "n": 12
+          },
+          "calls": {
+            "total": 48,
+            "perTrialMedian": 4,
+            "perTrialP90": 4
+          },
+          "chars": {
+            "prompt": 544002,
+            "response": 57338,
+            "tokensEstimate": 150335
+          }
+        },
+        "nongame": {
+          "pass": 2,
+          "n": 3,
+          "submissions": {
+            "total": 7,
+            "medianAll": 2,
+            "p90All": 3,
+            "medianPassing": 2,
+            "p90Passing": 2
+          },
+          "hostMsPassing": {
+            "p50": 5174,
+            "p90": 5303,
+            "n": 2
+          },
+          "calls": {
+            "total": 16,
+            "perTrialMedian": 5,
+            "perTrialP90": 6
+          },
+          "chars": {
+            "prompt": 182227,
+            "response": 22542,
+            "tokensEstimate": 51193
+          }
+        },
+        "games": {
+          "pass": 31,
+          "n": 36,
+          "submissions": {
+            "total": 42,
+            "medianAll": 1,
+            "p90All": 2,
+            "medianPassing": 1,
+            "p90Passing": 2
+          },
+          "hostMsPassing": {
+            "p50": 3832,
+            "p90": 4363,
+            "n": 31
+          },
+          "calls": {
+            "total": 159,
+            "perTrialMedian": 4,
+            "perTrialP90": 5
+          },
+          "chars": {
+            "prompt": 1720640,
+            "response": 198703,
+            "tokensEstimate": 479836
+          }
+        }
+      },
+      "perTask": [
+        {
+          "task": "N1-runner",
+          "pass": 1,
+          "n": 3,
+          "presented": 3,
+          "meets": false
+        },
+        {
+          "task": "N2-coins",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "N3-shooter",
+          "pass": 0,
+          "n": 3,
+          "v2": 3,
+          "presented": 3,
+          "meets": false
+        },
+        {
+          "task": "N4-catch",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "M1-snake-slow",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "M2-pong-paddle",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "M3-dodge-multiturn",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "M4-target-timer",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "R1-snake-restart",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "R2-dodge-narrow",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "R3-pong-collision",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "R4-target-hit",
+          "pass": 3,
+          "n": 3,
+          "presented": 3,
+          "meets": true
+        },
+        {
+          "task": "V1-scatter-legend",
+          "pass": 2,
+          "n": 3,
+          "presented": 2,
+          "meets": true
+        }
+      ],
+      "tasksMeeting": 11,
+      "submissionsToPass": {
+        "median": 1,
+        "p90": 2,
+        "firstSubmissionPasses": 30,
+        "n": 33
+      },
+      "hostMsPassing": {
+        "p50": 3846,
+        "p90": 5303,
+        "max": 7693,
+        "n": 33
+      },
+      "calls": {
+        "total": 175,
+        "perTrialMedian": 4,
+        "perTrialP90": 6,
+        "byPurpose": {
+          "plan": 42,
+          "hypothesize": 42,
+          "propose": 90,
+          "review": 1
+        },
+        "invalid": 0
+      },
+      "chars": {
+        "prompt": 1902867,
+        "response": 221245,
+        "tokensEstimate": 531028
+      },
+      "smokeOkEvalFail": [
+        {
+          "run": "P-r1",
+          "task": "N3-shooter",
+          "failed": [
+            "[retain] hit-then-ammo-gameover-restart: 1 発で命中なし"
+          ]
+        },
+        {
+          "run": "P-r2",
+          "task": "N1-runner",
+          "failed": [
+            "[retain] jump-space: y0=309.5 y1=309.5 y2=309.5",
+            "[retain] score-by-jumping: ゲームオーバー（得点 0）"
+          ]
+        },
+        {
+          "run": "P-r2",
+          "task": "N3-shooter",
+          "failed": [
+            "[retain] hit-then-ammo-gameover-restart: 1 発で命中なし"
+          ]
+        },
+        {
+          "run": "P-r3",
+          "task": "N1-runner",
+          "failed": [
+            "[retain] jump-space: y0=309.5 y1=309.5 y2=309.5",
+            "[retain] score-by-jumping: ゲームオーバー（得点 0）"
+          ]
+        },
+        {
+          "run": "P-r3",
+          "task": "N3-shooter",
+          "failed": [
+            "[retain] hit-then-ammo-gameover-restart: 例外: screenshot: Timeout 29997.67100000009ms exceeded.\nCall log:\n  - taking element screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n  - attempting "
+          ]
+        }
+      ],
+      "notPresented": [
+        {
+          "run": "P-r1",
+          "task": "V1-scatter-legend",
+          "why": "生成に失敗: Pursuit の中で提出の上限を使い切った（製品の修正ループは使わない）"
+        }
+      ],
+      "extraVsD": {
+        "callsRatio": 3.57,
+        "tokensRatio": 6.88,
+        "extraCalls": 126,
+        "extraTokensEstimate": 453876
+      }
+    }
+  }
+}

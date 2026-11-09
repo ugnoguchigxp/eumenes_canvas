@@ -1,0 +1,30 @@
+{
+  "note": "参考: 基盤の例外（screenshot timeout）が出た試行の再判定。正式の数には入れない。",
+  "at": "2026-11-09T16:21:42.371Z",
+  "out": [
+    {
+      "run": "C-r2",
+      "task": "R1-snake-restart",
+      "checks": [
+        {
+          "id": "speed-before-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "10.00 マス"
+        },
+        {
+          "id": "speed-after-restart-x2",
+          "kind": "change",
+          "pass": true,
+          "detail": "1 回目 10.00・2 回目 10.00 マス"
+        },
+        {
+          "id": "eat-score",
+          "kind": "retain",
+          "pass": true,
+          "detail": "得点 1"
+        }
+      ]
+    }
+  ]
+}

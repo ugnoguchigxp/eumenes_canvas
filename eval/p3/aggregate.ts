@@ -63,12 +63,29 @@ async function main() {
       byTrial.set(k, v);
     }
     const trials = [...byTrial.values()];
+    // 課題群ごとの提出・時間・推論・文字数（群をまたいで混ぜない）
+    const byGroup = Object.fromEntries([...GROUPS, "games"].map((g) => {
+      const all = sel(g);
+      const ok = all.filter(pass);
+      const hm = ok.map((r) => r.turns.reduce((a, x) => a + x.hostMs, 0));
+      const keys = new Set(all.map((r) => `${r.run}|${r.task}`));
+      const rows = callRows.filter((x) => keys.has(`${(x as UsageRow & { run: string }).run}|${x.task}`));
+      const perTrial = all.map((r) => rows.filter((x) => (x as UsageRow & { run: string }).run === r.run && x.task === r.task).length);
+      return [g, {
+        pass: ok.length, n: all.length,
+        submissions: { total: all.reduce((a, r) => a + r.submissions, 0), medianAll: pct(sub(all), 50), p90All: pct(sub(all), 90), medianPassing: pct(sub(ok), 50), p90Passing: pct(sub(ok), 90) },
+        hostMsPassing: { p50: pct(hm, 50), p90: pct(hm, 90), n: hm.length },
+        calls: { total: rows.length, perTrialMedian: pct(perTrial, 50), perTrialP90: pct(perTrial, 90) },
+        chars: { prompt: rows.reduce((a, x) => a + x.promptChars, 0), response: rows.reduce((a, x) => a + x.responseChars, 0), tokensEstimate: Math.ceil(rows.reduce((a, x) => a + x.promptChars + x.responseChars, 0) / 4) },
+      }];
+    }));
     const smokeOkEvalFail = rs.filter((r) => r.presented && gradeOf(r) && !gradeOf(r)!.v1.pass).map((r) => ({ run: r.run, task: r.task, failed: gradeOf(r)!.v1.checks.filter((c) => !c.pass).map((c) => `[${c.kind}] ${c.id}: ${c.detail ?? ""}`.slice(0, 200)) }));
     out[cond] = {
       trials: rs.length,
       graded: rs.filter((r) => gradeOf(r)).length,
       presented: rs.filter((r) => r.presented).length,
       groups,
+      byGroup,
       perTask,
       tasksMeeting: perTask.filter((t) => t.meets).length,
       submissionsToPass: { median: pct(sub(passing), 50), p90: pct(sub(passing), 90), firstSubmissionPasses: passing.filter((r) => r.submissions === r.turns.length).length, n: passing.length },
