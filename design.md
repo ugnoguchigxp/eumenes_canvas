@@ -43,14 +43,16 @@ Claude Code は、同じ依頼と版を受け取る実装担当の候補とす�
 
 ## 4. プレビューの実行境界
 
-初期実装の候補は、**固定のプレビューシェルを持つ sandbox 付き iframe と、生成 JavaScript を実行する専用 Worker**。Canvas の描画面は `OffscreenCanvas` として Worker へ渡す。キーボード・ポインター入力、時刻、表示サイズ、許可済みのデータは型を決めて渡す。作品はこれらを使って描画し、ホストは通知・エラー・停止を扱う。生成したコードを実行する場所と、Eumenes 本体の DOM を扱う場所を分離する。 [OffscreenCanvas](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas) · [Worker の停止](https://developer.mozilla.org/en-US/docs/Web/API/Worker/terminate)
+初期実装の候補は、**固定のプレビューシェルを持つ sandbox 付き iframe と、生成 JavaScript を実行する専用 Worker**だった。P0 の実測（[P0 結果](docs/p0-results.md)）で Blob Worker 方式が隔離を満たさなかったため、**専用プレビューオリジン方式**に切り替えた。キーボード・ポインター入力、時刻、表示サイズ、許可済みのデータは型を決めて渡す。作品はこれらを使って描画し、ホストは通知・エラー・停止を扱う。生成したコードを実行する場所と、Eumenes 本体の DOM を扱う場所を分離する。 [OffscreenCanvas](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas) · [Worker の停止](https://developer.mozilla.org/en-US/docs/Web/API/Worker/terminate)
 
-- iframe は `allow-scripts` のみを起点とし、オリジン、トップ画面への遷移、フォーム、ポップアップ、権限移譲を制限する。初期候補では固定シェルが Blob Worker を生成する。ホストの CSP は固定ブートストラップと必要な Worker 起動だけを許す。Blob Worker は親の CSP を継承するため、親に許した Worker 起動が子でも可能かを実測する。通信、外部コードの読込、ストレージ、子 Worker の生成・停止をブラウザで確認する。作品から子 Worker を生成できる場合は、固定シェルと作品 Worker に異なる CSP を適用できる配信方式などを検討する。 [iframe の隔離](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe) · [Worker の CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy#csp_in_workers)
-- 初期化時に対象 iframe を照合し、専用のメッセージポートを渡す。型、サイズ、頻度、実行 ID を検査する。作品からの通知に権限を付与せず、任意 URL、ホスト API、シェル、永続ストレージに接続する操作を公開しない。作品の状態通知は診断に使い、テストの合否はブラウザ側が独立に観測する。
-- ホストが描画面の大きさと入力頻度を抑え、同時に動かすプレビューを制作画面ごとに一つに絞る。停止・再実行・タブ閉鎖で Worker と参照を解放する。定常時の描画停止、エラー、無限ループ、過大なメッセージで停止が効くかを確認する。Worker だけでメモリ・GPU の上限を保証できるとは扱わず、試験用ブラウザは専用プロセスで期限と資源を制限する。
+- **採用方式（2026-11-09 P0 で決定）。** プレビューはホストと別サイトの専用オリジン（検証ホストでは `localhost` に対する `127.0.0.1`）から配信する。iframe は `sandbox="allow-scripts allow-same-origin"`、`allow=""` とし、遷移・フォーム・ポップアップ・権限移譲を与えない。`allow-same-origin` は別サイトのプレビューオリジンに対してだけ使い、ホストの DOM・保存データには届かない。固定シェルは同一オリジンの URL から作品 Worker を起動する。Worker スクリプト（固定ブートストラップ＋作品本体）は一度だけ使える短命トークンで配信し、応答に `Content-Security-Policy: default-src 'none'` を付ける。これにより、親（シェル）と作品 Worker に異なる CSP を適用でき、作品からの通信・外部コード読込・eval・子 Worker 起動を CSP で拒否する。CSP が覆わない `indexedDB`・`caches`・`BroadcastChannel`・`navigator.storage` などは、ブートストラップが作品の実行前に外す（多層防御）。
+- **不採用とした方式。** `allow-scripts` のみの iframe ＋ Blob Worker は、Chromium で親の `worker-src blob:` を継承した作品 Worker から子 Worker を起動・実行できた。WebKit では不透明オリジンの文書に `'self'` が一致せず、固定シェル自体を読めなかった。再現用の特性試験を `tests/e2e/p0-blob-baseline.spec.ts` に置く。
+- **描画の受け渡し。** 当初は `transferControlToOffscreen()` で描画面を Worker へ渡す計画だったが、対象の WebKit（WPE の headless）で Worker から描いた内容が表示に反映されない場合があった。作品は Worker が持つ `OffscreenCanvas` に描き、ブートストラップが描画のたびに複製を `ImageBitmap` としてシェルへ渡し、シェルは `bitmaprenderer` で表示する。作品の描画内容はフレームをまたいで保持される。
+- 初期化時に対象 iframe を照合し、専用のメッセージポートを渡す。シェルは親とホストのオリジンを照合してから 1 回だけポートを受け取る。型、サイズ、頻度、実行 ID を検査する。作品からの通知に権限を付与せず、任意 URL、ホスト API、シェル、永続ストレージに接続する操作を公開しない。作品の状態通知は診断に使い、テストの合否はブラウザ側が独立に観測する。
+- ホストが描画面の大きさと入力頻度を抑え、同時に動かすプレビューを制作画面ごとに一つに絞る。停止・再実行・タブ閉鎖で Worker と参照を解放する。定常時の描画停止、エラー、無限ループ、過大なメッセージで停止が効くかを確認する。**Chromium は実行中の Worker を `terminate()` から約 2 秒後に強制終了する（実測 2.0–2.1 秒、iframe の除去でも同じ）。** WebKit は約 0.1 秒以内に止まる。この間もホストは操作できるが、§4 の「2 秒以内」は Chromium で未達のまま残す。Worker だけでメモリ・GPU の上限を保証できるとは扱わず、試験用ブラウザは専用プロセスで期限と資源を制限する。
 - 生成・検証で使う OS 側の環境も分離する。ブラウザ試験は資格情報のない使い捨て環境で実行し、試験対象への通信だけを許可する。Claude Code を試す場合は、作業用ディレクトリの外側、製品 API・DB、認証情報、任意の外向き通信を実行環境側で制限する。モデル接続はホストが管理する。画面なしのブラウザは消音する。
 
-この方式の成立確認が最初の実装判断になる。Blob Worker の起動や隔離、強制停止が対象ブラウザで合格しない場合は、通信・ストレージと実行資源を制御できる専用プレビューオリジンなどを検討し、境界を再設計してから生成物を動かす。
+本体へ取り込む際は、ホストとは別サイトのプレビューオリジンを用意することが配置の前提になる。プレビューオリジンには資格情報・保存データを置かない。
 
 ## 5. 表示モードと入力
 
