@@ -74,5 +74,7 @@ Playwright で実際の入力と描画を確認する。固定データ、画面
 - [x] P1 で作品・候補・検証・保存の契約を通し、3表示モードを受け入れる（headless の Chromium・WebKit。実ブラウザの全画面と Esc は未測定）。
 - [x] 調整用と未使用の課題を分け、試験・上限・判定条件を凍結する（[凍結記録](docs/p2-eval.md)、commit 0edd712）。
 - [ ] Luna・Haiku の基準版と候補版を比較し、本体取込の合否を記録する（Grok Bot が代行した記録済み推論で経路だけ評価。ゲーム 31/36・新規 7/12 で未達。実モデルは未測定）。
+- [x] P3 で Collaborator・Pursuit を直接生成と比べる（[P3 結果](docs/p3-results.md)。3 条件とも §4 未達、主因は契約の書き漏れと観測器の偽陰性で経路の差ではない。代行の推論で、実モデルは未測定）。
+- [ ] P3 の改善（契約の明示・制作手順 `docs/maker-skill.md`・観測 host-smoke/2）を直接生成の経路に入れ、汎用課題 general-v1（[凍結記録](docs/eval/general-v1.md)、10 件）で汎用度を測る。合格率の生成は未実施。
 - [ ] 修復課題で Pursuit と Claude Code の採否を判断する（未実施・保留：Pursuit／Claude Code の実行環境と、参照先の `eumenes/vendor/pursuit/manifest.json` が無い）。
 - [ ] 検証済みの配布物を本体へ接続し、固定・実モデル・実ブラウザの受入を行う（未実施・保留：§4 未達、本体リポジトリの変更が今回の範囲外、`eumenes/spec/collaboration-integration-2026-11-05.md` が無い）。
