@@ -1,6 +1,20 @@
 // ホスト側のプレビュー制御。iframe を照合して専用ポートを渡し、シェルからの通知を検査する。
 import { checkShellToHost, makeRateWindow } from "/shared/messages.js";
 
+/** shell-ready を待つ既定の上限（ミリ秒）。超えたら接続失敗として理由付きで終える。 */
+export const CONNECT_TIMEOUT_MS = 5_000;
+
+/** プレビューとの握手が成立しなかったことを表す。 */
+export class PreviewConnectError extends Error {
+  constructor(previewOrigin, timeoutMs) {
+    super(`プレビュー ${previewOrigin} から ${timeoutMs}ms 以内に応答がありません`);
+    this.name = "PreviewConnectError";
+    this.code = "preview-connect-timeout";
+    this.previewOrigin = previewOrigin;
+    this.timeoutMs = timeoutMs;
+  }
+}
+
 let seqCounter = 0;
 function newRunId() {
   const a = new Uint8Array(9);
@@ -9,10 +23,21 @@ function newRunId() {
 }
 
 export class PreviewController {
-  constructor(container, { previewOrigin, onEvent } = {}) {
+  /**
+   * @param {any} container
+   * @param {{ previewOrigin?: string, onEvent?: (m: any) => void, onConnection?: (state: string, err: PreviewConnectError | null) => void, connectTimeoutMs?: number }} [opts]
+   */
+  constructor(container, { previewOrigin, onEvent, onConnection, connectTimeoutMs = CONNECT_TIMEOUT_MS } = {}) {
     this.container = container;
     this.previewOrigin = previewOrigin;
     this.onEvent = onEvent || (() => {});
+    // 接続状態の変化（"connecting" | "connected" | "failed"）を知らせる
+    this.onConnection = onConnection || (() => {});
+    this.connectTimeoutMs = connectTimeoutMs;
+    /** "idle" | "connecting" | "connected" | "failed" */
+    this.connectionState = "idle";
+    this.connectError = null;
+    this.connectAttempts = 0;
     this.port = null;
     this.runId = null;
     this.waiters = new Map();
@@ -22,8 +47,9 @@ export class PreviewController {
     this.lastStart = null;
   }
 
+  /** iframe を置いて接続する。接続済みならそのまま、失敗済みなら読み直して再接続する。 */
   mount() {
-    if (this.iframe) return this.connected;
+    if (this.iframe) return this.connectionState === "failed" ? this.reconnect() : this.connected;
     const f = document.createElement("iframe");
     f.setAttribute("sandbox", "allow-scripts allow-same-origin");
     f.setAttribute("allow", "");
@@ -36,19 +62,64 @@ export class PreviewController {
     return this.connected;
   }
 
+  /** 失敗した接続をやり直す（iframe を読み直す）。 */
+  reconnect() {
+    if (!this.iframe) return this.mount();
+    if (this.connectionState === "connecting") return this.connected;
+    if (this.port) this.port.close();
+    this.port = null;
+    this.runId = null;
+    this.connected = this._connect();
+    return this.connected;
+  }
+
+  _setConnection(st, err = null) {
+    this.connectionState = st;
+    this.connectError = err;
+    this.onConnection(st, err);
+  }
+
   _connect() {
-    return new Promise((resolve) => {
+    const attempt = ++this.connectAttempts;
+    this._setConnection("connecting");
+    const p = new Promise((resolve, reject) => {
       const f = this.iframe;
+      let done = false;
+      const finish = (err) => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        f.removeEventListener("load", onLoad);
+        if (attempt !== this.connectAttempts) {
+          // 新しい試行に置き換わった。待っている側は新しい試行の結果を受け取る
+          this.connected.then(resolve, reject);
+          return;
+        }
+        if (err) {
+          if (this.port) this.port.close();
+          this.port = null;
+          this._setConnection("failed", err);
+          reject(err);
+        } else {
+          this._setConnection("connected");
+          resolve();
+        }
+      };
+      const timer = setTimeout(() => finish(new PreviewConnectError(this.previewOrigin, this.connectTimeoutMs)), this.connectTimeoutMs);
       const onLoad = () => {
         f.removeEventListener("load", onLoad);
+        if (done || attempt !== this.connectAttempts) return;
         const ch = new MessageChannel();
         this.port = ch.port1;
-        this.port.onmessage = (e) => this._onPort(e, resolve);
+        this.port.onmessage = (e) => this._onPort(e, () => finish(null));
+        // 送り先のオリジンが一致しない文書（遮断・エラーページ）には届かず、時間切れになる
         f.contentWindow.postMessage({ type: "canvas-connect" }, this.previewOrigin, [ch.port2]);
       };
       f.addEventListener("load", onLoad);
       f.src = this.previewOrigin + "/shell.html";
     });
+    p.catch(() => {}); // 呼び出し側が待たない場合の未処理拒否を防ぐ
+    return p;
   }
 
   _onPort(e, resolveConnected) {
@@ -139,6 +210,11 @@ export class PreviewController {
     this.runId = null;
     this.connected = this._connect();
     await this.connected;
+  }
+
+  /** 接続済みかどうか。 */
+  get isConnected() {
+    return this.connectionState === "connected" && !!this.port;
   }
 
   focus() {

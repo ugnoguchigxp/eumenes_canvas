@@ -1,5 +1,5 @@
 // 検証ホストの画面。会話・作品一覧・プレビュー・3 表示モード・候補の保存と復元。
-import { PreviewController } from "/preview-client.js";
+import { PreviewController, PreviewConnectError } from "/preview-client.js";
 
 const $ = (id) => document.getElementById(id);
 const cfg = await (await fetch("/api/config")).json();
@@ -51,13 +51,51 @@ const ctl = new PreviewController($("preview-frame"), {
     if (m.type === "violation") notice("作品を停止しました（" + m.message + "）");
     if (m.type === "escape") exitMode();
   },
+  onConnection: (st, err) => showConnection(st, err),
 });
-await ctl.mount();
 window.__canvasHost = { ctl, state }; // 試験での観測用（読み取りのみ）
 
 function notice(t) {
   $("notice").textContent = t;
 }
+
+// ---- プレビューの接続状態 ----
+// 接続はホスト画面の操作と切り離して進める。失敗しても送信・保存は使える。
+function connectFailureText(err) {
+  const origin = err?.previewOrigin || cfg.previewOrigin;
+  const sec = Math.round((err?.timeoutMs ?? ctl.connectTimeoutMs) / 1000);
+  const hostName = new URL(origin).hostname;
+  return (
+    `プレビュー（${origin}）に接続できません。${sec} 秒以内に応答がありませんでした。` +
+    `依頼の送信と保存はこのまま使えますが、作品は表示できません。` +
+    `考えられる原因: ブラウザが別サイトの ${hostName} の埋め込みを遮断している（シールド・広告ブロック・ローカルネットワークへのアクセス許可）、` +
+    `プレビューのポートがサーバーの設定と違う、サーバーを起動し直す前に開いた古いタブ。`
+  );
+}
+
+function showConnection(st, err) {
+  document.body.dataset.preview = st;
+  const box = $("preview-error");
+  if (st === "failed") {
+    $("preview-error-text").textContent = connectFailureText(err);
+    $("preview-retry").disabled = false;
+    box.hidden = false;
+    console.error("[canvas] " + connectFailureText(err), err);
+  } else if (st === "connecting") {
+    $("preview-retry").disabled = true;
+  } else {
+    box.hidden = true;
+  }
+}
+
+$("preview-retry").addEventListener("click", async () => {
+  try {
+    await ctl.reconnect();
+  } catch {
+    return; // 失敗の表示は showConnection が出す
+  }
+  if (state.previewSource) await showPreview(state.previewSource, $("preview-label").textContent);
+});
 
 // ---- 表示モード ----
 function setMode(mode) {
@@ -125,12 +163,20 @@ async function showPreview(source, label) {
   state.previewSource = source;
   host.dataset.ready = "0";
   $("preview-label").textContent = label;
-  const r = await ctl.start({ token: p.token, data: p.data, seed: 1, clock: CLOCK });
+  let r;
+  try {
+    r = await ctl.start({ token: p.token, data: p.data, seed: 1, clock: CLOCK });
+  } catch (err) {
+    if (!(err instanceof PreviewConnectError)) throw err;
+    host.dataset.ready = "0";
+    notice("プレビューに接続できないため表示できません。上の「再接続」を試してください。");
+    return { type: "connect-failed", message: err.message };
+  }
   host.dataset.ready = r.type === "ready" ? "1" : "0";
   if (r.type !== "ready") notice("起動できませんでした: " + (r.message || r.type));
   return r;
 }
-$("stop").addEventListener("click", () => ctl.stop());
+$("stop").addEventListener("click", () => ctl.stop().catch(() => {}));
 $("restart").addEventListener("click", () => state.previewSource && showPreview(state.previewSource, $("preview-label").textContent));
 
 // ---- 会話 ----
@@ -331,5 +377,11 @@ $("new-artwork").addEventListener("click", () => {
   refreshArtworks();
 });
 
-await refreshArtworks();
+// 操作をすべて登録してから接続を始める。接続の成否を待たずに画面を使えるようにする。
+ctl.mount().catch(() => {});
+try {
+  await refreshArtworks();
+} catch (err) {
+  notice("作品一覧を読めませんでした: " + err.message);
+}
 document.body.dataset.ready = "1";

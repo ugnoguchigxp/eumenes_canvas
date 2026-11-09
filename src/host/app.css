@@ -32,3 +32,5 @@ h2 { font-size: 14px; margin: 6px 0; }
 .pass { color: #176a1b; }
 .fail { color: #b00020; }
 .notice { min-height: 1.2em; color: #a05a00; font-size: 12px; }
+.preview-error { margin-top: 8px; padding: 8px; border: 1px solid #e0a0a0; border-radius: 6px; background: #fff3f3; color: #8a1020; font-size: 13px; }
+.preview-error p { margin: 0 0 6px; }
