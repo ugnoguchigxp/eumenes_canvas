@@ -1,0 +1,68 @@
+{
+ "author": "Grok Bot が制作担当を代行して作成（Luna／Haiku の出力ではない）。凍結 commit 0edd712 の後に作成。",
+ "recordings": [
+  {
+   "input": {
+    "request": "ボールが自分のパドルをすり抜けることがある。直して。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "ポン",
+     "entryFile": "../bases/pong-collision-bug.js"
+    }
+   },
+   "sample": 0,
+   "output": {
+    "title": "ポン",
+    "entryFile": "R3-pong-collision/s0.js",
+    "changes": "プレイヤーのパドルの当たり判定がパドルの半分しかなかったのを、パドル全体＋ボールの半径にした。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "プレイヤーのパドルの当たり判定がパドルの半分しかなかったのを、パドル全体＋ボールの半径にした。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "ボールが自分のパドルをすり抜けることがある。直して。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "ポン",
+     "entryFile": "../bases/pong-collision-bug.js"
+    }
+   },
+   "sample": 1,
+   "output": {
+    "title": "ポン",
+    "entryFile": "R3-pong-collision/s1.js",
+    "changes": "プレイヤーのパドルの当たり判定がパドルの半分しかなかったのを、パドル全体＋ボールの半径にした。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "プレイヤーのパドルの当たり判定がパドルの半分しかなかったのを、パドル全体＋ボールの半径にした。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "ボールが自分のパドルをすり抜けることがある。直して。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "ポン",
+     "entryFile": "../bases/pong-collision-bug.js"
+    }
+   },
+   "sample": 2,
+   "output": {
+    "title": "ポン",
+    "entryFile": "R3-pong-collision/s2.js",
+    "changes": "プレイヤーのパドルの当たり判定がパドルの半分しかなかったのを、パドル全体＋ボールの半径にした。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "プレイヤーのパドルの当たり判定がパドルの半分しかなかったのを、パドル全体＋ボールの半径にした。 動かして確かめてください。"
+   }
+  }
+ ]
+}

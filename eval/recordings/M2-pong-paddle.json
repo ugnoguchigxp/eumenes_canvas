@@ -1,0 +1,68 @@
+{
+ "author": "Grok Bot が制作担当を代行して作成（Luna／Haiku の出力ではない）。凍結 commit 0edd712 の後に作成。",
+ "recordings": [
+  {
+   "input": {
+    "request": "プレイヤー（左）のパドルの長さを 60px から 90px にして。CPU のパドル、ボール、得点の表示はそのまま。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "ポン",
+     "entryFile": "../bases/pong.js"
+    }
+   },
+   "sample": 0,
+   "output": {
+    "title": "ポン",
+    "entryFile": "M2-pong-paddle/s0.js",
+    "changes": "プレイヤーのパドルの長さ・移動範囲・当たり判定を 90px に変更。CPU は 60px のまま。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "プレイヤーのパドルの長さ・移動範囲・当たり判定を 90px に変更。CPU は 60px のまま。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "プレイヤー（左）のパドルの長さを 60px から 90px にして。CPU のパドル、ボール、得点の表示はそのまま。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "ポン",
+     "entryFile": "../bases/pong.js"
+    }
+   },
+   "sample": 1,
+   "output": {
+    "title": "ポン",
+    "entryFile": "M2-pong-paddle/s1.js",
+    "changes": "プレイヤーのパドルの長さ・移動範囲・当たり判定を 90px に変更。CPU は 60px のまま。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "プレイヤーのパドルの長さ・移動範囲・当たり判定を 90px に変更。CPU は 60px のまま。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "プレイヤー（左）のパドルの長さを 60px から 90px にして。CPU のパドル、ボール、得点の表示はそのまま。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "ポン",
+     "entryFile": "../bases/pong.js"
+    }
+   },
+   "sample": 2,
+   "output": {
+    "title": "ポン",
+    "entryFile": "M2-pong-paddle/s2.js",
+    "changes": "プレイヤーのパドルの長さ・移動範囲・当たり判定を 90px に変更。CPU は 60px のまま。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "プレイヤーのパドルの長さ・移動範囲・当たり判定を 90px に変更。CPU は 60px のまま。 動かして確かめてください。"
+   }
+  }
+ ]
+}

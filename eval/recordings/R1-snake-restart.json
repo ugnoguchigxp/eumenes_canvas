@@ -1,0 +1,68 @@
+{
+ "author": "Grok Bot が制作担当を代行して作成（Luna／Haiku の出力ではない）。凍結 commit 0edd712 の後に作成。",
+ "recordings": [
+  {
+   "input": {
+    "request": "やり直し（R キー）をすると、ヘビの動きが速くなってしまう。直して。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "スネーク",
+     "entryFile": "../bases/snake-restart-bug.js"
+    }
+   },
+   "sample": 0,
+   "output": {
+    "title": "スネーク",
+    "entryFile": "R1-snake-restart/s0.js",
+    "changes": "やり直しのたびにタイマーが増えて進行が重なっていたのを、1 つだけにした。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "やり直しのたびにタイマーが増えて進行が重なっていたのを、1 つだけにした。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "やり直し（R キー）をすると、ヘビの動きが速くなってしまう。直して。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "スネーク",
+     "entryFile": "../bases/snake-restart-bug.js"
+    }
+   },
+   "sample": 1,
+   "output": {
+    "title": "スネーク",
+    "entryFile": "R1-snake-restart/s1.js",
+    "changes": "やり直しのたびにタイマーが増えて進行が重なっていたのを、1 つだけにした。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "やり直しのたびにタイマーが増えて進行が重なっていたのを、1 つだけにした。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "やり直し（R キー）をすると、ヘビの動きが速くなってしまう。直して。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "スネーク",
+     "entryFile": "../bases/snake-restart-bug.js"
+    }
+   },
+   "sample": 2,
+   "output": {
+    "title": "スネーク",
+    "entryFile": "R1-snake-restart/s2.js",
+    "changes": "やり直しのたびにタイマーが増えて進行が重なっていたのを、1 つだけにした。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "やり直しのたびにタイマーが増えて進行が重なっていたのを、1 つだけにした。 動かして確かめてください。"
+   }
+  }
+ ]
+}

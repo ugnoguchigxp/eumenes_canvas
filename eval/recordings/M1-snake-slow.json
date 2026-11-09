@@ -1,0 +1,68 @@
+{
+ "author": "Grok Bot が制作担当を代行して作成（Luna／Haiku の出力ではない）。凍結 commit 0edd712 の後に作成。",
+ "recordings": [
+  {
+   "input": {
+    "request": "ヘビが 1 マス進む間隔を 150ms から 250ms にして、今よりゆっくりにして。操作、得点、ぶつかった時のゲームオーバーとやり直しはそのまま。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "スネーク",
+     "entryFile": "../bases/snake.js"
+    }
+   },
+   "sample": 0,
+   "output": {
+    "title": "スネーク",
+    "entryFile": "M1-snake-slow/s0.js",
+    "changes": "1 マス進む間隔を 150ms から 250ms に変更。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "1 マス進む間隔を 150ms から 250ms に変更。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "ヘビが 1 マス進む間隔を 150ms から 250ms にして、今よりゆっくりにして。操作、得点、ぶつかった時のゲームオーバーとやり直しはそのまま。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "スネーク",
+     "entryFile": "../bases/snake.js"
+    }
+   },
+   "sample": 1,
+   "output": {
+    "title": "スネーク",
+    "entryFile": "M1-snake-slow/s1.js",
+    "changes": "1 マス進む間隔を 150ms から 250ms に変更。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "1 マス進む間隔を 150ms から 250ms に変更。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "ヘビが 1 マス進む間隔を 150ms から 250ms にして、今よりゆっくりにして。操作、得点、ぶつかった時のゲームオーバーとやり直しはそのまま。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "スネーク",
+     "entryFile": "../bases/snake.js"
+    }
+   },
+   "sample": 2,
+   "output": {
+    "title": "スネーク",
+    "entryFile": "M1-snake-slow/s2.js",
+    "changes": "1 マス進む間隔を 150ms から 250ms に変更。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "1 マス進む間隔を 150ms から 250ms に変更。 動かして確かめてください。"
+   }
+  }
+ ]
+}

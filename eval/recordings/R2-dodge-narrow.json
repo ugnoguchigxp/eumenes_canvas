@@ -1,0 +1,68 @@
+{
+ "author": "Grok Bot が制作担当を代行して作成（Luna／Haiku の出力ではない）。凍結 commit 0edd712 の後に作成。",
+ "recordings": [
+  {
+   "input": {
+    "request": "画面が狭いと、自機がマウスの位置からずれる。どの幅でもマウスの真下に来るように直して。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "よけゲーム",
+     "entryFile": "../bases/dodge-pointer-bug.js"
+    }
+   },
+   "sample": 0,
+   "output": {
+    "title": "よけゲーム",
+    "entryFile": "R2-dodge-narrow/s0.js",
+    "changes": "ポインター座標を設計幅で拡大していたのをやめ、表示座標をそのまま使う。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "ポインター座標を設計幅で拡大していたのをやめ、表示座標をそのまま使う。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "画面が狭いと、自機がマウスの位置からずれる。どの幅でもマウスの真下に来るように直して。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "よけゲーム",
+     "entryFile": "../bases/dodge-pointer-bug.js"
+    }
+   },
+   "sample": 1,
+   "output": {
+    "title": "よけゲーム",
+    "entryFile": "R2-dodge-narrow/s1.js",
+    "changes": "ポインター座標を設計幅で拡大していたのをやめ、表示座標をそのまま使う。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "ポインター座標を設計幅で拡大していたのをやめ、表示座標をそのまま使う。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "画面が狭いと、自機がマウスの位置からずれる。どの幅でもマウスの真下に来るように直して。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "よけゲーム",
+     "entryFile": "../bases/dodge-pointer-bug.js"
+    }
+   },
+   "sample": 2,
+   "output": {
+    "title": "よけゲーム",
+    "entryFile": "R2-dodge-narrow/s2.js",
+    "changes": "ポインター座標を設計幅で拡大していたのをやめ、表示座標をそのまま使う。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "ポインター座標を設計幅で拡大していたのをやめ、表示座標をそのまま使う。 動かして確かめてください。"
+   }
+  }
+ ]
+}

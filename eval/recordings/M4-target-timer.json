@@ -1,0 +1,68 @@
+{
+ "author": "Grok Bot が制作担当を代行して作成（Luna／Haiku の出力ではない）。凍結 commit 0edd712 の後に作成。",
+ "recordings": [
+  {
+   "input": {
+    "request": "制限時間を 30 秒から 20 秒にして、的の半径を 20px から 12px に小さくして。それ以外はそのまま。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "的当て",
+     "entryFile": "../bases/target.js"
+    }
+   },
+   "sample": 0,
+   "output": {
+    "title": "的当て",
+    "entryFile": "M4-target-timer/s0.js",
+    "changes": "制限時間を 20 秒、的の半径を 12px に変更。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "制限時間を 20 秒、的の半径を 12px に変更。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "制限時間を 30 秒から 20 秒にして、的の半径を 20px から 12px に小さくして。それ以外はそのまま。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "的当て",
+     "entryFile": "../bases/target.js"
+    }
+   },
+   "sample": 1,
+   "output": {
+    "title": "的当て",
+    "entryFile": "M4-target-timer/s1.js",
+    "changes": "制限時間を 20 秒、的の半径を 12px に変更。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "制限時間を 20 秒、的の半径を 12px に変更。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "制限時間を 30 秒から 20 秒にして、的の半径を 20px から 12px に小さくして。それ以外はそのまま。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "的当て",
+     "entryFile": "../bases/target.js"
+    }
+   },
+   "sample": 2,
+   "output": {
+    "title": "的当て",
+    "entryFile": "M4-target-timer/s2.js",
+    "changes": "制限時間を 20 秒、的の半径を 12px に変更。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "制限時間を 20 秒、的の半径を 12px に変更。 動かして確かめてください。"
+   }
+  }
+ ]
+}

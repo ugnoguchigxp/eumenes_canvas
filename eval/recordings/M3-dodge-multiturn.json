@@ -1,0 +1,140 @@
+{
+ "author": "Grok Bot が制作担当を代行して作成（Luna／Haiku の出力ではない）。凍結 commit 0edd712 の後に作成。",
+ "recordings": [
+  {
+   "input": {
+    "request": "敵が落ちる速さを今の 2 倍にして、自機の色を青 #0080ff にして。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "よけゲーム",
+     "entryFile": "../bases/dodge.js"
+    }
+   },
+   "sample": 0,
+   "output": {
+    "title": "よけゲーム",
+    "entryFile": "M3-dodge-multiturn/s0-t1.js",
+    "changes": "敵の落下速度を 2 倍（0.3px/ms）、自機の色を青 #0080ff に変更。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "敵の落下速度を 2 倍（0.3px/ms）、自機の色を青 #0080ff に変更。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "自機の色は元の緑に戻して。速さは 2 倍のままで。",
+    "conversation": [
+     "user:敵が落ちる速さを今の 2 倍にして、自機の色を青 #0080ff にして。",
+     "assistant:敵の落下速度を 2 倍（0.3px/ms）、自機の色を青 #0080ff に変更。 動かして確かめてください。"
+    ],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "よけゲーム",
+     "entryFile": "M3-dodge-multiturn/s0-t1.js"
+    }
+   },
+   "sample": 0,
+   "output": {
+    "title": "よけゲーム",
+    "entryFile": "M3-dodge-multiturn/s0-t2.js",
+    "changes": "自機の色を緑 #00ff00 に戻した。速さは 2 倍のまま。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "自機の色を緑 #00ff00 に戻した。速さは 2 倍のまま。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "敵が落ちる速さを今の 2 倍にして、自機の色を青 #0080ff にして。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "よけゲーム",
+     "entryFile": "../bases/dodge.js"
+    }
+   },
+   "sample": 1,
+   "output": {
+    "title": "よけゲーム",
+    "entryFile": "M3-dodge-multiturn/s1-t1.js",
+    "changes": "敵の落下速度を 2 倍（0.3px/ms）、自機の色を青 #0080ff に変更。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "敵の落下速度を 2 倍（0.3px/ms）、自機の色を青 #0080ff に変更。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "自機の色は元の緑に戻して。速さは 2 倍のままで。",
+    "conversation": [
+     "user:敵が落ちる速さを今の 2 倍にして、自機の色を青 #0080ff にして。",
+     "assistant:敵の落下速度を 2 倍（0.3px/ms）、自機の色を青 #0080ff に変更。 動かして確かめてください。"
+    ],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "よけゲーム",
+     "entryFile": "M3-dodge-multiturn/s1-t1.js"
+    }
+   },
+   "sample": 1,
+   "output": {
+    "title": "よけゲーム",
+    "entryFile": "M3-dodge-multiturn/s1-t2.js",
+    "changes": "自機の色を緑 #00ff00 に戻した。速さは 2 倍のまま。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "自機の色を緑 #00ff00 に戻した。速さは 2 倍のまま。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "敵が落ちる速さを今の 2 倍にして、自機の色を青 #0080ff にして。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "よけゲーム",
+     "entryFile": "../bases/dodge.js"
+    }
+   },
+   "sample": 2,
+   "output": {
+    "title": "よけゲーム",
+    "entryFile": "M3-dodge-multiturn/s2-t1.js",
+    "changes": "敵の落下速度を 2 倍（0.3px/ms）、自機の色を青 #0080ff に変更。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "敵の落下速度を 2 倍（0.3px/ms）、自機の色を青 #0080ff に変更。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "自機の色は元の緑に戻して。速さは 2 倍のままで。",
+    "conversation": [
+     "user:敵が落ちる速さを今の 2 倍にして、自機の色を青 #0080ff にして。",
+     "assistant:敵の落下速度を 2 倍（0.3px/ms）、自機の色を青 #0080ff に変更。 動かして確かめてください。"
+    ],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "よけゲーム",
+     "entryFile": "M3-dodge-multiturn/s2-t1.js"
+    }
+   },
+   "sample": 2,
+   "output": {
+    "title": "よけゲーム",
+    "entryFile": "M3-dodge-multiturn/s2-t2.js",
+    "changes": "自機の色を緑 #00ff00 に戻した。速さは 2 倍のまま。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "自機の色を緑 #00ff00 に戻した。速さは 2 倍のまま。 動かして確かめてください。"
+   }
+  }
+ ]
+}

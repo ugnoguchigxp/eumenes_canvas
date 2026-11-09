@@ -1,0 +1,68 @@
+{
+ "author": "Grok Bot が制作担当を代行して作成（Luna／Haiku の出力ではない）。凍結 commit 0edd712 の後に作成。",
+ "recordings": [
+  {
+   "input": {
+    "request": "的の真ん中をクリックしても点が入らないことがある。直して。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "的当て",
+     "entryFile": "../bases/target-hit-bug.js"
+    }
+   },
+   "sample": 0,
+   "output": {
+    "title": "的当て",
+    "entryFile": "R4-target-hit/s0.js",
+    "changes": "当たり判定で的の x の代わりに y を使っていたのを直した。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "当たり判定で的の x の代わりに y を使っていたのを直した。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "的の真ん中をクリックしても点が入らないことがある。直して。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "的当て",
+     "entryFile": "../bases/target-hit-bug.js"
+    }
+   },
+   "sample": 1,
+   "output": {
+    "title": "的当て",
+    "entryFile": "R4-target-hit/s1.js",
+    "changes": "当たり判定で的の x の代わりに y を使っていたのを直した。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "当たり判定で的の x の代わりに y を使っていたのを直した。 動かして確かめてください。"
+   }
+  },
+  {
+   "input": {
+    "request": "的の真ん中をクリックしても点が入らないことがある。直して。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "的当て",
+     "entryFile": "../bases/target-hit-bug.js"
+    }
+   },
+   "sample": 2,
+   "output": {
+    "title": "的当て",
+    "entryFile": "R4-target-hit/s2.js",
+    "changes": "当たり判定で的の x の代わりに y を使っていたのを直した。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "当たり判定で的の x の代わりに y を使っていたのを直した。 動かして確かめてください。"
+   }
+  }
+ ]
+}

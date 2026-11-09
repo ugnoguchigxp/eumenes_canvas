@@ -1,0 +1,74 @@
+{
+ "author": "Grok Bot が制作担当を代行して作成（Luna／Haiku の出力ではない）。凍結 commit 0edd712 の後に作成。",
+ "recordings": [
+  {
+   "input": {
+    "request": "凡例を右側に縦に並べて（右端から 120px 以内）。点の色分けと、凡例のクリックで系列を絞り込む動きはそのまま。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "センサー値の分布",
+     "entryFile": "../bases/scatter.js",
+     "dataRef": "synthetic-sensors"
+    }
+   },
+   "sample": 0,
+   "output": {
+    "title": "センサー値の分布",
+    "entryFile": "V1-scatter-legend/s0.js",
+    "changes": "凡例を右側の列に縦に並べ、描画領域を左に詰めた。色分けと凡例クリックでの絞り込みはそのまま。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "凡例を右側の列に縦に並べ、描画領域を左に詰めた。色分けと凡例クリックでの絞り込みはそのまま。 動かして確かめてください。",
+    "dataRef": "synthetic-sensors"
+   }
+  },
+  {
+   "input": {
+    "request": "凡例を右側に縦に並べて（右端から 120px 以内）。点の色分けと、凡例のクリックで系列を絞り込む動きはそのまま。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "センサー値の分布",
+     "entryFile": "../bases/scatter.js",
+     "dataRef": "synthetic-sensors"
+    }
+   },
+   "sample": 1,
+   "output": {
+    "title": "センサー値の分布",
+    "entryFile": "V1-scatter-legend/s1.js",
+    "changes": "凡例を右側の列に縦に並べ、描画領域を左に詰めた。色分けと凡例クリックでの絞り込みはそのまま。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "凡例を右側の列に縦に並べ、描画領域を左に詰めた。色分けと凡例クリックでの絞り込みはそのまま。 動かして確かめてください。",
+    "dataRef": "synthetic-sensors"
+   }
+  },
+  {
+   "input": {
+    "request": "凡例を右側に縦に並べて（右端から 120px 以内）。点の色分けと、凡例のクリックで系列を絞り込む動きはそのまま。",
+    "conversation": [],
+    "attempt": 0,
+    "baseFrom": {
+     "title": "センサー値の分布",
+     "entryFile": "../bases/scatter.js",
+     "dataRef": "synthetic-sensors"
+    }
+   },
+   "sample": 2,
+   "output": {
+    "title": "センサー値の分布",
+    "entryFile": "V1-scatter-legend/s2.js",
+    "changes": "凡例を右側の列に縦に並べ、描画領域を左に詰めた。色分けと凡例クリックでの絞り込みはそのまま。",
+    "unconfirmed": [
+     "依頼どおりに遊べるかは未確認（ホストの自動検査は起動と操作への反応だけ）"
+    ],
+    "reply": "凡例を右側の列に縦に並べ、描画領域を左に詰めた。色分けと凡例クリックでの絞り込みはそのまま。 動かして確かめてください。",
+    "dataRef": "synthetic-sensors"
+   }
+  }
+ ]
+}
