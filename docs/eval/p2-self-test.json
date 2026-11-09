@@ -1,0 +1,899 @@
+{
+  "environment": "chromium 141.0.7390.37",
+  "rows": [
+    {
+      "task": "N1-runner",
+      "name": "空の作品",
+      "data": null,
+      "expect": "fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "start-player-on-ground",
+          "kind": "start",
+          "pass": false,
+          "detail": "自機なし"
+        },
+        {
+          "id": "obstacle-moves-left-200",
+          "kind": "start",
+          "pass": false,
+          "detail": "障害物が出ない"
+        },
+        {
+          "id": "jump-space",
+          "kind": "retain",
+          "pass": false,
+          "detail": "y0=NaN y1=NaN y2=NaN"
+        },
+        {
+          "id": "score-by-jumping",
+          "kind": "retain",
+          "pass": false,
+          "detail": "得点 0"
+        },
+        {
+          "id": "collision-gameover-restart",
+          "kind": "retain",
+          "pass": false,
+          "detail": "当たってもゲームオーバーにならない"
+        }
+      ]
+    },
+    {
+      "task": "N2-coins",
+      "name": "空の作品",
+      "data": null,
+      "expect": "fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "arrow-move-200",
+          "kind": "start",
+          "pass": false,
+          "detail": "dx=NaN dy=NaN"
+        },
+        {
+          "id": "collect-coins-timer-restart",
+          "kind": "retain",
+          "pass": false,
+          "detail": "14 秒で得点 0"
+        }
+      ]
+    },
+    {
+      "task": "N3-shooter",
+      "name": "空の作品",
+      "data": null,
+      "expect": "fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "move-and-fire",
+          "kind": "start",
+          "pass": false,
+          "detail": "dx=NaN bullet=なし"
+        },
+        {
+          "id": "hit-then-ammo-gameover-restart",
+          "kind": "retain",
+          "pass": false,
+          "detail": "自機なし"
+        }
+      ]
+    },
+    {
+      "task": "N4-catch",
+      "name": "空の作品",
+      "data": null,
+      "expect": "fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "basket-follows-pointer",
+          "kind": "start",
+          "pass": false,
+          "detail": "a=NaN b=NaN"
+        },
+        {
+          "id": "catch-miss-gameover-restart",
+          "kind": "retain",
+          "pass": false,
+          "detail": "受け止め 0"
+        }
+      ]
+    },
+    {
+      "task": "M1-snake-slow",
+      "name": "元作品 bases/snake.js",
+      "data": null,
+      "expect": "change-fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "step-250ms",
+          "kind": "change",
+          "pass": false,
+          "detail": "2.5 秒で NaN マス"
+        },
+        {
+          "id": "turn-with-arrow",
+          "kind": "retain",
+          "pass": true,
+          "detail": "下へ 8.0 マス"
+        },
+        {
+          "id": "eat-score",
+          "kind": "retain",
+          "pass": true,
+          "detail": "得点 1"
+        },
+        {
+          "id": "wall-gameover-restart-colors",
+          "kind": "retain",
+          "pass": true,
+          "detail": "再開・色"
+        }
+      ]
+    },
+    {
+      "task": "M2-pong-paddle",
+      "name": "元作品 bases/pong.js",
+      "data": null,
+      "expect": "change-fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "left-paddle-90",
+          "kind": "change",
+          "pass": false,
+          "detail": "左 60"
+        },
+        {
+          "id": "right-paddle-60-and-w-moves",
+          "kind": "retain",
+          "pass": true,
+          "detail": "右 60 上へ 90"
+        },
+        {
+          "id": "rally",
+          "kind": "retain",
+          "pass": true,
+          "detail": "打ち返した"
+        },
+        {
+          "id": "cpu-scores-on-miss",
+          "kind": "retain",
+          "pass": true,
+          "detail": "CPU の得点表示"
+        }
+      ]
+    },
+    {
+      "task": "M3-dodge-multiturn",
+      "name": "元作品 bases/dodge.js",
+      "data": null,
+      "expect": "change-fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "player-green-not-blue",
+          "kind": "change",
+          "pass": true,
+          "detail": "緑 400 青 0"
+        },
+        {
+          "id": "enemy-speed-x2",
+          "kind": "change",
+          "pass": false,
+          "detail": "0.150 px/ms"
+        },
+        {
+          "id": "pointer-follow",
+          "kind": "retain",
+          "pass": true,
+          "detail": "99.5,379.5"
+        },
+        {
+          "id": "collision-gameover-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "ゲームオーバー後に再開"
+        }
+      ]
+    },
+    {
+      "task": "M4-target-timer",
+      "name": "元作品 bases/target.js",
+      "data": null,
+      "expect": "change-fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "radius-12",
+          "kind": "change",
+          "pass": false,
+          "detail": "40×39"
+        },
+        {
+          "id": "time-20s-bar-restart",
+          "kind": "change",
+          "pass": false,
+          "detail": "10 秒時のバー 320"
+        },
+        {
+          "id": "click-scores",
+          "kind": "retain",
+          "pass": true,
+          "detail": "3/3"
+        }
+      ]
+    },
+    {
+      "task": "R1-snake-restart",
+      "name": "元作品 bases/snake-restart-bug.js",
+      "data": null,
+      "expect": "change-fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "speed-before-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "10.00 マス"
+        },
+        {
+          "id": "speed-after-restart-x2",
+          "kind": "change",
+          "pass": false,
+          "detail": "1 回目 NaN・2 回目 NaN マス"
+        },
+        {
+          "id": "eat-score",
+          "kind": "retain",
+          "pass": true,
+          "detail": "得点 1"
+        }
+      ]
+    },
+    {
+      "task": "R1-snake-restart",
+      "name": "不具合のない作品 bases/snake.js",
+      "data": null,
+      "expect": "all-pass",
+      "ok": true,
+      "checks": [
+        {
+          "id": "speed-before-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "10.00 マス"
+        },
+        {
+          "id": "speed-after-restart-x2",
+          "kind": "change",
+          "pass": true,
+          "detail": "1 回目 10.00・2 回目 10.00 マス"
+        },
+        {
+          "id": "eat-score",
+          "kind": "retain",
+          "pass": true,
+          "detail": "得点 1"
+        }
+      ]
+    },
+    {
+      "task": "R2-dodge-narrow",
+      "name": "元作品 bases/dodge-pointer-bug.js",
+      "data": null,
+      "expect": "change-fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "narrow-pointer",
+          "kind": "change",
+          "pass": false,
+          "detail": "119.5,229.5"
+        },
+        {
+          "id": "wide-pointer",
+          "kind": "retain",
+          "pass": true,
+          "detail": "299.5"
+        },
+        {
+          "id": "enemy-speed-kept",
+          "kind": "retain",
+          "pass": true,
+          "detail": "0.150 px/ms"
+        },
+        {
+          "id": "collision-gameover-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "ゲームオーバー後に再開"
+        }
+      ]
+    },
+    {
+      "task": "R2-dodge-narrow",
+      "name": "不具合のない作品 bases/dodge.js",
+      "data": null,
+      "expect": "all-pass",
+      "ok": true,
+      "checks": [
+        {
+          "id": "narrow-pointer",
+          "kind": "change",
+          "pass": true,
+          "detail": "59.5,179.5"
+        },
+        {
+          "id": "wide-pointer",
+          "kind": "retain",
+          "pass": true,
+          "detail": "299.5"
+        },
+        {
+          "id": "enemy-speed-kept",
+          "kind": "retain",
+          "pass": true,
+          "detail": "0.150 px/ms"
+        },
+        {
+          "id": "collision-gameover-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "ゲームオーバー後に再開"
+        }
+      ]
+    },
+    {
+      "task": "R3-pong-collision",
+      "name": "元作品 bases/pong-collision-bug.js",
+      "data": null,
+      "expect": "change-fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "bounce-near-paddle-edge-up",
+          "kind": "change",
+          "pass": false,
+          "detail": "CPU に点が入った"
+        },
+        {
+          "id": "bounce-near-paddle-edge-down",
+          "kind": "change",
+          "pass": true,
+          "detail": "打ち返した"
+        },
+        {
+          "id": "bounce-center",
+          "kind": "retain",
+          "pass": true,
+          "detail": "打ち返した"
+        },
+        {
+          "id": "cpu-scores-on-miss",
+          "kind": "retain",
+          "pass": true,
+          "detail": "CPU の得点表示"
+        },
+        {
+          "id": "paddle-60-w-moves",
+          "kind": "retain",
+          "pass": true,
+          "detail": "左 60"
+        }
+      ]
+    },
+    {
+      "task": "R3-pong-collision",
+      "name": "不具合のない作品 bases/pong.js",
+      "data": null,
+      "expect": "all-pass",
+      "ok": true,
+      "checks": [
+        {
+          "id": "bounce-near-paddle-edge-up",
+          "kind": "change",
+          "pass": true,
+          "detail": "打ち返した"
+        },
+        {
+          "id": "bounce-near-paddle-edge-down",
+          "kind": "change",
+          "pass": true,
+          "detail": "打ち返した"
+        },
+        {
+          "id": "bounce-center",
+          "kind": "retain",
+          "pass": true,
+          "detail": "打ち返した"
+        },
+        {
+          "id": "cpu-scores-on-miss",
+          "kind": "retain",
+          "pass": true,
+          "detail": "CPU の得点表示"
+        },
+        {
+          "id": "paddle-60-w-moves",
+          "kind": "retain",
+          "pass": true,
+          "detail": "左 60"
+        }
+      ]
+    },
+    {
+      "task": "R4-target-hit",
+      "name": "元作品 bases/target-hit-bug.js",
+      "data": null,
+      "expect": "change-fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "center-click-scores",
+          "kind": "change",
+          "pass": false,
+          "detail": "0/5"
+        },
+        {
+          "id": "miss-no-score-radius-20",
+          "kind": "retain",
+          "pass": true,
+          "detail": "半径 20"
+        },
+        {
+          "id": "time-30s-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "再開"
+        }
+      ]
+    },
+    {
+      "task": "R4-target-hit",
+      "name": "不具合のない作品 bases/target.js",
+      "data": null,
+      "expect": "all-pass",
+      "ok": true,
+      "checks": [
+        {
+          "id": "center-click-scores",
+          "kind": "change",
+          "pass": true,
+          "detail": "5/5"
+        },
+        {
+          "id": "miss-no-score-radius-20",
+          "kind": "retain",
+          "pass": true,
+          "detail": "半径 20"
+        },
+        {
+          "id": "time-30s-restart",
+          "kind": "retain",
+          "pass": true,
+          "detail": "再開"
+        }
+      ]
+    },
+    {
+      "task": "V1-scatter-legend",
+      "name": "元作品 bases/scatter.js",
+      "data": {
+        "title": "センサー値の分布（合成データ）",
+        "groups": [
+          {
+            "name": "温度",
+            "color": "#d62728"
+          },
+          {
+            "name": "湿度",
+            "color": "#1f77b4"
+          },
+          {
+            "name": "気圧",
+            "color": "#9467bd"
+          }
+        ],
+        "points": [
+          {
+            "group": "温度",
+            "x": 82.6,
+            "y": 42.4
+          },
+          {
+            "group": "温度",
+            "x": 7.6,
+            "y": 40.1
+          },
+          {
+            "group": "温度",
+            "x": 33.9,
+            "y": 21.6
+          },
+          {
+            "group": "温度",
+            "x": 49.4,
+            "y": 78.2
+          },
+          {
+            "group": "温度",
+            "x": 19.2,
+            "y": 56.6
+          },
+          {
+            "group": "温度",
+            "x": 65.5,
+            "y": 15.8
+          },
+          {
+            "group": "温度",
+            "x": 16.4,
+            "y": 17.8
+          },
+          {
+            "group": "温度",
+            "x": 35.3,
+            "y": 20.4
+          },
+          {
+            "group": "温度",
+            "x": 26.4,
+            "y": 67
+          },
+          {
+            "group": "温度",
+            "x": 65.2,
+            "y": 26
+          },
+          {
+            "group": "温度",
+            "x": 45.1,
+            "y": 87.1
+          },
+          {
+            "group": "温度",
+            "x": 35.3,
+            "y": 33.7
+          },
+          {
+            "group": "温度",
+            "x": 20.1,
+            "y": 35.3
+          },
+          {
+            "group": "温度",
+            "x": 37,
+            "y": 40.5
+          },
+          {
+            "group": "温度",
+            "x": 33.9,
+            "y": 32.6
+          },
+          {
+            "group": "温度",
+            "x": 20.1,
+            "y": 59.1
+          },
+          {
+            "group": "温度",
+            "x": 48.6,
+            "y": 44.7
+          },
+          {
+            "group": "温度",
+            "x": 77.9,
+            "y": 70.1
+          },
+          {
+            "group": "温度",
+            "x": 48,
+            "y": 20
+          },
+          {
+            "group": "温度",
+            "x": 60,
+            "y": 87
+          },
+          {
+            "group": "温度",
+            "x": 48.3,
+            "y": 87.7
+          },
+          {
+            "group": "温度",
+            "x": 84.5,
+            "y": 70.5
+          },
+          {
+            "group": "温度",
+            "x": 79.4,
+            "y": 64.9
+          },
+          {
+            "group": "温度",
+            "x": 47,
+            "y": 25.6
+          },
+          {
+            "group": "温度",
+            "x": 25.2,
+            "y": 60.9
+          },
+          {
+            "group": "湿度",
+            "x": 42.3,
+            "y": 83
+          },
+          {
+            "group": "湿度",
+            "x": 24.9,
+            "y": 27.3
+          },
+          {
+            "group": "湿度",
+            "x": 69.3,
+            "y": 52.6
+          },
+          {
+            "group": "湿度",
+            "x": 12.6,
+            "y": 32.9
+          },
+          {
+            "group": "湿度",
+            "x": 75.8,
+            "y": 53.1
+          },
+          {
+            "group": "湿度",
+            "x": 14.1,
+            "y": 5.8
+          },
+          {
+            "group": "湿度",
+            "x": 7.1,
+            "y": 55
+          },
+          {
+            "group": "湿度",
+            "x": 58.7,
+            "y": 57
+          },
+          {
+            "group": "湿度",
+            "x": 76.4,
+            "y": 27.7
+          },
+          {
+            "group": "湿度",
+            "x": 78.5,
+            "y": 48.8
+          },
+          {
+            "group": "湿度",
+            "x": 24.6,
+            "y": 43
+          },
+          {
+            "group": "湿度",
+            "x": 27,
+            "y": 77.2
+          },
+          {
+            "group": "湿度",
+            "x": 79.7,
+            "y": 77.3
+          },
+          {
+            "group": "湿度",
+            "x": 93.7,
+            "y": 50.4
+          },
+          {
+            "group": "湿度",
+            "x": 39.1,
+            "y": 15
+          },
+          {
+            "group": "湿度",
+            "x": 48.6,
+            "y": 91.1
+          },
+          {
+            "group": "湿度",
+            "x": 25,
+            "y": 38.7
+          },
+          {
+            "group": "湿度",
+            "x": 31.7,
+            "y": 52.9
+          },
+          {
+            "group": "湿度",
+            "x": 67.4,
+            "y": 82.6
+          },
+          {
+            "group": "湿度",
+            "x": 7.3,
+            "y": 87
+          },
+          {
+            "group": "湿度",
+            "x": 82.1,
+            "y": 9.5
+          },
+          {
+            "group": "湿度",
+            "x": 46.9,
+            "y": 23.7
+          },
+          {
+            "group": "湿度",
+            "x": 34,
+            "y": 77.8
+          },
+          {
+            "group": "湿度",
+            "x": 33.3,
+            "y": 23.3
+          },
+          {
+            "group": "湿度",
+            "x": 46.2,
+            "y": 85.3
+          },
+          {
+            "group": "気圧",
+            "x": 60.5,
+            "y": 86.3
+          },
+          {
+            "group": "気圧",
+            "x": 94.1,
+            "y": 27.2
+          },
+          {
+            "group": "気圧",
+            "x": 92.1,
+            "y": 13.6
+          },
+          {
+            "group": "気圧",
+            "x": 65.1,
+            "y": 65.7
+          },
+          {
+            "group": "気圧",
+            "x": 57,
+            "y": 17.4
+          },
+          {
+            "group": "気圧",
+            "x": 11.5,
+            "y": 11.9
+          },
+          {
+            "group": "気圧",
+            "x": 38.6,
+            "y": 14.1
+          },
+          {
+            "group": "気圧",
+            "x": 72.4,
+            "y": 82.6
+          },
+          {
+            "group": "気圧",
+            "x": 29.6,
+            "y": 23
+          },
+          {
+            "group": "気圧",
+            "x": 55,
+            "y": 20.4
+          },
+          {
+            "group": "気圧",
+            "x": 80.1,
+            "y": 53.5
+          },
+          {
+            "group": "気圧",
+            "x": 93.4,
+            "y": 41.3
+          },
+          {
+            "group": "気圧",
+            "x": 81.9,
+            "y": 14.1
+          },
+          {
+            "group": "気圧",
+            "x": 15,
+            "y": 26.7
+          },
+          {
+            "group": "気圧",
+            "x": 84.2,
+            "y": 50
+          },
+          {
+            "group": "気圧",
+            "x": 68.4,
+            "y": 10.4
+          },
+          {
+            "group": "気圧",
+            "x": 32.6,
+            "y": 40.1
+          },
+          {
+            "group": "気圧",
+            "x": 89.8,
+            "y": 43.3
+          },
+          {
+            "group": "気圧",
+            "x": 82.9,
+            "y": 73.3
+          },
+          {
+            "group": "気圧",
+            "x": 27.7,
+            "y": 16.7
+          },
+          {
+            "group": "気圧",
+            "x": 75.9,
+            "y": 63.4
+          },
+          {
+            "group": "気圧",
+            "x": 8.7,
+            "y": 89
+          },
+          {
+            "group": "気圧",
+            "x": 55.2,
+            "y": 19.8
+          },
+          {
+            "group": "気圧",
+            "x": 16.9,
+            "y": 17.8
+          },
+          {
+            "group": "気圧",
+            "x": 86.7,
+            "y": 93.8
+          }
+        ]
+      },
+      "expect": "change-fails",
+      "ok": true,
+      "checks": [
+        {
+          "id": "legend-right-vertical",
+          "kind": "change",
+          "pass": false,
+          "detail": "x=17,77,137 y=36,36,36"
+        },
+        {
+          "id": "filter-by-legend",
+          "kind": "retain",
+          "pass": true,
+          "detail": "点 22,25,24"
+        }
+      ]
+    }
+  ]
+}
