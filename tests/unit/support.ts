@@ -32,7 +32,7 @@ export class FakeObserver implements ObserverPort {
   async close() {}
 }
 
-export function makeService(o: { dataDir?: string | null; runTimeoutMs?: number; deliverAfterAbort?: boolean; ignoreLatency?: boolean; observer?: FakeObserver } = {}) {
+export function makeService(o: { dataDir?: string | null; runTimeoutMs?: number; deliverAfterAbort?: boolean; ignoreLatency?: boolean; observer?: FakeObserver; singleUser?: boolean } = {}) {
   const model = new RecordedProvider([P1], "p1");
   model.deliverAfterAbort = !!o.deliverAfterAbort;
   model.ignoreLatency = !!o.ignoreLatency;
@@ -45,6 +45,7 @@ export function makeService(o: { dataDir?: string | null; runTimeoutMs?: number;
     contract: "contract",
     datasets: [{ ref: "synthetic-sales", description: "d", data: JSON.parse(readFileSync(join(ROOT, "fixtures/data/synthetic-sales.json"), "utf8")) }],
     runTimeoutMs: o.runTimeoutMs,
+    singleUser: o.singleUser,
   });
   return { svc, store, model, observer };
 }

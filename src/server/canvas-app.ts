@@ -1,10 +1,13 @@
-// 検証ホストの API。所有者は HttpOnly cookie、制作画面は x-canvas-session で区別する。
+// 検証ホストの API。制作画面は x-canvas-session で区別する。所有者は、単一利用者モードでは固定の `local`、
+// そうでなければ HttpOnly cookie で区別する（design.md §3）。
 import { randomBytes } from "node:crypto";
 import { CanvasService, ServiceError } from "../core/service";
 import { HttpError, json, readJson, startApp } from "./app";
 import { PreviewTokens } from "./preview";
 
 const OWNER_COOKIE = "canvas_owner";
+/** 単一利用者モードで新しい記録に付ける所有者。 */
+export const SINGLE_USER_OWNER = "local";
 const SESSION_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
 function cookieOwner(req: Request): string | null {
@@ -18,7 +21,9 @@ export interface CanvasAppOptions {
   previewPort: number;
   devHarness?: boolean;
   logDir?: string | null;
-  makeService: (deps: { tokens: PreviewTokens; hostOrigin: string }) => CanvasService;
+  /** 単一利用者モード。所有者 cookie を発行・要求せず、全要求を所有者 `local` として扱う。makeService には同じ値を渡す。 */
+  singleUser?: boolean;
+  makeService: (deps: { tokens: PreviewTokens; hostOrigin: string; singleUser: boolean }) => CanvasService;
 }
 
 export function startCanvasApp(o: CanvasAppOptions) {
@@ -30,11 +35,11 @@ export function startCanvasApp(o: CanvasAppOptions) {
     devHarness: o.devHarness,
     logDir: o.logDir,
     tokens,
-    onPage: (req): Record<string, string> => (cookieOwner(req) ? {} : { "set-cookie": `${OWNER_COOKIE}=${randomBytes(18).toString("base64url")}; Path=/; HttpOnly; SameSite=Strict` }),
+    onPage: (req): Record<string, string> => (o.singleUser || cookieOwner(req) ? {} : { "set-cookie": `${OWNER_COOKIE}=${randomBytes(18).toString("base64url")}; Path=/; HttpOnly; SameSite=Strict` }),
     extraRoutes: async (req, url) => {
       if (!url.pathname.startsWith("/api/") || url.pathname === "/api/config" || url.pathname.startsWith("/api/dev/")) return null;
       const svc = service!;
-      const owner = cookieOwner(req);
+      const owner = o.singleUser ? SINGLE_USER_OWNER : cookieOwner(req);
       if (!owner) throw new HttpError(401, "所有者 cookie がない");
       const parts = url.pathname.split("/").filter(Boolean); // ["api", ...]
       const m = req.method;
@@ -71,6 +76,6 @@ export function startCanvasApp(o: CanvasAppOptions) {
       return null;
     },
   });
-  service = o.makeService({ tokens, hostOrigin: app.hostOrigin });
+  service = o.makeService({ tokens, hostOrigin: app.hostOrigin, singleUser: !!o.singleUser });
   return { ...app, service };
 }

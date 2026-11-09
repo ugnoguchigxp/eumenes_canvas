@@ -16,6 +16,8 @@ export interface CanvasConfig {
   logDir?: string | null;
   runTimeoutMs?: number;
   devHarness?: boolean;
+  /** 単一利用者モード（作品一覧をブラウザ間で共有）。項目が無ければ真。 */
+  singleUser?: boolean;
   model: { provider: "recorded"; label: string; files: string[]; ignoreLatency?: boolean; deliverAfterAbort?: boolean };
   datasets: { ref: string; description: string; file: string }[];
 }
@@ -34,14 +36,18 @@ export function loadDatasets(cfg: CanvasConfig, root: string): Dataset[] {
   return cfg.datasets.map((d) => ({ ref: d.ref, description: d.description, data: JSON.parse(readFileSync(join(root, d.file), "utf8")) }));
 }
 
+export const singleUserOf = (cfg: Pick<CanvasConfig, "singleUser">) => cfg.singleUser !== false;
+
 export function runFromConfig(cfg: CanvasConfig, root: string) {
+  const singleUser = singleUserOf(cfg);
   const contract = readFileSync(join(root, "docs/artwork-contract-v1.md"), "utf8");
   const app = startCanvasApp({
     hostPort: cfg.hostPort,
     previewPort: cfg.previewPort,
     devHarness: cfg.devHarness,
+    singleUser,
     logDir: cfg.logDir ? resolve(root, cfg.logDir) : cfg.dataDir ? resolve(root, cfg.dataDir, "logs") : null,
-    makeService: ({ tokens, hostOrigin }) =>
+    makeService: ({ tokens, hostOrigin, singleUser }) =>
       new CanvasService({
         store: new Store(cfg.dataDir ? resolve(root, cfg.dataDir) : null),
         model: makeModel(cfg.model, root),
@@ -49,6 +55,7 @@ export function runFromConfig(cfg: CanvasConfig, root: string) {
         contract,
         datasets: loadDatasets(cfg, root),
         runTimeoutMs: cfg.runTimeoutMs,
+        singleUser,
       }),
   });
   return app;
@@ -60,5 +67,6 @@ if (import.meta.main) {
   const cfg = JSON.parse(readFileSync(file, "utf8")) as CanvasConfig;
   const app = runFromConfig(cfg, root);
   console.log(`検証ホスト ${app.hostOrigin}（プレビュー ${app.previewOrigin}）`);
+  console.log(singleUserOf(cfg) ? "単一利用者モード（全ブラウザで作品一覧を共有）" : "所有者ごとに作品を分けるモード");
   console.log(app.logDir ? `診断ログ ${app.logDir}/server.log・client.log` : "診断ログ なし（dataDir・logDir が未設定）");
 }

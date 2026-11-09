@@ -1,5 +1,5 @@
 // デモの 4 題を、動いている検証ホストへ通常の API（/api/runs → 検査・観測 → 保存）で依頼して保存する。
-// 使い方: bun scripts/seed-demo.ts [設定ファイル] [--owner <canvas_owner の値>] [--host <http://localhost:4300>]
+// 使い方: bun scripts/seed-demo.ts [設定ファイル] [--host <http://localhost:4300>]
 // 同じ題名の作品がすでにある依頼は飛ばす（再実行しても重複しない）。
 import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -9,11 +9,10 @@ const ROOT = resolve(import.meta.dir, "..");
 const DEMO = join(ROOT, "fixtures/demo/recordings.json");
 
 function parseArgs(argv: string[]) {
-  const o: { config: string; owner: string | null; host: string | null } = { config: join(ROOT, "canvas.config.json"), owner: null, host: null };
+  const o: { config: string; host: string | null } = { config: join(ROOT, "canvas.config.json"), host: null };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === "--owner") o.owner = argv[++i] ?? null;
-    else if (a === "--host") o.host = argv[++i] ?? null;
+    if (a === "--host") o.host = argv[++i] ?? null;
     else if (!a.startsWith("--")) o.config = resolve(a);
     else throw new Error(`不明な引数: ${a}`);
   }
@@ -22,21 +21,19 @@ function parseArgs(argv: string[]) {
 
 const rid = () => randomBytes(12).toString("base64url");
 
-export async function seedDemo(opts: { host: string; owner?: string | null; log?: (s: string) => void }) {
+export async function seedDemo(opts: { host: string; log?: (s: string) => void }) {
   const log = opts.log ?? console.log;
   const H = opts.host.replace(/\/$/, "");
-  let owner = opts.owner ?? null;
-  if (!owner) {
-    const r = await fetch(H + "/");
-    const m = (r.headers.get("set-cookie") ?? "").match(/canvas_owner=([A-Za-z0-9_-]+)/);
-    if (!m) throw new Error("所有者 cookie を受け取れない");
-    owner = m[1];
-    log(`新しい所有者で入れます（canvas_owner=${owner}）。このブラウザで見るには、この値を cookie に設定するか --owner に自分の値を渡してください。`);
-  }
+  // 単一利用者モード（既定）では cookie は発行されず、保存した作品は全ブラウザの一覧に出る。
+  // 所有者を分けるモードのホストなら、ここで受け取った新しい所有者に入る（他のブラウザには出ない）。
+  const page = await fetch(H + "/");
+  const m = (page.headers.get("set-cookie") ?? "").match(/canvas_owner=([A-Za-z0-9_-]+)/);
+  const owner = m ? m[1] : null;
+  if (owner) log("注意: このホストは所有者ごとに作品を分ける設定（singleUser: false）なので、入れた作品は他のブラウザの一覧には出ません。");
   const call = async (path: string, init: { method?: string; body?: unknown; session?: string } = {}) => {
     const r = await fetch(H + path, {
       method: init.method ?? "GET",
-      headers: { "content-type": "application/json", origin: H, cookie: `canvas_owner=${owner}`, "x-canvas-session": init.session ?? "seed-demo-0" },
+      headers: { "content-type": "application/json", origin: H, ...(owner ? { cookie: `canvas_owner=${owner}` } : {}), "x-canvas-session": init.session ?? "seed-demo-0" },
       body: init.body === undefined ? undefined : JSON.stringify(init.body),
     });
     const j: any = await r.json().catch(() => ({}));
@@ -87,7 +84,7 @@ if (import.meta.main) {
   const a = parseArgs(process.argv.slice(2));
   const cfg = JSON.parse(readFileSync(a.config, "utf8")) as { hostPort: number };
   const host = a.host ?? `http://localhost:${cfg.hostPort}`;
-  const out = await seedDemo({ host, owner: a.owner });
+  const out = await seedDemo({ host });
   const bad = out.results.filter((r) => r.result !== "saved" && r.result !== "skipped");
   process.exit(bad.length ? 1 : 0);
 }

@@ -15,6 +15,8 @@ export interface Dataset extends DatasetInfo {
 }
 
 export interface ServiceOptions {
+  /** 単一利用者モード。記録の owner を照合せず、全作品・実行・候補を見せる（design.md §3）。 */
+  singleUser?: boolean;
   store: Store;
   model: ModelPort;
   observer: ObserverPort;
@@ -54,9 +56,14 @@ export class CanvasService {
     return body.dataRef ? (this.datasets.get(body.dataRef)?.data ?? null) : null;
   }
 
+  /** 記録の所有者が要求者と一致するか。単一利用者モードでは常に真（既存記録の owner は書き換えずに無視する）。 */
+  private sees(recordOwner: string, owner: string): boolean {
+    return !!this.o.singleUser || recordOwner === owner;
+  }
+
   private ownArtwork(owner: string, artworkId: string): Artwork {
     const a = this.o.store.artworks[artworkId];
-    if (!a || a.owner !== owner) throw new ServiceError(404, "作品が見つからない");
+    if (!a || !this.sees(a.owner, owner)) throw new ServiceError(404, "作品が見つからない");
     return a;
   }
 
@@ -143,7 +150,7 @@ export class CanvasService {
 
   cancelRun(owner: string, runId: string): Run {
     const r = this.o.store.runs[runId];
-    if (!r || r.owner !== owner) throw new ServiceError(404, "実行が見つからない");
+    if (!r || !this.sees(r.owner, owner)) throw new ServiceError(404, "実行が見つからない");
     if (r.state === "running" || r.state === "presented")
       this.o.store.tx(() => {
         r.state = "cancelled";
@@ -155,7 +162,7 @@ export class CanvasService {
 
   getRun(owner: string, runId: string) {
     const r = this.o.store.runs[runId];
-    if (!r || r.owner !== owner) throw new ServiceError(404, "実行が見つからない");
+    if (!r || !this.sees(r.owner, owner)) throw new ServiceError(404, "実行が見つからない");
     const cands = r.candidateIds.map((c) => this.candidateView(this.o.store.candidates[c]));
     return { ...structuredClone(r), candidates: cands };
   }
@@ -307,7 +314,7 @@ export class CanvasService {
       return { status: prior.status, result: prior.result, replay: true };
     }
     const c = this.o.store.candidates[candidateId];
-    if (!c || c.owner !== owner) throw new ServiceError(404, "候補が見つからない");
+    if (!c || !this.sees(c.owner, owner)) throw new ServiceError(404, "候補が見つからない");
     const run = this.o.store.runs[c.runId];
     if (!run || run.state !== "presented" || run.presentedCandidateId !== c.id)
       throw new ServiceError(409, "この候補は採用できない状態", { code: "run-" + (run?.state ?? "missing") });
@@ -316,7 +323,7 @@ export class CanvasService {
     if (!v || !v.requiredPassed) throw new ServiceError(409, "必須の検証に合格していない", { code: "unverified" });
     if (v.digest !== c.digest || recomputed !== c.digest) throw new ServiceError(409, "検証した digest と一致しない", { code: "digest-mismatch" });
     const art = this.o.store.artworks[c.artworkId];
-    if (art && art.owner !== owner) throw new ServiceError(404, "候補が見つからない");
+    if (art && !this.sees(art.owner, owner)) throw new ServiceError(404, "候補が見つからない");
     const current = art?.currentRevision ?? 0;
     if (req.expectedRevision !== current || c.baseRevision !== current) {
       // 競合。候補は残し、差分の確認に戻す
@@ -393,7 +400,7 @@ export class CanvasService {
   // ---- 参照 ----
   listArtworks(owner: string) {
     return Object.values(this.o.store.artworks)
-      .filter((a) => a.owner === owner)
+      .filter((a) => this.sees(a.owner, owner))
       .sort((x, y) => y.updatedAt - x.updatedAt)
       .map((a) => ({ id: a.id, title: a.title, currentRevision: a.currentRevision, updatedAt: a.updatedAt }));
   }
@@ -410,7 +417,7 @@ export class CanvasService {
   resolvePreview(owner: string, src: { candidateId?: string; artworkId?: string; revision?: number }): { body: ArtworkBody; data: unknown } {
     if (src.candidateId) {
       const c = this.o.store.candidates[src.candidateId];
-      if (!c || c.owner !== owner) throw new ServiceError(404, "候補が見つからない");
+      if (!c || !this.sees(c.owner, owner)) throw new ServiceError(404, "候補が見つからない");
       const v = c.verificationId ? this.o.store.verifications[c.verificationId] : null;
       // 契約の検査と起動を通った候補だけをプレビューできる
       if (!v || !v.checks.some((k) => k.level === "loaded" && k.pass)) throw new ServiceError(409, "起動を確認していない候補", { code: "not-loaded" });
