@@ -55,7 +55,7 @@
 | callsLeft | このターンに残る推論の回数 |
 
 - 応答は `createCollaborationContract(...).check` で検査する。invoke 以外（reply・return・discard）は作品を出さないので、そのターンは候補なしで終わる（不合格）。
-- **契約にない部分（ギャップとして記録）**：TOOLS と TOOL_RESULT の書式は collaboration の core に無く、Eumenes 本体の担当実行側にある。本体を使わない指示のため、canvas 側の adapter が JSON で組む（`TOOLS=` と `TOOL_RESULT=`）。ReplyPolicy の値（最大文字数・文数）も host 側の値で、ここでは 400 字・4 文とする。
+- **契約にない部分（ギャップとして記録）**：TOOLS と TOOL_RESULT の書式は collaboration の core に無く、Eumenes 本体の担当実行側にある。本体を使わない指示のため、canvas 側の adapter が JSON で組む（`TOOLS=` と `TOOL_RESULT=`）。ReplyPolicy の値（最大文字数・文数）も host 側の値で、collaboration の example/host.ts と同じ 300 字・2 文とする。system の組み方（rules＋文書改訂の注意＋OUTPUT_SCHEMA、invoke の arguments に引数 schema を差し込む）も example/host.ts の `propose` に合わせる。
 
 ## 条件 P の接続（Pursuit の host 契約への対応）
 
@@ -83,10 +83,18 @@
 
 ## 実行の手順
 
-1. `eval/p3/setup-deps.sh`（固定した版を展開して依存を入れる）。
-2. `bun eval/p3/run.ts --cond D|C|P --run-dir /workspace/canvas_p3/<cond>-r<k> --host-port <port>`（13 課題を順に。制作担当の応答を待つ）。
-3. 全条件・全反復の制作が終わってから `bun eval/p3/grade.ts`（判定 v1・参考 v2）と `bun eval/p3/aggregate.ts`。
+1. `eval/p3/setup-deps.sh`（固定した版を展開して依存を入れる）。`bun run p3:typecheck` で接続部の型を確かめる。
+2. `eval/p3/make-runs.sh /workspace/canvas_p3`：`{D,C,P}-r{1,2,3}` の 9 個の実行ディレクトリを作る。各ディレクトリに `RUN_NAME`・`PORT`（4701 から 2 つおき）・`READY.txt`（制作担当の説明と立入禁止の範囲。P は `READY-rev.txt` も）・`tools/`（`eval/p3/responder/` の写し）・`work/`。
+3. `eval/p3/start-runs.sh /workspace/canvas_p3`：9 個の実行器（`bun eval/p3/run.ts --cond <c> --run-dir <dir> --host-port <port>`）をバックグラウンドで起動する。ログは `/workspace/canvas_p3/logs/`（実行ディレクトリの外）。止まっても、終わった課題を飛ばして再開できる。
+4. 実行ディレクトリごとに、新しい会話の制作担当を 1 人（P は検証担当も 1 人）割り当て、`READY.txt` だけを渡す。担当は `tools/show.sh` で要求を読み、条件ごとの道具（D: `art.sh`、C: `invoke.sh`・`fill.sh`、P: `ptool.sh`・`fill.sh`、共通: `write.sh`）で答える。`host/DONE` ができたら終了。
+5. 全条件・全反復の制作が終わってから `bun eval/p3/grade.ts --root /workspace/canvas_p3`（判定 v1 正式・N3 だけ v2 参考。結果は `grade/grades.json`）と `bun eval/p3/aggregate.ts --root /workspace/canvas_p3 --out docs/eval/p3-summary.json`。
+
+応答の道具は、形の検査に落ちた応答を理由つきで同じ要求に戻す（`-retry<k>`、最大 2 回。3 条件で同じ）。形の空欄を埋める `fill.sh` は、出力の形の必須項目を空の値で埋めるだけで、中身は作らない。
 
 ## 凍結後の変更
 
-（なし）
+制作を始める前（採点の記録が 1 件も無い時点）の変更だけ。
+
+- 条件 C：ReplyPolicy を 400 字・4 文から、collaboration の example/host.ts と同じ 300 字・2 文に直した（契約に無い値を自分で決めないため）。
+- 条件 C：`document.revision` を、会話の版番号ではなくその担当の会話の中で数える番号にした。会話の版番号を使うと、最後の会話の版と文書の版が食い違い、利用者が画面で変更したことになる誤り（`changedOnScreen: true`）が出たため。乾式の確認で見つけた。
+- 実行の手順に、実行ディレクトリの作成・起動・応答の道具を書き足した。

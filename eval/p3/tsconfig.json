@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": [
+    "./**/*.ts",
+    "../lib/**/*.ts",
+    "../checks/**/*.ts"
+  ],
+  "exclude": [],
+  "compilerOptions": {
+    "allowImportingTsExtensions": true
+  }
+}

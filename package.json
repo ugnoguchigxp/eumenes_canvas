@@ -10,7 +10,8 @@
     "test:e2e": "playwright test",
     "verify": "bun run typecheck && bun test tests/unit && playwright test",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "eval:p2": "bun eval/runner.ts"
+    "eval:p2": "bun eval/runner.ts",
+    "p3:typecheck": "tsc --noEmit -p eval/p3/tsconfig.json"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",
