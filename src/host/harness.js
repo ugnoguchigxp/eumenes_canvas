@@ -25,6 +25,7 @@ window.harness = {
   },
   startToken: ({ token, data = null, seed = 1, clock = "manual" }) => ctl.start({ token, data, seed, clock }),
   advance: (ms) => ctl.advance(ms),
+  poke: (count) => ctl.poke(count),
   stop: () => ctl.stop(),
   focus: () => ctl.focus(),
   setNarrow(on) {

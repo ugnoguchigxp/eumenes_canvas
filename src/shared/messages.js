@@ -12,6 +12,7 @@ export const LIMITS = Object.freeze({
   workerMessageBytesHard: 1024 * 1024,
   maxCanvasDevicePixels: 4096,
   maxAdvanceMs: 60_000,
+  maxPokeCount: 120, // 時間を進めない描き直し（poke）の 1 回の回数
   svgChars: 256 * 1024, // api.decodeSVG に渡せる SVG の長さ
   svgPerSecond: 30, // 超えた復号の依頼は失敗として返す
   svgPending: 8, // シェルが同時に復号する件数
@@ -59,6 +60,12 @@ export function checkHostToShell(m) {
       if (!onlyKeys(m, ["type", "runId", "seq", "ms"]) || !RUN_ID.test(m.runId)) return null;
       if (!Number.isInteger(m.seq) || !finiteIn(m.seq, 0, 2 ** 31)) return null;
       if (!finiteIn(m.ms, 0, LIMITS.maxAdvanceMs)) return null;
+      return m;
+    case "poke":
+      // 時間を進めない描き直し：frame(t, 0) を count 回。返事は advanced
+      if (!onlyKeys(m, ["type", "runId", "seq", "count"]) || !RUN_ID.test(m.runId)) return null;
+      if (!Number.isInteger(m.seq) || !finiteIn(m.seq, 0, 2 ** 31)) return null;
+      if (!Number.isInteger(m.count) || !finiteIn(m.count, 1, LIMITS.maxPokeCount)) return null;
       return m;
     default:
       return null;

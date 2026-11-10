@@ -190,6 +190,14 @@ export class PreviewController {
     return wait;
   }
 
+  /** 時間を進めない描き直し（frame(t, 0) を count 回）。返事は advance と同じ advanced。 */
+  async poke(count) {
+    const seq = ++seqCounter;
+    const wait = this._wait("advanced:" + seq, 10_000);
+    this.port.postMessage({ type: "poke", runId: this.runId, seq, count });
+    return wait;
+  }
+
   /** 停止。シェルが 300ms 以内に応答しなければ iframe を読み直して強制的に破棄する。 */
   async stop() {
     const t0 = performance.now();

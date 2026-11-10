@@ -225,6 +225,11 @@ var __canvasApp = (function () {
       }
       present();
       post({ type: "advanced", seq: m.seq });
+    } else if (m.type === "poke") {
+      // 観測用の時間を進めない描き直し：t を変えずに frame(t, 0) を count 回
+      for (var k = 0; k < m.count; k++) frame(0);
+      present();
+      post({ type: "advanced", seq: m.seq });
     } else if (m.type === "input") {
       call("input", [m.ev]);
       if (m.ev && m.ev.type !== "pointermove") { frame(0); present(); }

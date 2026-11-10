@@ -205,6 +205,7 @@ function onHostMessage(e) {
     stopWorker("stop");
     send({ type: "stopped", runId: m.runId });
   } else if (m.type === "advance" && m.runId === runId) toWorker({ type: "advance", seq: m.seq, ms: m.ms });
+  else if (m.type === "poke" && m.runId === runId) toWorker({ type: "poke", seq: m.seq, count: m.count });
 }
 
 // ホストは 1 回だけポートを渡す。送信元とオリジンを照合する。

@@ -79,4 +79,16 @@ describe("ブートストラップ（偽の Worker 環境）", () => {
     const w = boot("canvasApp.start((api) => ({ frame() {} }));");
     expect(w.offset).toBe(BOOT.split("\n").length - 1 + 3);
   });
+  // 02：時間を進めない描き直し（poke）
+  test("poke は t を変えずに frame(t, 0) を count 回呼び、advanced を返す", () => {
+    const w = boot("let n = 0; canvasApp.start((api) => ({ frame(t, dt) { n++; api.status({ n, t, dt }); } }));");
+    w.send(INIT);
+    w.send({ type: "advance", ms: 32, seq: 1 });
+    const before = w.posted.length;
+    w.send({ type: "poke", seq: 2, count: 30 });
+    const added = w.posted.slice(before).filter((m) => m.type === "status").map((m) => m.value);
+    expect(added.length).toBe(30);
+    expect(added.every((v) => v.dt === 0 && v.t === 32)).toBe(true);
+    expect(w.posted[w.posted.length - 1]).toEqual({ type: "advanced", seq: 2 });
+  });
 });
