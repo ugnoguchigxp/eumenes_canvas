@@ -47,7 +47,9 @@ export function checkHostToShell(m) {
   if (byteLength(m) > LIMITS.hostToShellBytes) return null;
   switch (m.type) {
     case "start":
-      if (!onlyKeys(m, ["type", "runId", "token", "data", "seed", "clock"])) return null;
+      if (!onlyKeys(m, ["type", "runId", "token", "data", "seed", "clock", "direct"])) return null;
+      // direct（直接描画）はあるときだけ真偽値
+      if ("direct" in m && m.direct !== true && m.direct !== false) return null;
       if (!RUN_ID.test(m.runId) || !TOKEN.test(m.token)) return null;
       if (!finiteIn(m.seed, 0, 2 ** 32 - 1) || !Number.isInteger(m.seed)) return null;
       if (m.clock !== "raf" && m.clock !== "manual") return null;

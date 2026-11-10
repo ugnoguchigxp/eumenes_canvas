@@ -23,6 +23,8 @@ export interface CanvasAppOptions {
   logDir?: string | null;
   /** 単一利用者モード。所有者 cookie を発行・要求せず、全要求を所有者 `local` として扱う。makeService には同じ値を渡す。 */
   singleUser?: boolean;
+  /** 直接描画を有効にするか（startApp に渡す）。 */
+  directRender?: boolean;
   makeService: (deps: { tokens: PreviewTokens; hostOrigin: string; singleUser: boolean }) => CanvasService;
 }
 
@@ -34,6 +36,7 @@ export function startCanvasApp(o: CanvasAppOptions) {
     previewPort: o.previewPort,
     devHarness: o.devHarness,
     logDir: o.logDir,
+    directRender: o.directRender,
     tokens,
     onPage: (req): Record<string, string> => (o.singleUser || cookieOwner(req) ? {} : { "set-cookie": `${OWNER_COOKIE}=${randomBytes(18).toString("base64url")}; Path=/; HttpOnly; SameSite=Strict` }),
     extraRoutes: async (req, url) => {

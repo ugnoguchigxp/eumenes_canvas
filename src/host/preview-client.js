@@ -174,12 +174,13 @@ export class PreviewController {
   }
 
   /** 作品を起動する。ready・error・timeout のいずれかで解決する。 */
-  async start({ token, data = null, seed = 1, clock = "raf" }) {
+  async start({ token, data = null, seed = 1, clock = "raf", direct = false }) {
     await this.mount();
     this.runId = newRunId();
-    this.lastStart = { data, seed, clock };
+    this.lastStart = { data, seed, clock, direct };
     const wait = this._wait("ready", 10_000);
-    this.port.postMessage({ type: "start", runId: this.runId, token, data, seed, clock });
+    // direct（直接描画）は真のときだけ項目を入れる（偽のときは既存のメッセージと同じ形）
+    this.port.postMessage({ type: "start", runId: this.runId, token, data, seed, clock, ...(direct ? { direct: true } : {}) });
     return wait;
   }
 

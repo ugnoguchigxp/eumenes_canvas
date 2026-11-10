@@ -41,6 +41,12 @@ var __canvasApp = (function () {
   var presentCanvas = null; // 表示用に複製して ImageBitmap として渡す面
   var presentCtx = null;
   var dirty = false;
+  var canvas3d = null; // 3D の面。複写方式では、作品が初めて api.canvas3d を読んだときに作る
+  var used3d = false; // 作品が api.canvas3d を読んだか
+  var direct = false; // 画面の canvas を直接受け取ったか（直接描画）
+  var split = false; // 作品が frame の代わりに update・draw を返したか
+  var needDraw = false; // draw を呼ぶ必要があるか
+  var selfClock = false; // Worker 自身の requestAnimationFrame で進めているか
   var size = { width: 1, height: 1, dpr: 1 };
   var t = 0;
   var lastTickT = null;
@@ -86,8 +92,15 @@ var __canvasApp = (function () {
   function applySize() {
     canvas.width = Math.max(1, Math.round(size.width * size.dpr));
     canvas.height = Math.max(1, Math.round(size.height * size.dpr));
-    presentCanvas.width = canvas.width;
-    presentCanvas.height = canvas.height;
+    if (presentCanvas) {
+      presentCanvas.width = canvas.width;
+      presentCanvas.height = canvas.height;
+    }
+    // 3D の面は作品の resize の前に 2D の面と同じ寸法にする（作品は resize の中で変えてよい）
+    if (canvas3d) {
+      canvas3d.width = canvas.width;
+      canvas3d.height = canvas.height;
+    }
     api.width = size.width;
     api.height = size.height;
     api.dpr = size.dpr;
@@ -103,19 +116,33 @@ var __canvasApp = (function () {
     }
   }
 
+  // 時間を dt だけ進める。update・draw の形では、update は dt > 0 のときだけ呼び、draw は present の直前に 1 回だけ呼ぶ。
   function frame(dt) {
     t += dt;
-    ctx.setTransform(size.dpr, 0, 0, size.dpr, 0, 0);
-    call("frame", [t, dt]);
+    if (split) {
+      if (dt > 0) call("update", [t, dt]);
+      needDraw = true;
+    } else {
+      ctx.setTransform(size.dpr, 0, 0, size.dpr, 0, 0);
+      call("frame", [t, dt]);
+    }
     dirty = true;
   }
 
   // 描画面を複製し、ImageBitmap としてシェルへ渡す（作品の描画内容は保持される）。
+  // 直接描画では画面の canvas に描いているので、何も送らない。複写方式で 3D の面を使う作品は、3D の面を下、2D の面を上に重ねる。
   function present() {
     if (!dirty) return;
     dirty = false;
+    if (split && needDraw) {
+      needDraw = false;
+      ctx.setTransform(size.dpr, 0, 0, size.dpr, 0, 0);
+      call("draw", [t]);
+    }
+    if (direct) return;
     presentCtx.setTransform(1, 0, 0, 1, 0, 0);
     presentCtx.clearRect(0, 0, presentCanvas.width, presentCanvas.height);
+    if (used3d && canvas3d) presentCtx.drawImage(canvas3d, 0, 0, presentCanvas.width, presentCanvas.height);
     presentCtx.drawImage(canvas, 0, 0);
     var bmp = presentCanvas.transferToImageBitmap();
     post({ type: "frame", bitmap: bmp }, [bmp]);
@@ -141,10 +168,17 @@ var __canvasApp = (function () {
     var m = ev.data;
     if (!m || typeof m !== "object") return;
     if (m.type === "init") {
-      canvas = new OffscreenCanvas(1, 1);
+      // 直接描画：シェルが画面の 2D・3D の canvas を渡したときは、そこへ直接描く（表示用の面は作らない）
+      direct = !!(m.canvas2d && m.canvas3d);
+      if (direct) {
+        canvas = m.canvas2d;
+        canvas3d = m.canvas3d;
+      } else {
+        canvas = new OffscreenCanvas(1, 1);
+        presentCanvas = new OffscreenCanvas(1, 1);
+        presentCtx = presentCanvas.getContext("2d");
+      }
       ctx = canvas.getContext("2d");
-      presentCanvas = new OffscreenCanvas(1, 1);
-      presentCtx = presentCanvas.getContext("2d");
       size = { width: m.width, height: m.height, dpr: m.dpr };
       var rand = mulberry32(m.seed >>> 0);
       api = {
@@ -174,6 +208,15 @@ var __canvasApp = (function () {
       };
       Object.freeze(api.random);
       Object.freeze(api.decodeSVG);
+      // 3D の面（WebGL などで描く。2D の面の下に重なる）。何度読んでも同じ面を返す
+      Object.defineProperty(api, "canvas3d", {
+        enumerable: false,
+        get: function () {
+          used3d = true;
+          if (!canvas3d) canvas3d = new OffscreenCanvas(canvas.width, canvas.height);
+          return canvas3d;
+        },
+      });
       applySize();
       if (typeof setupFn !== "function") {
         reportError("start", new Error("canvasApp.start(setup) が呼ばれていない"));
@@ -185,6 +228,8 @@ var __canvasApp = (function () {
         reportError("setup", e);
         return;
       }
+      // frame が無く update か draw がある作品は、更新と描画を分けて呼ぶ（frame があれば frame の形）
+      split = typeof handlers.frame !== "function" && (typeof handlers.update === "function" || typeof handlers.draw === "function");
       call("resize", [size.width, size.height, size.dpr]);
       frame(0);
       present();
@@ -194,6 +239,19 @@ var __canvasApp = (function () {
         // 起動中に頼まれた SVG の復号が済むまで（最大 3 秒）ready を待つ。済んだら dt=0 で描き直してから知らせる。
         var readyTimer = setTimeout(sendReady, 3000);
         bootWaiters = function () { if (svgPendingCount === 0) { clearTimeout(readyTimer); sendReady(); } };
+      }
+      // 直接描画で、シェルが許したときは Worker 自身の requestAnimationFrame で進める
+      if (direct && m.selfClock === true && typeof self.requestAnimationFrame === "function") {
+        selfClock = true;
+        var lastNow = null;
+        var loop = function (now) {
+          var d = lastNow === null ? 0 : Math.min(100, Math.max(0, now - lastNow));
+          lastNow = now;
+          frame(d);
+          present();
+          self.requestAnimationFrame(loop);
+        };
+        self.requestAnimationFrame(loop);
       }
       return;
     } else if (m.type === "svg-result" || m.type === "svg-error") {
@@ -212,6 +270,7 @@ var __canvasApp = (function () {
     } else if (!api) {
       return;
     } else if (m.type === "tick") {
+      if (selfClock) return;
       var dt = lastTickT === null ? 0 : Math.min(100, Math.max(0, m.t - lastTickT));
       lastTickT = m.t;
       frame(dt);

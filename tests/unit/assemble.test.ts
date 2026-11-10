@@ -20,3 +20,11 @@ test("poke は型・runId・seq・count だけを、count 1〜120 の整数で�
   const { seq, ...noSeq } = ok;
   expect(checkHostToShell(noSeq)).toBeNull();
 });
+
+// 05：ホスト→シェルの start に direct（直接描画）を通す
+test("start の direct は真偽値のときだけ通し、無ければ今と同じく通す", () => {
+  const base = { type: "start", runId: "r1", token: "t".repeat(24), data: null, seed: 1, clock: "raf" };
+  expect(checkHostToShell({ ...base, direct: true })).not.toBeNull();
+  expect(checkHostToShell({ ...base, direct: "yes" })).toBeNull();
+  expect(checkHostToShell({ ...base })).toEqual(base);
+});

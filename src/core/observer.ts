@@ -25,12 +25,12 @@ type IssueToken = (body: ArtworkBody) => string;
 export class PlaywrightObserver implements ObserverPort {
   readonly suite = OBSERVER_SUITE;
   private browser: any = null;
-  constructor(private hostOrigin: string, private issue: IssueToken) {}
+  constructor(private hostOrigin: string, private issue: IssueToken, private launchArgs: string[] = []) {}
 
   private async getBrowser() {
     if (!this.browser) {
       const { chromium } = await import("@playwright/test");
-      this.browser = await chromium.launch({ args: ["--mute-audio"] });
+      this.browser = await chromium.launch({ args: ["--mute-audio", ...this.launchArgs] });
     }
     return this.browser;
   }

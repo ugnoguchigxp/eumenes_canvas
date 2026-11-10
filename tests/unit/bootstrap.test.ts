@@ -21,21 +21,29 @@ class FakeSurface {
 }
 
 /** 作品をブートストラップと連結して（配信と同じ組み立て）偽の self で実行する。 */
-function boot(entry: string) {
+function boot(entry: string, opts: { raf?: boolean } = {}) {
   const posted: any[] = [];
   let onMessage: ((ev: { data: unknown }) => void) | null = null;
+  let rafQueue: ((now: number) => void)[] = [];
   // navigator の prototype は試験ごとの空の物にする（ブートストラップが prototype に getter を定義するため、Object.prototype を汚さない）
-  const self = {
+  const self: Record<string, unknown> = {
     postMessage: (m: unknown) => posted.push(m),
     addEventListener: (type: string, f: (ev: { data: unknown }) => void) => {
       if (type === "message") onMessage = f;
     },
     navigator: Object.create({}),
   };
+  // 05：Worker 自身の時計（requestAnimationFrame）。渡された関数を積み、flushRaf(now) で呼ぶ
+  if (opts.raf) self.requestAnimationFrame = (f: (now: number) => void) => rafQueue.push(f);
   const script = assembleWorkerScript(entry);
   const offset = Number(/;__canvasEntryLine=(\d+);\(function \(canvasApp\) \{\n/.exec(script)![1]);
   new Function("self", "OffscreenCanvas", script)(self, FakeSurface);
-  return { posted, send: (m: unknown) => onMessage!({ data: m }), offset };
+  const flushRaf = (now: number) => {
+    const q = rafQueue;
+    rafQueue = [];
+    for (const f of q) f(now);
+  };
+  return { posted, send: (m: unknown) => onMessage!({ data: m }), offset, self, flushRaf };
 }
 
 const INIT = { type: "init", width: 480, height: 360, dpr: 1, data: null, seed: 1 };
@@ -90,5 +98,65 @@ describe("ブートストラップ（偽の Worker 環境）", () => {
     expect(added.length).toBe(30);
     expect(added.every((v) => v.dt === 0 && v.t === 32)).toBe(true);
     expect(w.posted[w.posted.length - 1]).toEqual({ type: "advanced", seq: 2 });
+  });
+
+  // 05：3D の面・直接描画・更新と描画の分離
+  const types = (posted: any[]) => posted.map((m) => m.type);
+  const st = (posted: any[]) => posted.filter((m) => m.type === "status").map((m) => m.value);
+  test("update・draw", () => {
+    const w = boot('canvasApp.start((api) => ({ update(t, dt) { api.status({ k: "u", dt }); }, draw(t) { api.status({ k: "d" }); } }));');
+    w.send(INIT);
+    const seg = () => st(w.posted).map((v) => v.k).join("");
+    expect(seg()).toBe("d");
+    w.send({ type: "advance", ms: 1000, seq: 1 });
+    expect(seg()).toBe("d" + "u".repeat(63) + "d");
+    w.send({ type: "input", ev: { type: "keydown", key: "a", code: "KeyA" } });
+    expect(seg()).toBe("d" + "u".repeat(63) + "dd");
+    w.send({ type: "poke", seq: 2, count: 30 });
+    expect(seg()).toBe("d" + "u".repeat(63) + "ddd");
+    expect(st(w.posted).filter((v) => v.k === "u").every((v) => v.dt > 0)).toBe(true);
+  });
+  test("frame が優先", () => {
+    const w = boot('canvasApp.start((api) => ({ frame() { api.status("f"); }, update() { api.status("u"); }, draw() { api.status("d"); } }));');
+    w.send(INIT);
+    w.send({ type: "advance", ms: 16, seq: 1 });
+    expect(st(w.posted)).toEqual(["f", "f"]);
+  });
+  test("複写方式の 3D の面", () => {
+    const w = boot("canvasApp.start((api) => { self.__a = api.canvas3d; self.__b = api.canvas3d; return { frame() {} }; });");
+    w.send({ ...INIT, dpr: 2 });
+    const a = w.self.__a as FakeSurface;
+    expect(a).toBe(w.self.__b as FakeSurface);
+    expect([a.width, a.height]).toEqual([960, 720]);
+    expect(types(w.posted)).toContain("frame");
+  });
+  test("3D の面を使わない作品", () => {
+    const w = boot("canvasApp.start((api) => ({ frame() {} }));");
+    w.send(INIT);
+    expect(types(w.posted)).toEqual(["frame", "ready"]);
+  });
+  test("直接描画", () => {
+    const w = boot("canvasApp.start((api) => { self.__api = api; return { frame(t, dt) { api.status([t, dt]); } }; });", { raf: true });
+    const c2 = new FakeSurface(1, 1), c3 = new FakeSurface(1, 1);
+    w.send({ ...INIT, canvas2d: c2, canvas3d: c3, selfClock: true });
+    const api = w.self.__api as any;
+    expect(api.canvas).toBe(c2);
+    expect(api.canvas3d).toBe(c3);
+    expect([c2.width, c2.height, c3.width, c3.height]).toEqual([480, 360, 480, 360]);
+    w.flushRaf(1000);
+    w.flushRaf(1016);
+    expect(st(w.posted)).toEqual([[0, 0], [0, 0], [16, 16]]);
+    w.send({ type: "tick", t: 5000 });
+    expect(st(w.posted).length).toBe(3);
+    w.send({ type: "resize", width: 240, height: 360, dpr: 1 });
+    expect([c2.width, c3.width]).toEqual([240, 240]);
+    expect(new Set(types(w.posted))).toEqual(new Set(["status", "ready"]));
+  });
+  test("直接描画で時計が無い", () => {
+    const w = boot("canvasApp.start((api) => ({ frame(t, dt) { api.status([t, dt]); } }));");
+    w.send({ ...INIT, canvas2d: new FakeSurface(1, 1), canvas3d: new FakeSurface(1, 1), selfClock: true });
+    w.send({ type: "tick", t: 100 });
+    w.send({ type: "tick", t: 116 });
+    expect(st(w.posted)).toEqual([[0, 0], [0, 0], [16, 16]]);
   });
 });

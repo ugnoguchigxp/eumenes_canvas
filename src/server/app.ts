@@ -19,6 +19,8 @@ export interface AppOptions {
   onPage?: (req: Request) => Record<string, string>;
   /** 診断ログの置き場所（server.log・client.log）。null・未指定ならファイルに残さない。 */
   logDir?: string | null;
+  /** 直接描画（実時間の表示で画面の canvas を作品 Worker に渡す）を有効にするか。/api/config で画面に伝える。 */
+  directRender?: boolean;
 }
 
 export function hostCsp(previewOrigin: string): string {
@@ -141,7 +143,7 @@ export function startApp(opts: AppOptions) {
           if (ext === ".html" && opts.onPage) Object.assign(headers, opts.onPage(req));
           return new Response(readFileSync(join(SRC, file), "utf8"), { headers });
         }
-        if (url.pathname === "/api/config") return json({ previewOrigin, hostOrigin });
+        if (url.pathname === "/api/config") return json({ previewOrigin, hostOrigin, ...(opts.directRender ? { directRender: true } : {}) }); // directRender は有効なときだけ（既定の返事の形は変えない）
         if (url.pathname === "/api/client-log" && req.method === "POST") {
           // 所有者 cookie は要求しない（cookie が届かない状態の診断にも使う）。Origin の照合は上で済んでいる
           if (!clientLimiter.hit()) throw new HttpError(429, "診断ログの送信が多すぎる");

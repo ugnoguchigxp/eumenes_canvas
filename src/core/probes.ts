@@ -164,12 +164,12 @@ export function probeText(r: ProbeReport): string {
 export class PlaywrightProber implements ProbePort {
   readonly suite = PROBE_SUITE;
   private browser: any = null;
-  constructor(private hostOrigin: string, private issue: IssueToken) {}
+  constructor(private hostOrigin: string, private issue: IssueToken, private launchArgs: string[] = []) {}
 
   protected async getBrowser() {
     if (!this.browser) {
       const { chromium } = await import("@playwright/test");
-      this.browser = await chromium.launch({ args: ["--mute-audio"] });
+      this.browser = await chromium.launch({ args: ["--mute-audio", ...this.launchArgs] });
     }
     return this.browser;
   }

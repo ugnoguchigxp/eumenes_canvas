@@ -8,10 +8,12 @@ let port = null;
 let worker = null;
 let runId = null;
 let canvas = null;
+let canvas3d = null; // 直接描画のときだけ作る 3D の面（2D の面の下の層）
 let resizeObs = null;
 let rafHandle = 0;
 let t0 = 0;
 let pendingMove = null;
+let pendingWheel = null; // ホイールは 1 描画フレームに 1 回へまとめる
 const statusRate = makeRateWindow();
 const svgRate = makeRateWindow();
 let svgActive = 0;
@@ -26,6 +28,7 @@ function send(m) {
 
 function stopWorker(reason) {
   pendingMove = null;
+  pendingWheel = null;
   if (rafHandle) cancelAnimationFrame(rafHandle);
   rafHandle = 0;
   if (resizeObs) resizeObs.disconnect();
@@ -38,6 +41,8 @@ function stopWorker(reason) {
   worker = null;
   if (canvas) canvas.remove();
   canvas = null;
+  if (canvas3d) canvas3d.remove();
+  canvas3d = null;
   const id = runId;
   runId = null;
   return id;
@@ -60,17 +65,24 @@ function toWorker(m, transfer) {
 
 function pointerEv(type, e) {
   const r = canvas.getBoundingClientRect();
-  return { type, x: e.clientX - r.left, y: e.clientY - r.top, button: e.button, pointerType: e.pointerType || "mouse" };
+  return { type, x: e.clientX - r.left, y: e.clientY - r.top, button: e.button, pointerType: e.pointerType || "mouse", id: e.pointerId };
 }
 
 function start(m) {
   stopWorker("restart");
   runId = m.runId;
+  // 直接描画はホストが direct を渡し、実時間の時計で、ブラウザが canvas を Worker に渡せるときだけ（シェルが自分で判断しない）
+  const direct = m.direct === true && m.clock === "raf" && typeof HTMLCanvasElement.prototype.transferControlToOffscreen === "function";
+  if (direct) {
+    canvas3d = document.createElement("canvas");
+    stage.appendChild(canvas3d);
+  }
   canvas = document.createElement("canvas");
   canvas.tabIndex = 0;
   stage.appendChild(canvas);
   const s = sizeOf();
-  const view = canvas.getContext("bitmaprenderer");
+  // 直接描画では渡した canvas に文脈を作れないので、bitmaprenderer は複写方式のときだけ作る
+  const view = direct ? null : canvas.getContext("bitmaprenderer");
   const thisRun = runId;
   worker = new Worker("/w/" + encodeURIComponent(m.token), { name: "artwork-" + runId });
   worker.onerror = (e) => {
@@ -88,6 +100,7 @@ function start(m) {
     const msg = checkWorkerToShell(e.data);
     if (!msg) return; // 型・大きさが合わない通知は破棄する
     if (msg.type === "frame") {
+      if (direct) return;
       if (canvas.width !== msg.bitmap.width) canvas.width = msg.bitmap.width;
       if (canvas.height !== msg.bitmap.height) canvas.height = msg.bitmap.height;
       view.transferFromImageBitmap(msg.bitmap);
@@ -105,7 +118,12 @@ function start(m) {
     }
     send({ ...msg, runId: thisRun });
   };
-  toWorker({ type: "init", width: s.width, height: s.height, dpr: s.dpr, data: m.data ?? null, seed: m.seed });
+  if (direct) {
+    // 渡したあとはシェルから width・height を設定しない（寸法は Worker が設定する）
+    const off2d = canvas.transferControlToOffscreen();
+    const off3d = canvas3d.transferControlToOffscreen();
+    toWorker({ type: "init", width: s.width, height: s.height, dpr: s.dpr, data: m.data ?? null, seed: m.seed, canvas2d: off2d, canvas3d: off3d, selfClock: true }, [off2d, off3d]);
+  } else toWorker({ type: "init", width: s.width, height: s.height, dpr: s.dpr, data: m.data ?? null, seed: m.seed });
 
   let last = s;
   resizeObs = new ResizeObserver(() => {
@@ -127,6 +145,18 @@ function start(m) {
   canvas.addEventListener("pointermove", (e) => {
     pendingMove = pointerEv("pointermove", e); // 1 描画フレームに 1 回へまとめる
   });
+  canvas.addEventListener(
+    "wheel",
+    (e) => {
+      e.preventDefault();
+      // 行・ページの単位は画素にそろえる。1 描画フレームに 1 回へまとめる（差は足し合わせ、位置は最後の値）
+      const k = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1;
+      const r = canvas.getBoundingClientRect();
+      const prev = pendingWheel;
+      pendingWheel = { type: "wheel", x: e.clientX - r.left, y: e.clientY - r.top, deltaX: (prev ? prev.deltaX : 0) + e.deltaX * k, deltaY: (prev ? prev.deltaY : 0) + e.deltaY * k };
+    },
+    { passive: false },
+  );
 
   if (m.clock === "raf") {
     t0 = performance.now();
@@ -180,6 +210,10 @@ function flushMove() {
   if (pendingMove) {
     toWorker({ type: "input", ev: pendingMove });
     pendingMove = null;
+  }
+  if (pendingWheel) {
+    toWorker({ type: "input", ev: pendingWheel });
+    pendingWheel = null;
   }
 }
 

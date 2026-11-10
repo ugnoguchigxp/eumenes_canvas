@@ -14,6 +14,9 @@ function rid(n = 12) {
 // 制作画面ごとの session（タブごと）
 // 試験では ?clock=manual で時計をホストから進める
 const CLOCK = new URLSearchParams(location.search).get("clock") === "manual" ? "manual" : "raf";
+// 直接描画は実時間の時計で、設定が有効で、WebKit だけのブラウザでないときだけ（WebKit では Worker から描いた内容が表示に出ないことがある）
+const WEBKIT_ONLY = /AppleWebKit/.test(navigator.userAgent) && !/Chrome|Chromium|Edg\//.test(navigator.userAgent);
+const DIRECT = CLOCK === "raf" && cfg.directRender === true && !WEBKIT_ONLY;
 const session = sessionStorage.getItem("canvas-session") || rid();
 sessionStorage.setItem("canvas-session", session);
 
@@ -179,7 +182,7 @@ async function showPreview(source, label) {
   $("preview-label").textContent = label;
   let r;
   try {
-    r = await ctl.start({ token: p.token, data: p.data, seed: 1, clock: CLOCK });
+    r = await ctl.start({ token: p.token, data: p.data, seed: 1, clock: CLOCK, direct: DIRECT });
   } catch (err) {
     if (!(err instanceof PreviewConnectError)) throw err;
     host.dataset.ready = "0";

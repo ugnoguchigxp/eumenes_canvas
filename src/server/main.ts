@@ -18,6 +18,10 @@ export interface CanvasConfig {
   devHarness?: boolean;
   /** 単一利用者モード（作品一覧をブラウザ間で共有）。項目が無ければ真。 */
   singleUser?: boolean;
+  /** 直接描画（実時間の表示で画面の canvas を作品 Worker に渡す。Chromium 系だけ）。項目が無ければ偽。 */
+  directRender?: boolean;
+  /** 観測のブラウザ（Chromium）に足す起動引数。既定は空。 */
+  observerArgs?: string[];
   model: { provider: "recorded"; label: string; files: string[]; ignoreLatency?: boolean; deliverAfterAbort?: boolean };
   datasets: { ref: string; description: string; file: string }[];
 }
@@ -45,13 +49,14 @@ export function runFromConfig(cfg: CanvasConfig, root: string) {
     hostPort: cfg.hostPort,
     previewPort: cfg.previewPort,
     devHarness: cfg.devHarness,
+    directRender: cfg.directRender,
     singleUser,
     logDir: cfg.logDir ? resolve(root, cfg.logDir) : cfg.dataDir ? resolve(root, cfg.dataDir, "logs") : null,
     makeService: ({ tokens, hostOrigin, singleUser }) =>
       new CanvasService({
         store: new Store(cfg.dataDir ? resolve(root, cfg.dataDir) : null),
         model: makeModel(cfg.model, root),
-        observer: new PlaywrightObserver(hostOrigin, (b) => tokens.issue(b)),
+        observer: new PlaywrightObserver(hostOrigin, (b) => tokens.issue(b), cfg.observerArgs ?? []),
         contract,
         datasets: loadDatasets(cfg, root),
         runTimeoutMs: cfg.runTimeoutMs,

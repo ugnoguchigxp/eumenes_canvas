@@ -7,8 +7,8 @@ export async function openHarness(page: Page) {
   await expect(page).toHaveTitle("ready");
 }
 
-export async function start(page: Page, entry: string, o: { data?: unknown; seed?: number; clock?: "raf" | "manual"; title?: string; libraries?: string[] } = {}) {
-  return page.evaluate((a) => (window as any).harness.start(a), { entry, data: o.data ?? null, seed: o.seed ?? 1, clock: o.clock ?? "manual", title: o.title ?? "probe", ...(o.libraries ? { libraries: o.libraries } : {}) });
+export async function start(page: Page, entry: string, o: { data?: unknown; seed?: number; clock?: "raf" | "manual"; title?: string; libraries?: string[]; direct?: boolean } = {}) {
+  return page.evaluate((a) => (window as any).harness.start(a), { entry, data: o.data ?? null, seed: o.seed ?? 1, clock: o.clock ?? "manual", title: o.title ?? "probe", ...(o.libraries ? { libraries: o.libraries } : {}), ...(o.direct ? { direct: true } : {}) });
 }
 
 export async function advance(page: Page, ms: number) {
