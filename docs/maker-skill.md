@@ -44,7 +44,7 @@ description: Canvas の作品（ゲーム・シミュレーション・可視化
 1. 依頼・会話・基準の作品・観測を読み、モードを決める。
 2. 依頼の要素を短く列挙する（寸法・色・速度・時間・操作・得点・終了・やり直し、3D ならカメラの位置と向き・物体・照明、物理なら重力・質量・反発・摩擦、HTML なら文と書式）。基準の作品があるときは、変える箇所と変えない箇所を分ける。
 3. 描画の方法を決め、必要な `libraries` を決める（必須原則 9）。
-4. 作品を書く。`frame` は「`dt > 0` なら更新（物理の `step` を含む）、毎回描画」の形にする（または `update`・`draw` に分ける）。レイアウトは `api.width`・`api.height` から計算する。Three.js では `resize` で `renderer.setSize(w, h, false)` とカメラの縦横比を更新し、`frame` の最後に作品の面へ写す。HTML は内容が変わったときだけ `api.decodeSVG` で作り直す。
+4. 作品を書く。`frame` は「`dt > 0` なら更新（物理の `step` を含む）、毎回描画」の形にする（または `update`・`draw` に分ける）。レイアウトは `api.width`・`api.height` から計算する。Three.js は `new THREE.WebGLRenderer({ canvas: api.canvas3d })` で作り、`resize` で `renderer.setSize(w, h, false)` とカメラの縦横比を更新し、`frame` の中で `renderer.render(scene, camera)` を呼ぶ。`api.canvas3d` に描いた内容は、ホストが 2D の面（`api.ctx`）の下に重ねて表示するので、作品が自分で写す必要は無い（直接描画が有効でも無効でも同じ）。自分で作った `OffscreenCanvas` に描いたときだけ、`frame` の最後に `api.ctx.drawImage(その面, 0, 0, api.width, api.height)` で写す。HTML は内容が変わったときだけ `api.decodeSVG` で作り直す。
 5. 書いた全文を読み直し、必須原則 1〜4・9〜12 と依頼の要素を一つずつ照らす。手元で構文を確かめられるなら確かめる。
 6. 指定の JSON を返す。`libraries` を使ったときは作品と一緒に返す。`changes` に何をどう変えたか、`unconfirmed` に確かめていない点と既定で読んだ点、`reply` に利用者への短い返答を書く。
 
