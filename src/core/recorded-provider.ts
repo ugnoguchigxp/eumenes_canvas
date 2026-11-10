@@ -15,6 +15,7 @@ export interface BodyRef {
   title: string;
   entryFile: string;
   dataRef?: string;
+  libraries?: string[];
 }
 
 export interface Recording {
@@ -29,6 +30,7 @@ export interface Recording {
     title: string;
     entryFile: string; // 記録ファイルからの相対パス
     dataRef?: string;
+    libraries?: string[];
     changes: string;
     unconfirmed: string[];
     reply: string;
@@ -92,7 +94,7 @@ export class RecordedProvider implements ModelPort {
       const j = JSON.parse(readFileSync(f, "utf8")) as RecordingFile;
       const dir = dirname(f);
       const digestOf = async (b: BodyRef) =>
-        artworkDigest({ title: b.title, entry: readFileSync(join(dir, b.entryFile), "utf8"), ...(b.dataRef ? { dataRef: b.dataRef } : {}) });
+        artworkDigest({ title: b.title, entry: readFileSync(join(dir, b.entryFile), "utf8"), ...(b.dataRef ? { dataRef: b.dataRef } : {}), ...(b.libraries?.length ? { libraries: b.libraries } : {}) });
       for (const rec of j.recordings) {
         const entry = readFileSync(join(dir, rec.output.entryFile), "utf8");
         const i = rec.input;
@@ -124,7 +126,7 @@ export class RecordedProvider implements ModelPort {
     }
     const o = hit.rec.output;
     return {
-      body: { title: o.title, entry: hit.entry, ...(o.dataRef ? { dataRef: o.dataRef } : {}) },
+      body: { title: o.title, entry: hit.entry, ...(o.dataRef ? { dataRef: o.dataRef } : {}), ...(o.libraries?.length ? { libraries: o.libraries } : {}) },
       changes: o.changes,
       unconfirmed: o.unconfirmed,
       reply: o.reply,

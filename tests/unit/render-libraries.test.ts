@@ -128,3 +128,17 @@ describe("作品からの SVG の通知", () => {
     expect(checkWorkerToShell({ type: "svg", id: 1, svg: "<svg/>", url: "http://x" })).toBeNull();
   });
 });
+
+describe("直接生成の応答の形", () => {
+  test("libraries を受け取り、作品の本体に渡す（空・省略なら付けない）", async () => {
+    const { validateArtwork, DIRECT_SYSTEM, DIRECT_SYSTEM_P3 } = await import("../../eval/p3/cond-d");
+    const base = { title: "t", entry, changes: "", unconfirmed: [], reply: "" };
+    const a = validateArtwork({ ...base, libraries: ["three@0.187.0"] });
+    expect(a.ok && a.value.body.libraries).toEqual(["three@0.187.0"]);
+    const b = validateArtwork({ ...base, libraries: [] });
+    expect(b.ok && "libraries" in b.value.body).toBe(false);
+    expect(validateArtwork({ ...base, libraries: "three" }).ok).toBe(false);
+    expect(DIRECT_SYSTEM).toContain("libraries");
+    expect(DIRECT_SYSTEM_P3).not.toContain("libraries"); // P3 の記録用の文は変えない
+  });
+});
