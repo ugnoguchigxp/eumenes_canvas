@@ -291,6 +291,38 @@ function hideCandidate() {
   state.candidate = null;
 }
 
+const REQUIRED_LEVELS = ["contract", "loaded", "operated"];
+const VERDICT_TEXT = { pass: "確認した", fail: "満たしていない", unknown: "未確認" };
+const SEVERITY_TEXT = { blocking: "[要修正]", warning: "[注意]", info: "[参考]" };
+
+function addLine(ul, className, text) {
+  const li = document.createElement("li");
+  li.className = className;
+  li.textContent = text; // 制作担当・検証担当の文をそのまま出すため textContent
+  ul.appendChild(li);
+}
+
+/** 候補の検証の結果（宣言・判定・指摘）。検証していない候補は隠す。 */
+function showReview(c) {
+  const r = c.review;
+  $("cand-review").hidden = !r;
+  const reqs = $("cand-requirements");
+  const finds = $("cand-findings");
+  reqs.textContent = "";
+  finds.textContent = "";
+  if (!r) return;
+  $("cand-review-head").textContent = `検証（${r.mode}）：要修正 ${r.blocking} 件` + (r.error ? `／検証の一部が失敗：${r.error}` : "");
+  const requirements = c.spec?.requirements ?? [];
+  if (r.verdict) {
+    for (const v of r.verdict.verdicts) {
+      const q = requirements.find((x) => x.id === v.requirement);
+      if (!q) continue;
+      addLine(reqs, v.verdict, `${q.id} ${q.text} — ${VERDICT_TEXT[v.verdict] ?? "未確認"}${v.note ? "：" + v.note : ""}`);
+    }
+  } else for (const q of requirements) addLine(reqs, "unknown", `${q.id} ${q.text} — 未確認`);
+  for (const f of r.findings) addLine(finds, f.severity, `${SEVERITY_TEXT[f.severity] ?? "[参考]"} ${f.message}`);
+}
+
 function showCandidate(c, run) {
   state.candidate = { ...c, baseRevision: run.baseRevision };
   state.saveKey = rid();
@@ -300,12 +332,14 @@ function showCandidate(c, run) {
   $("cand-changes").textContent = c.changes;
   const ul = $("cand-checks");
   ul.textContent = "";
-  for (const k of c.verification?.checks ?? []) {
+  // 必須の検査だけを出す（matched・advisory の助言を「不合格」と並べると、保存できない候補に見える）
+  for (const k of (c.verification?.checks ?? []).filter((k) => REQUIRED_LEVELS.includes(k.level))) {
     const li = document.createElement("li");
     li.className = k.pass ? "pass" : "fail";
     li.textContent = `${k.level}: ${k.id} ${k.pass ? "合格" : "不合格"}${k.detail ? "（" + k.detail + "）" : ""}`;
     ul.appendChild(li);
   }
+  showReview(c);
   $("cand-unconfirmed").textContent = c.unconfirmed.length ? "未確認: " + c.unconfirmed.join(" / ") : "未確認: 依頼に沿うかの照合（自動では確定しない）";
   $("save-status").textContent = "";
   $("save").disabled = !c.verification?.requiredPassed;

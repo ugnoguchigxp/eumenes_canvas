@@ -1,4 +1,6 @@
 import type { ArtworkBody } from "../contract/artwork";
+import type { CandidateReview } from "./review";
+import type { MakerSpec } from "./spec";
 
 /** advisory は性質の観測などの助言の検査（保存の必須にしない）。 */
 export type CheckLevel = "contract" | "loaded" | "operated" | "matched" | "advisory";
@@ -24,7 +26,8 @@ export interface Verification {
 }
 
 export interface Observation {
-  kind: "contract" | "runtime-error" | "boot-timeout" | "blank" | "static" | "model-error";
+  /** probe・evaluator は検証（review）の指摘。必須の検査には通っている。 */
+  kind: "contract" | "runtime-error" | "boot-timeout" | "blank" | "static" | "model-error" | "probe" | "evaluator";
   message: string;
 }
 
@@ -91,6 +94,10 @@ export interface Candidate {
   reply: string;
   verificationId: string | null;
   createdAt: number;
+  /** 制作担当の宣言（要件と操作）。宣言が無い・形が違うときは null。 */
+  spec?: MakerSpec | null;
+  /** 検証（review）の要約。検証しなかった候補は null。 */
+  review?: CandidateReview | null;
 }
 
 export interface SaveReceipt {

@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { Store } from "../core/store";
 import { CanvasService, type Dataset } from "../core/service";
+import { HostReviewer } from "../core/host-reviewer";
 import { PlaywrightObserver } from "../core/observer";
+import { PlaywrightProber } from "../core/probes";
+import type { ReviewMode } from "../core/review";
 import { RecordedProvider } from "../core/recorded-provider";
 import type { ModelPort } from "../core/model-port";
 import { startCanvasApp } from "./canvas-app";
@@ -22,6 +25,8 @@ export interface CanvasConfig {
   directRender?: boolean;
   /** 観測のブラウザ（Chromium）に足す起動引数。既定は空。 */
   observerArgs?: string[];
+  /** 候補の検証。省略時は off。 */
+  review?: { mode: "off" | "probes" | "judge" | "full"; maxReviews?: number };
   model: { provider: "recorded"; label: string; files: string[]; ignoreLatency?: boolean; deliverAfterAbort?: boolean };
   datasets: { ref: string; description: string; file: string }[];
 }
@@ -38,6 +43,13 @@ export function makeModel(cfg: CanvasConfig["model"], root: string): ModelPort {
 
 export function loadDatasets(cfg: CanvasConfig, root: string): Dataset[] {
   return cfg.datasets.map((d) => ({ ref: d.ref, description: d.description, data: JSON.parse(readFileSync(join(root, d.file), "utf8")) }));
+}
+
+/** 設定から検証を組み立てる。無い・off なら undefined（今と同じ動作）。検証担当はこの段階では null（09 で設定から作る）。 */
+export function makeReview(cfg: Pick<CanvasConfig, "review" | "observerArgs">, hostOrigin: string, issue: (b: Parameters<PlaywrightProber["probe"]>[0]) => string) {
+  if (!cfg.review || cfg.review.mode === "off") return undefined;
+  const reviewer = new HostReviewer(new PlaywrightProber(hostOrigin, issue, cfg.observerArgs ?? []), null);
+  return { reviewer, mode: cfg.review.mode as ReviewMode, maxReviews: cfg.review.maxReviews };
 }
 
 export const singleUserOf = (cfg: Pick<CanvasConfig, "singleUser">) => cfg.singleUser !== false;
@@ -61,6 +73,7 @@ export function runFromConfig(cfg: CanvasConfig, root: string) {
         datasets: loadDatasets(cfg, root),
         runTimeoutMs: cfg.runTimeoutMs,
         singleUser,
+        review: makeReview(cfg, hostOrigin, (b) => tokens.issue(b)),
       }),
   });
   return app;

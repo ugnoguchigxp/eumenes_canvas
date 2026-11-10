@@ -1,8 +1,8 @@
-// 性質の観測と検証担当の指摘、検証の接続口。08 でほかを足す。
+// 性質の観測と検証担当の指摘、検証の接続口、候補に残す検証の要約。
 import type { ArtworkBody } from "../contract/artwork";
 import type { EvalVerdict } from "./eval-types";
 import type { MakerSpec } from "./spec";
-import type { CheckResult, Turn } from "./types";
+import type { CheckResult, Observation, Turn } from "./types";
 
 export interface ReviewFinding {
   source: "probe" | "evaluator";
@@ -37,4 +37,33 @@ export interface ReviewerPort {
   readonly suite: string;
   review(input: ReviewInput, signal: AbortSignal): Promise<ReviewOutcome>;
   close(): Promise<void>;
+}
+
+/** 候補に残す検証の要約。 */
+export interface CandidateReview {
+  mode: ReviewMode;
+  suite: string;
+  blocking: number; // 重い指摘の数
+  findings: ReviewFinding[]; // 40 件まで
+  verdict: EvalVerdict | null;
+  evaluatorCalls: number;
+  ms: number;
+  error: string | null;
+}
+
+export function blockingCount(findings: ReviewFinding[]): number {
+  return findings.filter((f) => f.severity === "blocking").length;
+}
+
+/** 制作担当に返す指摘。info は渡さない（依頼どおりかもしれないことを直させない）。 */
+export function findingsAsObservations(findings: ReviewFinding[]): Observation[] {
+  return findings
+    .filter((f) => f.severity !== "info")
+    .slice(0, 12)
+    .map((f) => ({ kind: f.source, message: ((f.severity === "blocking" ? "[要修正] " : "[注意] ") + f.message).slice(0, 1200) }));
+}
+
+/** 検証そのものが失敗したときの結果（候補の失敗にはしない）。 */
+export function failedOutcome(suite: string, error: string, ms: number): ReviewOutcome {
+  return { suite, environment: "none", checks: [], findings: [], verdict: null, evaluatorCalls: 0, ms, error: error.slice(0, 500) };
 }

@@ -1,15 +1,27 @@
 // 制作コアとテスト用の版保存をつなぐサービス。
-// 受付 → 生成 → 候補検査 → ブラウザ観測 → 候補提示。保存・復元は所有者・版・世代・digest・検証記録を照合する。
+// 受付 → 生成 → 候補検査 → ブラウザ観測 →（設定があれば）検証 → 候補提示。保存・復元は所有者・版・世代・digest・検証記録を照合する。
 import { randomBytes } from "node:crypto";
 import { artworkDigest, checkArtwork, checkData, sha256Hex, type ArtworkBody } from "../contract/artwork";
 import { syntaxErrorDetail, withSourceLine } from "./locate";
 import type { DatasetInfo, GenerationInput, ModelPort } from "./model-port";
 import type { ObserverPort } from "./observer";
+import { blockingCount, failedOutcome, findingsAsObservations, type ReviewerPort, type ReviewMode, type ReviewOutcome } from "./review";
+import { normalizeSpec } from "./spec";
 import type { Store } from "./store";
-import type { Artwork, Candidate, Observation, Revision, Run, Turn, Verification } from "./types";
+import type { Artwork, Candidate, CheckResult, Observation, Revision, Run, Turn, Verification } from "./types";
 
 export const MAX_FIX_ATTEMPTS = 2; // 初回 1 回＋修正 2 回
 export const MAX_TURN_INFERENCES = 6; // 複数ターンの制作推論の合計
+
+/** 期限までの残りがこれより短いときは検証を始めない。 */
+export const REVIEW_MIN_REMAINING_MS = 45_000;
+
+// 必須は段階の名前で数える（matched・advisory は助言で、保存を止めない）
+const isRequired = (c: CheckResult) => c.level === "contract" || c.level === "loaded" || c.level === "operated";
+/** 必須の段階（contract・loaded・operated）がそろい、すべて合格か。 */
+function requiredPassed(checks: CheckResult[]): boolean {
+  return ["contract", "loaded", "operated"].every((l) => checks.some((c) => c.level === l)) && checks.filter(isRequired).every((c) => c.pass);
+}
 
 export interface Dataset extends DatasetInfo {
   data: unknown;
@@ -25,6 +37,8 @@ export interface ServiceOptions {
   datasets?: Dataset[];
   runTimeoutMs?: number;
   now?: () => number;
+  /** 候補の検証。省略・mode が off なら従来どおり（必須の検査に通った最初の候補を提示する）。 */
+  review?: { reviewer: ReviewerPort; mode: ReviewMode; maxReviews?: number };
 }
 
 export class ServiceError extends Error {
@@ -182,14 +196,23 @@ export class CanvasService {
       unconfirmed: c.unconfirmed,
       reply: c.reply,
       verification: v ? { id: v.id, requiredPassed: v.requiredPassed, checks: v.checks, failedAt: v.failedAt ?? null, environment: v.environment } : null,
+      spec: c.spec ?? null,
+      review: c.review ?? null,
     };
   }
 
-  // ---- 生成・検査・観測 ----
+  // ---- 生成・検査・観測・検証 ----
+  // 必須の検査に通った候補を検証し、重い指摘があって試行が残っていれば直させる。
+  // 提示はループのあとに 1 回だけ（必須の検査に通った候補のうち、重い指摘が最も少ないもの。同数なら後の候補）。
   private async execute(runId: string, base: ArtworkBody | null, signal: AbortSignal) {
     const run = this.o.store.runs[runId];
+    const review = this.o.review && this.o.review.mode !== "off" ? this.o.review : null;
+    const maxReviews = review?.maxReviews ?? MAX_FIX_ATTEMPTS + 1;
+    let reviewsUsed = 0;
+    let best: { id: string; blocking: number } | null = null;
     let previous: ArtworkBody | null = null;
     let previousDigest: string | null = null;
+    let previousPassed = false;
     let observations: Observation[] = [];
     for (let attempt = 0; attempt <= MAX_FIX_ATTEMPTS; attempt++) {
       if (!this.live(runId)) return;
@@ -204,12 +227,14 @@ export class CanvasService {
         previous,
         previousDigest,
         observations,
+        previousPassed,
       };
       let out;
       try {
         out = await this.o.model.generate(input, signal);
       } catch (e) {
         if (!this.live(runId)) return;
+        if (best) return this.present(runId, best.id);
         this.finish(runId, "failed", "生成に失敗: " + (e as Error).message);
         return;
       }
@@ -234,50 +259,97 @@ export class CanvasService {
         reply: String(out.reply ?? "").slice(0, 2000),
         verificationId: null,
         createdAt: this.now(),
+        spec: normalizeSpec(out.spec),
+        review: null,
       };
-      let verification: Verification;
+      let checks: Verification["checks"];
+      let environment = "none";
+      let dataDigest: string | null = null;
       if (!contract.ok) {
-        verification = this.makeVerification(digest, null, "none", [{ id: "contract", level: "contract", pass: false, detail: contract.errors.join(" / ") }]);
+        checks = [{ id: "contract", level: "contract", pass: false, detail: contract.errors.join(" / ") }];
         // 構文エラーには作品の行と該当行を足す（制作担当に返す文だけ。検証記録の detail は変えない）
         const syntax = contract.errors.some((m) => m.startsWith("構文エラー")) ? syntaxErrorDetail(String(out.body?.entry ?? "")) : null;
         observations = contract.errors.map((m) => ({ kind: "contract" as const, message: syntax !== null && m.startsWith("構文エラー") ? m + " ／ " + syntax : m }));
+      } else if (out.body.dataRef && !this.datasets.has(out.body.dataRef)) {
+        checks = [{ id: "contract", level: "contract", pass: false, detail: "未登録の dataRef" }];
+        observations = [{ kind: "contract", message: `未登録の dataRef: ${out.body.dataRef}` }];
       } else {
         const data = this.datasetFor(out.body);
-        if (out.body.dataRef && !this.datasets.has(out.body.dataRef)) {
-          verification = this.makeVerification(digest, null, "none", [{ id: "contract", level: "contract", pass: false, detail: "未登録の dataRef" }]);
-          observations = [{ kind: "contract", message: `未登録の dataRef: ${out.body.dataRef}` }];
-        } else {
-          let obs;
-          try {
-            obs = await this.o.observer.observe(out.body, data, signal);
-          } catch (e) {
-            if (!this.live(runId)) return;
-            this.finish(runId, "failed", "観測に失敗: " + (e as Error).message);
-            return;
-          }
+        let obs;
+        try {
+          obs = await this.o.observer.observe(out.body, data, signal);
+        } catch (e) {
           if (!this.live(runId)) return;
-          const dataDigest = data === null ? null : "sha256:" + (await sha256Hex(JSON.stringify(data)));
-          verification = this.makeVerification(digest, dataDigest, obs.environment, [{ id: "contract", level: "contract", pass: true }, ...obs.checks]);
-          // 実行時エラーには作品の該当行を足す（制作担当に返す文だけ）
-          observations = obs.observations.map((o) => (o.kind === "runtime-error" ? { ...o, message: withSourceLine(o.message, out.body.entry) } : o));
+          if (best) return this.present(runId, best.id);
+          this.finish(runId, "failed", "観測に失敗: " + (e as Error).message);
+          return;
         }
+        if (!this.live(runId)) return;
+        dataDigest = data === null ? null : "sha256:" + (await sha256Hex(JSON.stringify(data)));
+        environment = obs.environment;
+        checks = [{ id: "contract", level: "contract", pass: true }, ...obs.checks];
+        // 実行時エラーには作品の該当行を足す（制作担当に返す文だけ）
+        observations = obs.observations.map((o) => (o.kind === "runtime-error" ? { ...o, message: withSourceLine(o.message, out.body.entry) } : o));
       }
+      const requiredOk = requiredPassed(checks);
+      let outcome: ReviewOutcome | null = null;
+      if (requiredOk && review && reviewsUsed < maxReviews && run.deadline - this.now() >= REVIEW_MIN_REMAINING_MS) {
+        reviewsUsed++;
+        const t0 = this.now();
+        try {
+          outcome = await review.reviewer.review(
+            { request: run.request.message, conversation: run.request.conversation, base, body: out.body, data: this.datasetFor(out.body), spec: candidate.spec ?? null, mode: review.mode as Exclude<ReviewMode, "off"> },
+            signal,
+          );
+        } catch (e) {
+          // 検証の失敗は候補の失敗にしない
+          outcome = failedOutcome(review.reviewer.suite, String((e as Error)?.message ?? e), this.now() - t0);
+        }
+        if (!this.live(runId)) return;
+        candidate.review = {
+          mode: review.mode,
+          suite: outcome.suite,
+          blocking: blockingCount(outcome.findings),
+          findings: outcome.findings.slice(0, 40),
+          verdict: outcome.verdict,
+          evaluatorCalls: outcome.evaluatorCalls,
+          ms: outcome.ms,
+          error: outcome.error,
+        };
+      }
+      const verification = this.makeVerification(digest, dataDigest, environment, [...checks, ...(outcome?.checks ?? [])]);
       candidate.verificationId = verification.id;
+      // 候補と検証記録を保存する（ここでは実行の状態を変えない。提示はループのあと）
       this.o.store.tx((s) => {
         s.verifications[verification.id] = verification;
         s.candidates[candidate.id] = candidate;
         run.candidateIds.push(candidate.id);
-        if (verification.requiredPassed) {
-          run.presentedCandidateId = candidate.id;
-          run.state = "presented";
-          run.finishedAt = this.now();
-        }
       });
-      if (verification.requiredPassed) return;
       previous = out.body;
       previousDigest = digest;
+      if (!verification.requiredPassed) {
+        previousPassed = false;
+        continue;
+      }
+      const blocking = candidate.review?.blocking ?? 0; // 検証していない候補は重い指摘 0 件として扱う
+      if (!best || blocking <= best.blocking) best = { id: candidate.id, blocking };
+      if (!outcome || blocking === 0) break;
+      previousPassed = true;
+      observations = findingsAsObservations(outcome.findings);
     }
+    if (!this.live(runId)) return;
+    if (best) return this.present(runId, best.id);
     this.finish(runId, "failed", "修正の上限（初回＋2 回）に達した");
+  }
+
+  private present(runId: string, candidateId: string) {
+    const r = this.o.store.runs[runId];
+    if (!r || r.state !== "running") return;
+    this.o.store.tx(() => {
+      r.presentedCandidateId = candidateId;
+      r.state = "presented";
+      r.finishedAt = this.now();
+    });
   }
 
   private finish(runId: string, state: "failed", failure: string) {
@@ -292,9 +364,7 @@ export class CanvasService {
 
   private makeVerification(digest: string, dataDigest: string | null, environment: string, checks: Verification["checks"]): Verification {
     // 必須は段階の名前で数える（matched・advisory は助言で、保存を止めない）
-    const required = checks.filter((c) => c.level === "contract" || c.level === "loaded" || c.level === "operated");
-    const failed = required.find((c) => !c.pass);
-    const hasLevels = ["contract", "loaded", "operated"].every((l) => checks.some((c) => c.level === l));
+    const failed = checks.filter(isRequired).find((c) => !c.pass);
     return {
       id: id("v_"),
       digest,
@@ -302,7 +372,7 @@ export class CanvasService {
       environment,
       dataDigest,
       checks,
-      requiredPassed: hasLevels && !failed,
+      requiredPassed: requiredPassed(checks),
       failedAt: failed?.id,
       createdAt: this.now(),
     };
@@ -449,5 +519,6 @@ export class CanvasService {
     this.aborts.clear();
     await this.drain();
     await this.o.observer.close();
+    await this.o.review?.reviewer.close();
   }
 }
