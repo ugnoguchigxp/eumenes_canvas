@@ -2,10 +2,12 @@
 // 入力ごとの効果・dt = 0 の不変性・再現性・リサイズ・長時間。結果は助言で、保存の必須にしない（docs/agent-plan/README.md 規則 1）。
 // クリックの点は作品が描いた領域（paintedTargets）だけから取る。observer.ts の固定点は使わない。
 import type { ArtworkBody } from "../contract/artwork";
+import type { EvalPlan } from "./eval-types";
 import { HarnessSession, type IssueToken } from "./harness-session";
 import { paintedTargets } from "./observer";
 import { describeScene, diffShots, isSingleColor, sceneText, type DiffResult, type Shot } from "./pixels";
 import type { ReviewFinding } from "./review";
+import { runScript, type ScriptResult } from "./script-runner";
 import type { MakerSpec } from "./spec";
 import type { CheckResult } from "./types";
 
@@ -58,6 +60,8 @@ export interface ProbeReport {
 export interface ProbePort {
   readonly suite: string;
   probe(body: ArtworkBody, data: unknown, spec: MakerSpec | null, signal: AbortSignal): Promise<ProbeReport>;
+  /** 検証担当の台本を順に実行する（07）。 */
+  runScripts(body: ArtworkBody, data: unknown, plan: EvalPlan, signal: AbortSignal): Promise<ScriptResult[]>;
   close(): Promise<void>;
 }
 
@@ -277,6 +281,30 @@ export class PlaywrightProber implements ProbePort {
       return report;
     } finally {
       report.ms = Math.round(performance.now() - t0);
+      signal.removeEventListener("abort", abort);
+      await s.close();
+    }
+  }
+
+  /** 台本を 1 つの HarnessSession で順に実行する。全体の実時間が PROBE.scriptBudgetMs を超えたら、残りは実行しない。 */
+  async runScripts(body: ArtworkBody, data: unknown, plan: EvalPlan, signal: AbortSignal): Promise<ScriptResult[]> {
+    const t0 = performance.now();
+    const browser = await this.getBrowser();
+    const s = new HarnessSession(browser, this.hostOrigin, this.issue);
+    const abort = () => void s.close();
+    signal.addEventListener("abort", abort, { once: true });
+    const out: ScriptResult[] = [];
+    try {
+      await s.open();
+      for (const script of plan.scripts) {
+        if (performance.now() - t0 > PROBE.scriptBudgetMs) {
+          out.push({ id: script.id, requirement: script.requirement, purpose: script.purpose, measures: [], errors: [], skipped: "時間の上限" });
+          continue;
+        }
+        out.push(await runScript(s, body, data, script));
+      }
+      return out;
+    } finally {
       signal.removeEventListener("abort", abort);
       await s.close();
     }

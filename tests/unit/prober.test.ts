@@ -94,3 +94,14 @@ test("狭い幅で消える作品", async () => {
 test("版", () => {
   expect(prober.suite).toBe("host-probe/1");
 });
+
+test("台本の実行（07）", async () => {
+  const plan = { scripts: [{ id: "S1", requirement: "R1", purpose: "跳ぶ", seed: 1, steps: [{ do: "shot", label: "前" }, { do: "tap", input: "Space", holdMs: 50 }, { do: "wait", ms: 150 }, { do: "track", color: "#00ff00", label: "跳躍中" }] }] } as const;
+  const [r] = await prober.runScripts(body(jumper(true)), null, plan as any, sig());
+  expect(r.skipped).toBeNull();
+  expect(r.measures.length).toBe(2);
+  const m = /#00ff00 の画素 \d+、左上\((\d+),(\d+)\)/.exec(r.measures[1].text);
+  expect(m).not.toBeNull();
+  expect(Number(m![2])).toBeLessThan(280); // 起動時は左上 y = 300 - 20 = 280
+  console.log(`[prober] 台本\n${r.measures.map((x) => `${x.id}: [${x.t}ms ${x.label}] ${x.text}`).join("\n")}`);
+}, T);
