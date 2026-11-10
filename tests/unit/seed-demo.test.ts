@@ -1,4 +1,4 @@
-// デモの投入スクリプト：通常の API で 4 題を保存し、2 回目は同じ題名を飛ばす。
+// デモの投入スクリプト：通常の API でゲーム 4 題と描画 5 題を保存し、2 回目は同じ題名を飛ばす。
 import { afterAll, expect, test } from "bun:test";
 import { join } from "node:path";
 import { startCanvasApp } from "../../src/server/canvas-app";
@@ -17,18 +17,15 @@ const app = startCanvasApp({
 });
 afterAll(() => app.stop());
 
-test("単一利用者モードでは 4 題を保存し、再実行では飛ばす（cookie なし）", async () => {
+const TITLES = ["テトリス", "オセロ", "インベーダーゲーム", "ソリティア", "Three.js の場面", "マーブルラン", "ピンボール", "ブラックホール", "HTML in canvas のカード"];
+
+test("単一利用者モードでは 9 題を保存し、再実行では飛ばす（cookie なし）", async () => {
   const quiet = () => {};
   const first = await seedDemo({ host: app.hostOrigin, log: quiet });
   expect(first.owner).toBeNull();
-  expect(first.results.map((r) => [r.title, r.result])).toEqual([
-    ["テトリス", "saved"],
-    ["オセロ", "saved"],
-    ["インベーダーゲーム", "saved"],
-    ["ソリティア", "saved"],
-  ]);
+  expect(first.results.map((r) => [r.title, r.result])).toEqual(TITLES.map((title) => [title, "saved"]));
   const second = await seedDemo({ host: app.hostOrigin, log: quiet });
   expect(second.results.every((r) => r.result === "skipped")).toBe(true);
   const list = (await (await fetch(app.hostOrigin + "/api/artworks")).json()) as { title: string }[];
-  expect(list.map((a) => a.title).sort()).toEqual(["インベーダーゲーム", "オセロ", "ソリティア", "テトリス"].sort());
+  expect(list.map((a) => a.title).sort()).toEqual([...TITLES].sort());
 });

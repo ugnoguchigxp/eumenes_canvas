@@ -73,6 +73,110 @@
         ],
         "reply": "ソリティアを作りました。ドラッグかクリックで札を動かせます。"
       }
+    },
+    {
+      "note": "デモ：Three.js の場面",
+      "input": {
+        "request": "Three.js の場面を作って",
+        "conversation": [],
+        "attempt": 0
+      },
+      "output": {
+        "title": "Three.js の場面",
+        "entryFile": "../../examples/render/three-scene.js",
+        "libraries": [
+          "three@0.187.0"
+        ],
+        "changes": "物理なしの Three.js の場面。照明と影、トーラスノット・二十面体・立方体。ドラッグと矢印キーでカメラを回す。クリックした物体の色が変わる。HTML の名札を api.decodeSVG で画像にし、面のテクスチャにする。",
+        "unconfirmed": [
+          "カメラの速さ",
+          "名札の文言"
+        ],
+        "reply": "Three.js の場面を作りました。ドラッグか矢印キーで回り、物体をクリックすると色が変わります。"
+      }
+    },
+    {
+      "note": "デモ：マーブルラン",
+      "input": {
+        "request": "マーブルランを作って",
+        "conversation": [],
+        "attempt": 0
+      },
+      "output": {
+        "title": "マーブルラン",
+        "entryFile": "../../examples/render/marble-run.js",
+        "libraries": [
+          "three@0.187.0",
+          "cannon-es@0.20.0"
+        ],
+        "changes": "ジグザグの坂を複数のビー玉が転がり落ち、下の箱に集まる。最大 12 個。Space で 1 個足す、R で最初から、←→ でカメラを回す。Three.js と cannon-es を使う。",
+        "unconfirmed": [
+          "ビー玉の数と間隔",
+          "坂の傾き"
+        ],
+        "reply": "マーブルランを作りました。ビー玉が坂を転がって箱に入ります。Space で足せます。"
+      }
+    },
+    {
+      "note": "デモ：ピンボール",
+      "input": {
+        "request": "ピンボールを作って",
+        "conversation": [],
+        "attempt": 0
+      },
+      "output": {
+        "title": "ピンボール",
+        "entryFile": "../../examples/render/pinball.js",
+        "libraries": [
+          "three@0.187.0",
+          "cannon-es@0.20.0"
+        ],
+        "changes": "傾いた台、プランジャー（Space を押して溜め、離して打つ）、左右のフリッパー（← →、または Z・M）、バンパー 3 個（当たると弾き返して 100 点）、得点と残り球の HTML パネル（api.decodeSVG）。残り球 3、R で最初から。Three.js と cannon-es を使う。",
+        "unconfirmed": [
+          "台の傾き",
+          "得点の計算"
+        ],
+        "reply": "ピンボールを作りました。Space で打ち出し、←→ でフリッパーを操作します。"
+      }
+    },
+    {
+      "note": "デモ：ブラックホール",
+      "input": {
+        "request": "ブラックホールを作って",
+        "conversation": [],
+        "attempt": 0
+      },
+      "output": {
+        "title": "ブラックホール",
+        "entryFile": "../../examples/render/black-hole.js",
+        "libraries": [
+          "three@0.187.0"
+        ],
+        "changes": "シュヴァルツシルト時空の光の曲がりを近似で積分し、降着円盤（回転・ドップラーで明るさが左右非対称）、光子球の内側の影、背景の星の重力レンズを描く。上下のドラッグ・↑↓ で見込む角度、←→ で円盤の回転の速さ。物理エンジンは使わない。",
+        "unconfirmed": [
+          "影の内側の輪の見え方",
+          "見込む角度の初期値"
+        ],
+        "reply": "ブラックホールを描きました。↑↓ やドラッグで見込む角度を変えられます。"
+      }
+    },
+    {
+      "note": "デモ：HTML in canvas のカード",
+      "input": {
+        "request": "HTML in canvas のカードを作って",
+        "conversation": [],
+        "attempt": 0
+      },
+      "output": {
+        "title": "HTML in canvas のカード",
+        "entryFile": "../../examples/render/html-card.js",
+        "changes": "HTML/CSS で組んだカード（見出し・書式付きの文・表・進捗バー・ボタン・入力欄）を api.decodeSVG で画像にして Canvas 2D の上に描く。ボタンと入力欄は作品が自分の配置で当たり判定をし、キー入力で文字を受ける。背景は 2D で動かす。ライブラリは使わない。",
+        "unconfirmed": [
+          "IME や文字の選択は動かない",
+          "本物のフォーム部品ではない"
+        ],
+        "reply": "HTML in canvas のカードを作りました。ボタンと入力欄をクリックして操作できます。"
+      }
     }
   ]
 }

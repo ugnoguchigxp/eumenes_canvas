@@ -1,4 +1,4 @@
-// デモの 4 題を、動いている検証ホストへ通常の API（/api/runs → 検査・観測 → 保存）で依頼して保存する。
+// デモ（ゲーム 4 題と描画 5 題）を、動いている検証ホストへ通常の API（/api/runs → 検査・観測 → 保存）で依頼して保存する。
 // 使い方: bun scripts/seed-demo.ts [設定ファイル] [--host <http://localhost:4300>]
 // 同じ題名の作品がすでにある依頼は飛ばす（再実行しても重複しない）。
 import { randomBytes } from "node:crypto";
@@ -21,7 +21,7 @@ function parseArgs(argv: string[]) {
 
 const rid = () => randomBytes(12).toString("base64url");
 
-export async function seedDemo(opts: { host: string; log?: (s: string) => void }) {
+export async function seedDemo(opts: { host: string; log?: (s: string) => void; titles?: string[] }) {
   const log = opts.log ?? console.log;
   const H = opts.host.replace(/\/$/, "");
   // 単一利用者モード（既定）では cookie は発行されず、保存した作品は全ブラウザの一覧に出る。
@@ -44,9 +44,11 @@ export async function seedDemo(opts: { host: string; log?: (s: string) => void }
   const demo = JSON.parse(readFileSync(DEMO, "utf8")) as { recordings: { input: { request: string }; output: { title: string } }[] };
   const existing = new Set(((await call("/api/artworks")) as { title: string }[]).map((a) => a.title));
   const results: { request: string; title: string; result: string; attempts?: number; artworkId?: string; checks?: string }[] = [];
+  const only = opts.titles ? new Set(opts.titles) : null;
   for (const rec of demo.recordings) {
     const { request } = rec.input;
     const { title } = rec.output;
+    if (only && !only.has(title)) continue;
     if (existing.has(title)) {
       log(`飛ばす: ${title}（同じ題名の作品がある）`);
       results.push({ request, title, result: "skipped" });
