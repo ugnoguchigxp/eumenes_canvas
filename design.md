@@ -8,7 +8,7 @@
 
 初期受入は Canvas 2D のゲーム制作、部分修正、不具合修復。落ち物、ブロック崩しなど、操作と合格条件が異なる作品を使う。同じ実行環境で、グラフ、シミュレーション、描画ツール、データの可視化も扱える構成にする。ゲーム種別や題材で制作・保存・表示の経路を分けない。ブラウザへの入力、サイズ変更、描画、許可されたデータの受け渡しが共通の接点になる。
 
-初期版は同梱した JavaScript と Canvas 2D を使い、読み取り用データは合成データに限る。Three.js／WebGL、ライブデータ、アプリ内の永続状態、配布・共有、ネットワーク接続は個別に能力と受入条件を定めて追加する。例えばライブダッシュボードでは、認証済みホストが取得した必要な列だけを読み取り用データとして渡す。画面全体に HTML が必要な用途は別途実行契約を検討する。Canvas の上にはホストが提供する操作ボタンや説明を配置できる。
+初期版は同梱した JavaScript と Canvas 2D を使い、読み取り用データは合成データに限る。Three.js／WebGL、ライブデータ、アプリ内の永続状態、配布・共有、ネットワーク接続は個別に能力と受入条件を定めて追加する。Three.js（WebGL）・物理エンジン・HTML の描画は 2026-11-10 に §7 の方式で加えた（通信・保存・eval・Worker の禁止は変えない）。例えばライブダッシュボードでは、認証済みホストが取得した必要な列だけを読み取り用データとして渡す。画面全体に HTML が必要な用途は別途実行契約を検討する。Canvas の上にはホストが提供する操作ボタンや説明を配置できる。
 
 ## 2. 独立側と Eumenes の責務
 
@@ -94,3 +94,42 @@ P1 の実装では次のように具体化した（[P1 結果](docs/p1-results.m
 独立側で確認した制作コアとプレビューを、ソース commit、版、SHA-256、公開契約付きでパッケージ化する。独立ホスト、評価データ、モデル設定、秘密は配布対象から外す。Eumenes 側では新しい制作担当を bundle と登録 adapter で接続し、OpenUI の登録済み部品として共通プレビューを置く。アプリの保存と採用、認証、会話の仕事台帳はホストの既存規則に従う。モデル名と接続先は保存済み設定と実行時の catalog から解決する。 [OpenUI Artifact の契約](../eumenes/docs/openui-artifact.md) · [ツールチェーンの登録](../eumenes/docs/toolchain-extension.md) · [LARM の接続設定](../eumenes/docs/larm.md)
 
 取込の判定は [plan.md の評価と取込条件](plan.md#4-本体へ取り込む条件) に従う。Three.js や外部データを扱う際も、表示モード、作品の版、結果の採用は共通契約を使う。将来の描画方式や用途に備え、初期版の条件を満たすためのゲーム固有 API は設けない。
+
+## 7. 描画方式の拡張：Three.js・物理・HTML の描画（2026-11-10 追加）
+
+利用者の依頼（「ゲームだけではなく、three.js での描画や html in canvas 等もできる様に」「物理エンジンも考慮した marble run やピンボール、ブラックホール描画などをデモで試し、そこから最小の試験と計測基板を作る」）に応える。作品が Canvas 2D のゲームに限られず、3D（Three.js）、物理（剛体）、HTML/CSS の組版を作品の描画に使えるようにする。§4 の隔離（通信・外部コード読込・eval・Worker・保存の禁止）、上限、検証と保存の契約は弱めない。結果と実測は [docs/render-results.md](docs/render-results.md) に置く。
+
+### 7.1 調べて確かめたこと（事実）
+
+| 項目 | 内容（2026-11-10、Playwright 1.56.1 の Chromium 141.0.7390.37 headless・WebKit 26.0、Linux） |
+| --- | --- |
+| 実行場所 | 作品は専用 Worker で動き、DOM は無い（`src/preview/bootstrap.js`）。`api.canvas` は 2D の文脈を取得済みの `OffscreenCanvas` なので、同じ面で WebGL の文脈は取れない。 |
+| 外部コード | Worker の応答 CSP は `default-src 'none'`。`importScripts`・`import`・`fetch` に加え、`new Function` は EvalError、`WebAssembly.compile` は CompileError（`'unsafe-eval'` が無い）で拒否される（実測）。WASM の物理エンジン（Rapier、ammo.js の WASM 版）は CSP を緩めない限り使えない。 |
+| WebGL | Chromium は Worker 内の `new OffscreenCanvas()` で WebGL2 が使える（描画器は ANGLE の Vulkan 上の SwiftShader。GPU なしのソフトウェア描画）。Three.js r187 の `WebGLRenderer({ canvas: OffscreenCanvas })` で描いた立方体を `api.ctx.drawImage` で作品の面へ写すと、既存の観測（iframe の画面撮影）に写る。WebKit 26.0（Linux）は Worker 内で WebGL の文脈を作れず、Three.js は「Error creating WebGL context」を投げる（実行時エラーとして報告され、無言の空白にはならない）。 |
+| HTML の画像化 | Worker では `createImageBitmap(SVG の Blob)` が使えない（Chromium は文書側でも InvalidStateError）。文書側で `data:` URL の SVG（foreignObject に XHTML）を `<img>` で復号すれば描ける。Chromium はその `<img>` から直接作った ImageBitmap を origin-clean でないとして転送を拒む（DataCloneError）が、同一オリジンの `OffscreenCanvas` に描いてから取り出すと転送でき、受け取った側で `getImageData` も WebGL のテクスチャ化もできる。WebKit では直接作っても転送できる。 |
+| Three.js の配布形 | npm `three@0.187.0` は ESM だけ（`three.cjs` は `require(esm)` の再輸出で非推奨）。古典的スクリプトとして連結するには束ね直しが要る。Bun.build（IIFE・minify）で 755,502 バイト。 |
+| 物理エンジン | `cannon-es@0.20.0`（純 JavaScript、MIT、最終公開 2022-08）は Worker 内で動く。球と平面の 600 ステップが 14.6ms。束ねると 124,764 バイト。 |
+
+### 7.2 方式
+
+- **同梱ライブラリの宣言（作品の任意項目 `libraries`）。** 作品は使うライブラリを版付きの id で宣言する（`"three@0.187.0"`、`"cannon-es@0.20.0"`）。登録表は `src/contract/libraries.ts`。プレビューオリジンは、宣言されたライブラリだけを、npm の固定版（`package.json` で exact に固定、`bun.lock` に完全性の値）から IIFE に束ね（初回だけ、以後はメモリに保持）、固定ブートストラップと作品本体の間に連結する。作品の関数本体には `THREE`・`CANNON` を引数として渡す。通信・動的 import では読まないので、作品の `entry` は 128 KiB のまま、実行時のネットワークも要らない。宣言しない作品の Worker スクリプトと digest は従来と同じ。宣言した作品の digest は宣言した id を含む（ライブラリの版が変われば別物として扱う）。版を上げるときは新しい id を足し、古い id は保存済み作品のために残す。
+- **WebGL の面。** 作品が自分で `new OffscreenCanvas(1, 1)` を作り、`new THREE.WebGLRenderer({ canvas })` で描き、各フレームの最後に `api.ctx.drawImage(gl面, 0, 0, api.width, api.height)` で作品の面へ写す。ホストの表示・観測の経路（作品の面 → ImageBitmap → シェルの `bitmaprenderer` → 画面撮影）は変えない。`preserveDrawingBuffer` は不要（描いた直後の同じ処理の中で写すため）。WebGL を使えない環境では文脈の作成が失敗し、実行時エラーとして観測に出る。
+- **HTML の描画（HTML in canvas）。** `api.decodeSVG(svg)` を加える。作品は HTML/CSS を SVG の `foreignObject` に入れた文字列を渡し、シェル（プレビューの文書）が画像として復号して `ImageBitmap` を返す。作品はそれを `api.ctx.drawImage` で描くか、2D の `OffscreenCanvas` に写して `THREE.CanvasTexture` にする。SVG は画像として読むので、中のスクリプトは動かず、外部の資源（画像・フォント・CSS）も読まない。復号が済むと `frame(t, 0)` を呼ぶ（入力と同じく結果をすぐ描くため）。起動中（setup の中）に頼んだ復号は、済むまで（最長 3 秒）`ready` を待つ。上限は SVG 256 Ki 文字、毎秒 30 件、同時 8 件、幅・高さ 4096 px。
+  - 標準の HTML-in-Canvas 提案（`<canvas layoutsubtree>` と `drawElementImage`、three.js の `HTMLTexture`）は、Chromium でも実験フラグの段階で、Worker の作品からは使えない（推定。今回の環境では試していない）。標準化が進んだら、同じ「HTML を作品の画素にする」用途の置き換え候補とする。
+  - **操作できる HTML の重ね表示（シェルの DOM に作品の HTML を置く）は採らない。** シェルはホストへのポートを持つ文書で、作品が中身を決める DOM を同じ文書に置くと、CSP（`style-src 'self'` のため style 属性・`<style>` が効かない）、DOM の衝突、フォームの送信・遷移など、隔離の検査範囲が大きく広がる。HTML の要素への入力は、作品が自分の配置で当たり判定をする（ポインター・キー入力は従来どおり作品に届く）。IME の入力・文字選択・アクセシビリティは扱わない（制限として契約に書く）。
+- **物理。** 純 JavaScript の `cannon-es` を同梱する。WASM の Rapier・ammo.js は CSP の `'wasm-unsafe-eval'` を要し、隔離を緩めるので採らない。物理は Three.js と独立に使え、Canvas 2D の作品からも使える。固定刻み（例 1/60 秒）を積み上げる形を手順に書き、`dt <= 0` では進めない原則は変えない。
+- **観測。** 作品の画素はすべて作品の面に集まるので、host-smoke/2 の観測（撮影・差分・単色・描画領域のクリック）は変えない。WebGL の作品・HTML を描いた作品もそのまま観測に写る。SwiftShader のソフトウェア描画は GPU の実機と画素が一致しない（推定）ため、判定は色の許容幅・領域の重心・形の大まかさで行い、完全一致を使わない。
+- **隔離の変化はシェルの CSP の 1 点だけ。** シェルの `img-src 'none'` を `img-src data:` にした（作品が渡す SVG を画像として復号するため）。`data:` の画像は通信を伴わない。Worker の CSP（`default-src 'none'`）、sandbox、オリジンの照合、トークン、メッセージの型・大きさ・頻度の検査は変えない。シェルが受ける作品のメッセージに `svg` を加え、型・長さ・頻度・同時数を検査する。
+
+### 7.3 推定と仮定
+
+- **推定。** SwiftShader の WebGL は 640×480 程度の単純な場面なら観測の時間内に描ける（実測は docs/render-results.md）。重い全画面シェーダー（ブラックホールの光線追跡など）は 1 フレームが遅く、`advance` の刻み（16ms ごとに `frame`）では描画の回数を減らす工夫（描画は 1 回の `advance` の最後だけ、など）が要る場合がある。
+- **推定。** cannon-es は固定刻みと同じ入力列なら同じ結果になる（同じ JavaScript エンジンの中での浮動小数の決定性）。ブラウザ・版をまたいだ一致は仮定しない。
+- **仮定。** 実モデル（Luna／Haiku）がこの契約で Three.js・物理・HTML の作品を作れるかは未測定。計測基板（§7.4）はそのための入れ物で、合格率の生成は今回行わない。
+- **仮定。** 製品の Eumenes 側にこの拡張を取り込む時期・方法は §6 の取込に従い、本節では決めない。
+
+### 7.4 デモ・最小化した試験・計測基板
+
+1. **デモを先に作って動かす。** 契約に従う作品として、marble run（物理：コース・重力・衝突・複数の球）、ピンボール（物理：フリッパー・プランジャー・バンパー・球・台）、ブラックホール（シェーダー：降着円盤と重力レンズ）、物理なしの Three.js の場面、HTML in canvas（HTML の組版を作品の画素にする）を作り、共通プレビューで実際に動かす。置き場所は `examples/render/`（評価の参照作品とは別）。動かして分かったこと（難所、観測に写るもの、headless の WebGL で揺れるもの）を docs/render-results.md に残す。
+2. **最小化。** デモそのものを単体試験にしない。デモで「成功を見分けた画素・振る舞い」だけを残した小さな作品で、Playwright の試験（`tests/e2e/render-*.spec.ts`）を作る。例：WebGL が写る（背景と違う色の領域がある）、物理で球が落ちて止まる（領域の重心が下へ動き、その後動かない）、キーでフリッパーの領域が動く、HTML の文字・色が画素に出る、禁止事項（通信・eval・WASM・宣言していないライブラリ）が拒否される。
+3. **計測基板（render-v1）。** general-v1 と同じ形（凍結した課題文と判定方針の文書、課題 JSON、判定、参照作品、対照による自己確認、実行器、集計）で、制作担当が Three.js・物理・HTML の作品を作れるかを測る入れ物を作る。general-v1・P2・P3 の課題・判定・記録は変えない。課題の数は少なく保ち（6 件程度）、判定は画素の観測だけで行う（作品の `status` は使わない）。判定する要素は照明に左右されない平坦な色（`MeshBasicMaterial` など）で指定し、陰影のある装飾は判定に使わない。今回は入れ物と自己確認までで、制作担当による合格率の生成は行わない（未測定として残す）。

@@ -77,4 +77,19 @@ Playwright で実際の入力と描画を確認する。固定データ、画面
 - [x] P3 で Collaborator・Pursuit を直接生成と比べる（[P3 結果](docs/p3-results.md)。3 条件とも §4 未達、主因は契約の書き漏れと観測器の偽陰性で経路の差ではない。代行の推論で、実モデルは未測定）。
 - [ ] P3 の改善（契約の明示・制作手順 `docs/maker-skill.md`・観測 host-smoke/2）を直接生成の経路に入れ、汎用課題 general-v1（[凍結記録](docs/eval/general-v1.md)、10 件）で汎用度を測る。合格率の生成は未実施。
 - [ ] 修復課題で Pursuit と Claude Code の採否を判断する（未実施・保留：Pursuit／Claude Code の実行環境と、参照先の `eumenes/vendor/pursuit/manifest.json` が無い）。
+- [ ] 描画方式の拡張（§7、design.md §7）：Three.js・物理・HTML の描画の契約とプレビューの実装、デモ、最小化した試験、計測基板 render-v1 の入れ物と自己確認。制作担当による合格率の生成は未実施。
 - [ ] 検証済みの配布物を本体へ接続し、固定・実モデル・実ブラウザの受入を行う（未実施・保留：§4 未達、本体リポジトリの変更が今回の範囲外、`eumenes/spec/collaboration-integration-2026-11-05.md` が無い）。
+
+## 7. 描画方式の拡張（P5 の Three.js の一部を先行）
+
+P5 の「Three.js の固定版を同梱した小さな 3D 作品」を、取込（P4）を待たずに独立側で先に進める。方式は [design.md §7](design.md#7-描画方式の拡張threejs物理html-の描画2026-11-10-追加)。結果は [docs/render-results.md](docs/render-results.md)。P4 の取込条件（§4）は変えない。
+
+| 手順 | 内容 | 終了条件 |
+| --- | --- | --- |
+| 1. 文書 | design.md §7、本節、公開契約（`libraries`・WebGL・`api.decodeSVG`・観測・禁止事項・未確認事項）、制作手順（`docs/maker-skill.md`：Canvas 2D・Three.js・物理・HTML の原則と完成条件） | 実装より先に commit する。 |
+| 2. ホスト | 同梱ライブラリの登録・束ね・連結、契約の検査（`libraries`）、digest、`api.decodeSVG`（ブートストラップ・シェル・メッセージ検査）、シェルの CSP の `img-src data:` | 既存の単体・型検査・Playwright（Chromium・WebKit）が通る。WebGL の作品・HTML の作品が観測に写る。禁止事項（通信・eval・WASM・未宣言のライブラリ・宣言していない id）が拒否される。 |
+| 3. デモ | marble run・ピンボール・ブラックホール・物理なしの 3D・HTML in canvas を `examples/render/` に置き、共通プレビューで動かす | 動かした結果（成功・失敗・所要時間・観測の合否）を結果文書に書く。 |
+| 4. 最小化 | デモから成功を見分ける画素・振る舞いだけを残した試験 `tests/e2e/render-*.spec.ts` | Chromium で通る。WebKit は WebGL を使えないことを明示した試験にする。 |
+| 5. 計測基板 | render-v1：課題文と判定方針の凍結文書（`docs/eval/render-v1.md`）、`eval/tasks/render.json`、`eval/checks/render.ts`、`eval/gold/render/`、自己確認・集計（`eval/render/`）、実行器 `eval/p3/run.ts --suite render` | 対照（黒一色・壊した作品・参照作品）で判定が期待どおりに割れる。合格率の生成は行わない。 |
+
+測ること：各試験の合否と数、デモの起動時間・1 フレームの所要時間（SwiftShader）、束ねたライブラリの大きさ、自己確認の不一致数。実モデルでの合格率、実 GPU・macOS の Safari・Firefox での動作は未測定として残す。
