@@ -16,8 +16,9 @@ document.getElementById("probe-button").addEventListener("click", () => {
 
 window.harness = {
   events,
-  async start({ entry, title = "probe", data = null, seed = 1, clock = "manual" }) {
-    const r = await fetch("/api/dev/preview", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ title, entry }) });
+  async start({ entry, title = "probe", data = null, seed = 1, clock = "manual", libraries }) {
+    const body = libraries ? { title, entry, libraries } : { title, entry };
+    const r = await fetch("/api/dev/preview", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     const j = await r.json();
     if (!r.ok) return { type: "rejected", errors: j.errors };
     return ctl.start({ token: j.token, data, seed, clock });

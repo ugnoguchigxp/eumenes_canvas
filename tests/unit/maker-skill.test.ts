@@ -68,5 +68,6 @@ test("公開契約：入力時の frame(t, 0)、dt<=0 の扱い、start 1 回、
 test("契約に書いた frame(t, 0) は実装どおり：ブートストラップは pointermove 以外の入力・リサイズ・起動で frame(0) を呼ぶ", () => {
   const boot = readFileSync(join(ROOT, "src/preview/bootstrap.js"), "utf8");
   expect(boot).toMatch(/m\.type === "input"\) \{\s*call\("input", \[m\.ev\]\);\s*if \(m\.ev && m\.ev\.type !== "pointermove"\) \{ frame\(0\); present\(\); \}/);
-  expect(boot.match(/frame\(0\);/g)!.length).toBe(3); // 起動・入力・リサイズ
+  // 起動・入力・リサイズ・HTML の復号の完了・復号を待った起動の完了（docs/artwork-contract-v1.md「HTML の描画」）
+  expect(boot.match(/frame\(0\);/g)!.length).toBe(5);
 });

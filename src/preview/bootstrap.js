@@ -1,13 +1,16 @@
 // 作品 Worker の固定ブートストラップ（実行契約 v1）。
 // プレビューオリジンが作品本体の前に連結して配信する。応答の CSP は default-src 'none'。
 "use strict";
+// 宣言されたホスト同梱ライブラリ（src/preview/libs/*.js）が名前空間を置く場所。作品には引数として渡す。
+var __canvasLibs = {};
 var __canvasApp = (function () {
   var post = self.postMessage.bind(self);
   var addListener = self.addEventListener.bind(self);
 
   // CSP が覆わない保存・同一オリジン通信の API を作品から外す（多層防御）。
   // 通信・外部コード読込・子 Worker は応答の CSP で拒否する。
-  var removed = ["indexedDB", "caches", "BroadcastChannel", "SharedWorker", "cookieStore"];
+  // WebAssembly は契約で使えない。Chromium は CSP（'unsafe-eval' なし）で拒否するが、WebKit 26.0 は Worker で compile できた（2026-11-10 実測）ため外す。
+  var removed = ["indexedDB", "caches", "BroadcastChannel", "SharedWorker", "cookieStore", "WebAssembly"];
   for (var i = 0; i < removed.length; i++) {
     var name = removed[i];
     for (var o = self; o; o = Object.getPrototypeOf(o)) {
@@ -41,6 +44,13 @@ var __canvasApp = (function () {
   var lastTickT = null;
   var errorsSent = 0;
   var statusSent = 0;
+  // SVG（HTML を含む foreignObject）の復号。Worker には DOM が無いので、シェルが画像として復号して ImageBitmap を返す。
+  var svgSeq = 0;
+  var svgPending = {}; // id -> { resolve, reject }
+  var svgPendingCount = 0;
+  var MAX_SVG_CHARS = 256 * 1024;
+  var MAX_SVG_PENDING = 8;
+  var bootWaiters = null; // 起動中に頼まれた復号を ready の前に待つ
 
   function reportError(where, err) {
     if (errorsSent >= 5) return;
@@ -105,6 +115,14 @@ var __canvasApp = (function () {
     return v;
   }
 
+  function sendReady() {
+    if (!bootWaiters) return;
+    bootWaiters = null;
+    frame(0);
+    present();
+    post({ type: "ready" });
+  }
+
   addListener("message", function (ev) {
     var m = ev.data;
     if (!m || typeof m !== "object") return;
@@ -128,8 +146,20 @@ var __canvasApp = (function () {
           statusSent++;
           try { post({ type: "status", value: JSON.parse(JSON.stringify(value)) }); } catch (e) {}
         },
+        decodeSVG: function (svg) {
+          return new Promise(function (resolve, reject) {
+            if (typeof svg !== "string" || svg.length === 0) return reject(new TypeError("decodeSVG: SVG の文字列を渡す"));
+            if (svg.length > MAX_SVG_CHARS) return reject(new RangeError("decodeSVG: SVG は " + MAX_SVG_CHARS + " 文字まで"));
+            if (svgPendingCount >= MAX_SVG_PENDING) return reject(new Error("decodeSVG: 同時に復号できるのは " + MAX_SVG_PENDING + " 件まで"));
+            var id = ++svgSeq;
+            svgPending[id] = { resolve: resolve, reject: reject };
+            svgPendingCount++;
+            post({ type: "svg", id: id, svg: svg });
+          });
+        },
       };
       Object.freeze(api.random);
+      Object.freeze(api.decodeSVG);
       applySize();
       if (typeof setupFn !== "function") {
         reportError("start", new Error("canvasApp.start(setup) が呼ばれていない"));
@@ -144,7 +174,27 @@ var __canvasApp = (function () {
       call("resize", [size.width, size.height, size.dpr]);
       frame(0);
       present();
-      post({ type: "ready" });
+      if (svgPendingCount === 0) {
+        post({ type: "ready" });
+      } else {
+        // 起動中に頼まれた SVG の復号が済むまで（最大 3 秒）ready を待つ。済んだら dt=0 で描き直してから知らせる。
+        var readyTimer = setTimeout(sendReady, 3000);
+        bootWaiters = function () { if (svgPendingCount === 0) { clearTimeout(readyTimer); sendReady(); } };
+      }
+      return;
+    } else if (m.type === "svg-result" || m.type === "svg-error") {
+      var p = svgPending[m.id];
+      if (!p) return;
+      delete svgPending[m.id];
+      svgPendingCount--;
+      if (m.type === "svg-result") p.resolve(m.bitmap);
+      else p.reject(new Error("decodeSVG: " + String(m.message || "復号できない")));
+      // 作品の then が済んでから、dt=0 で描き直す（復号の結果をすぐ描くため）
+      Promise.resolve().then(function () {
+        if (bootWaiters) { bootWaiters(); return; }
+        frame(0);
+        present();
+      });
     } else if (!api) {
       return;
     } else if (m.type === "tick") {

@@ -98,11 +98,11 @@ export function startApp(opts: AppOptions) {
   const preview = Bun.serve({
     port: opts.previewPort,
     hostname: previewName,
-    fetch(req: Request) {
+    async fetch(req: Request) {
       const t0 = performance.now();
       const url = new URL(req.url);
       try {
-        const r = servePreview(req);
+        const r = await servePreview(req);
         logRequest("preview", req, url, r.status, t0);
         return r;
       } catch (e) {
@@ -155,7 +155,7 @@ export function startApp(opts: AppOptions) {
           const body = (await readJson(req)) as Record<string, unknown>;
           const c = checkArtwork(body);
           if (!c.ok) return json({ errors: c.errors }, 422);
-          return json({ token: tokens.issue(body as { title: string; entry: string }) });
+          return json({ token: tokens.issue(body as { title: string; entry: string; libraries?: string[] }) });
         }
         if (opts.extraRoutes) {
           const r = await opts.extraRoutes(req, url, { tokens, hostOrigin, previewOrigin });

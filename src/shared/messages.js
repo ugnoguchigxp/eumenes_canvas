@@ -12,6 +12,9 @@ export const LIMITS = Object.freeze({
   workerMessageBytesHard: 1024 * 1024,
   maxCanvasDevicePixels: 4096,
   maxAdvanceMs: 60_000,
+  svgChars: 256 * 1024, // api.decodeSVG に渡せる SVG の長さ
+  svgPerSecond: 30, // 超えた復号の依頼は失敗として返す
+  svgPending: 8, // シェルが同時に復号する件数
 });
 
 const RUN_ID = /^[A-Za-z0-9_-]{1,64}$/;
@@ -101,6 +104,9 @@ export function checkWorkerToShell(m) {
       return onlyKeys(m, ["type", "seq"]) && Number.isInteger(m.seq) ? m : null;
     case "status":
       return onlyKeys(m, ["type", "value"]) && byteLength(m.value) <= LIMITS.statusBytes ? m : null;
+    case "svg":
+      if (!onlyKeys(m, ["type", "id", "svg"]) || !Number.isInteger(m.id) || !finiteIn(m.id, 1, 2 ** 31)) return null;
+      return typeof m.svg === "string" && m.svg.length > 0 && m.svg.length <= LIMITS.svgChars ? m : null;
     case "error":
       return onlyKeys(m, ["type", "message"]) && typeof m.message === "string" ? { type: "error", message: m.message.slice(0, LIMITS.errorMessageChars) } : null;
     default:

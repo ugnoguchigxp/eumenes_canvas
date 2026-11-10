@@ -19,5 +19,9 @@
     "@types/pngjs": "6.0.5",
     "pngjs": "7.0.0",
     "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "cannon-es": "0.20.0",
+    "three": "0.187.0"
   }
 }

@@ -13,6 +13,8 @@ let rafHandle = 0;
 let t0 = 0;
 let pendingMove = null;
 const statusRate = makeRateWindow();
+const svgRate = makeRateWindow();
+let svgActive = 0;
 const hardRate = makeRateWindow();
 
 const PASS_KEYS = new Set(["Tab", "Escape"]);
@@ -91,6 +93,10 @@ function start(m) {
       view.transferFromImageBitmap(msg.bitmap);
       return;
     }
+    if (msg.type === "svg") {
+      decodeSvg(msg, thisRun);
+      return;
+    }
     if (msg.type === "status" && statusRate.hit() > LIMITS.statusPerSecond) return;
     if (msg.type === "advanced" || msg.type === "ready") {
       // 描画面の反映を待ってから知らせる
@@ -138,6 +144,35 @@ function start(m) {
       rafHandle = requestAnimationFrame(moveLoop);
     };
     rafHandle = requestAnimationFrame(moveLoop);
+  }
+}
+
+// 作品が渡した SVG（foreignObject の HTML を含む）を画像として復号し、ImageBitmap を作品へ返す。
+// SVG を画像として読むので、SVG 内のスクリプトは動かず、外部の資源も読まない（シェルの CSP は img-src data: だけ）。
+async function decodeSvg(msg, thisRun) {
+  const fail = (message) => runId === thisRun && toWorker({ type: "svg-error", id: msg.id, message });
+  if (svgRate.hit() > LIMITS.svgPerSecond) return fail("復号の依頼が多すぎる（毎秒 " + LIMITS.svgPerSecond + " 件まで）");
+  if (svgActive >= LIMITS.svgPending) return fail("同時に復号できる件数を超えた");
+  svgActive++;
+  try {
+    const img = new Image();
+    img.decoding = "async";
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(msg.svg);
+    await img.decode();
+    const w = img.naturalWidth, h = img.naturalHeight;
+    if (!(w > 0 && h > 0)) return fail("SVG の width・height が無い");
+    if (w > LIMITS.maxCanvasDevicePixels || h > LIMITS.maxCanvasDevicePixels) return fail("SVG が大きすぎる（" + LIMITS.maxCanvasDevicePixels + " px まで）");
+    // Chromium は SVG 画像から直接作った ImageBitmap を origin-clean でないとして転送を拒む（2026-11-10 実測、DataCloneError）。
+    // 同一オリジンの OffscreenCanvas に描いてから取り出すと転送できる（描いた面は汚染されない）。
+    const c = new OffscreenCanvas(w, h);
+    c.getContext("2d").drawImage(img, 0, 0, w, h);
+    const bmp = c.transferToImageBitmap();
+    if (runId !== thisRun) return bmp.close();
+    toWorker({ type: "svg-result", id: msg.id, bitmap: bmp }, [bmp]);
+  } catch (e) {
+    fail("SVG を画像として復号できない" + (e && e.name ? "（" + e.name + "）" : ""));
+  } finally {
+    svgActive--;
   }
 }
 

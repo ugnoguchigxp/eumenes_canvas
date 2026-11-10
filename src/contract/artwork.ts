@@ -1,4 +1,6 @@
 // 作品契約 v1：単一の自己完結した JavaScript エントリと、別に渡す小さな入力 JSON。
+// 任意で、ホストが同梱する固定版ライブラリ（src/contract/libraries.ts）を宣言できる。
+import { HOST_LIBRARIES, MAX_LIBRARIES, libraryById, resolveLibraries } from "./libraries";
 export const CONTRACT_VERSION = "canvas-artwork/1";
 export const MAX_ENTRY_BYTES = 128 * 1024;
 export const MAX_DATA_BYTES = 64 * 1024;
@@ -9,6 +11,8 @@ export interface ArtworkBody {
   entry: string;
   /** ホストが登録した読み取り専用データの参照（任意）。 */
   dataRef?: string;
+  /** ホストが同梱する固定版ライブラリの id（任意。例 "three@0.187.0"）。 */
+  libraries?: string[];
 }
 const DATA_REF = /^[a-z0-9][a-z0-9-]{0,39}$/;
 
@@ -32,7 +36,18 @@ export function checkArtwork(body: unknown): ContractResult {
   const errors: string[] = [];
   if (!body || typeof body !== "object") return { ok: false, errors: ["作品はオブジェクトでなければならない"] };
   const b = body as Record<string, unknown>;
-  const extra = Object.keys(b).filter((k) => k !== "title" && k !== "entry" && k !== "dataRef");
+  const extra = Object.keys(b).filter((k) => k !== "title" && k !== "entry" && k !== "dataRef" && k !== "libraries");
+  let libs: string[] = [];
+  if (b.libraries !== undefined) {
+    if (!Array.isArray(b.libraries) || b.libraries.some((x) => typeof x !== "string")) errors.push("libraries は文字列の配列");
+    else {
+      libs = b.libraries as string[];
+      const unknown = libs.filter((x) => !libraryById(x));
+      if (unknown.length) errors.push(`未提供のライブラリ: ${unknown.join(", ")}（提供されるのは ${HOST_LIBRARIES.map((l) => l.id).join(", ")}）`);
+      if (new Set(libs).size !== libs.length) errors.push("libraries に重複がある");
+      if (libs.length > MAX_LIBRARIES) errors.push(`libraries は ${MAX_LIBRARIES} 個まで`);
+    }
+  }
   if (b.dataRef !== undefined && (typeof b.dataRef !== "string" || !DATA_REF.test(b.dataRef))) errors.push("dataRef の形式が不正");
   if (extra.length) errors.push(`未定義の項目: ${extra.join(", ")}`);
   if (typeof b.title !== "string" || b.title.trim() === "") errors.push("title は空でない文字列");
@@ -48,12 +63,16 @@ export function checkArtwork(body: unknown): ContractResult {
   else {
     // 実行せずに構文だけを確認する。関数本体として解析できない場合（import 宣言など）は拒否する。
     try {
-      new Function("canvasApp", `"use strict";\n${entry}`);
+      // 実行時と同じ引数（canvasApp と宣言したライブラリ）で解析する。引数と同名の let・const は構文エラーになる。
+      new Function("canvasApp", ...resolveLibraries(libs).map((l) => l.param), `"use strict";\n${entry}`);
     } catch (e) {
       errors.push(`構文エラー: ${(e as Error).message}`);
     }
     if (/\bimport\s*\(/.test(entry)) errors.push("動的 import は使えない");
     if (/\bimportScripts\b/.test(entry)) errors.push("importScripts は使えない");
+    // 宣言せずに同梱ライブラリの名前を使うと実行時に未定義になる。先に契約の検査で知らせる。
+    for (const l of HOST_LIBRARIES)
+      if (!libs.includes(l.id) && new RegExp(`\\b${l.param}\\s*\\.`).test(entry) && !new RegExp(`\\b(?:const|let|var|function|class)\\s+${l.param}\\b`).test(entry)) errors.push(`${l.param} を使うには libraries に "${l.id}" を宣言する`);
   }
   return { ok: errors.length === 0, errors };
 }
@@ -72,7 +91,9 @@ export function checkData(data: unknown): ContractResult {
 
 /** ホストが保存した実体と契約の版から digest を計算する。 */
 export async function artworkDigest(body: ArtworkBody): Promise<string> {
-  const canonical = JSON.stringify({ contract: CONTRACT_VERSION, title: body.title, entry: body.entry, dataRef: body.dataRef ?? null });
+  // libraries を宣言しない作品の digest は従来と同じ（保存済み作品の digest を保つ）。
+  const base = { contract: CONTRACT_VERSION, title: body.title, entry: body.entry, dataRef: body.dataRef ?? null };
+  const canonical = JSON.stringify(body.libraries && body.libraries.length ? { ...base, libraries: resolveLibraries(body.libraries).map((l) => l.id) } : base);
   const h = await crypto.subtle.digest("SHA-256", enc.encode(canonical));
   return "sha256:" + Buffer.from(h).toString("hex");
 }
