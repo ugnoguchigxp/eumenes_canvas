@@ -6,12 +6,20 @@ const CANARY_PORT = Number(process.env.CANARY_PORT ?? 4312);
 const SINGLE_HOST_PORT = Number(process.env.SINGLE_HOST_PORT ?? 4320);
 
 const hits: { path: string; kind: string; at: number }[] = [];
+// 10（ページ直接モードの境界）：WebRTC の STUN の問い合わせが届くかを数える UDP の待ち受け。ブラウザごとに別のポート
+const UDP_PORTS = [4318, 4319];
+const udp: Record<string, number> = {};
+for (const port of UDP_PORTS) {
+  udp[port] = 0;
+  await Bun.udpSocket({ port, hostname: "127.0.0.1", socket: { data() { udp[port]++; } } });
+}
 Bun.serve({
   port: CANARY_PORT,
   hostname: "127.0.0.1",
   fetch(req, server) {
     const url = new URL(req.url);
     if (url.pathname === "/__hits") return Response.json(hits);
+    if (url.pathname === "/__udp") return Response.json(udp);
     if (url.pathname === "/__reset") {
       hits.length = 0;
       return Response.json({ ok: true });
@@ -28,6 +36,9 @@ Bun.serve({
 
 import { startBlobBaseline } from "./blob-baseline";
 startBlobBaseline(4313, 4314);
+// 10：ページ直接モードの境界を測る試験用の配信（製品コードからは参照しない）
+import { startPageBoundary } from "./page-boundary";
+startPageBoundary(4316, 4317);
 
 const { createTestApp } = await import("./app-factory");
 // 単一利用者モード（design.md §3）の検証ホスト。デモの固定応答も読み、通常の API でゲーム 4 題を入れてから試験を始める
