@@ -2,6 +2,7 @@
 // 受付 → 生成 → 候補検査 → ブラウザ観測 → 候補提示。保存・復元は所有者・版・世代・digest・検証記録を照合する。
 import { randomBytes } from "node:crypto";
 import { artworkDigest, checkArtwork, checkData, sha256Hex, type ArtworkBody } from "../contract/artwork";
+import { syntaxErrorDetail, withSourceLine } from "./locate";
 import type { DatasetInfo, GenerationInput, ModelPort } from "./model-port";
 import type { ObserverPort } from "./observer";
 import type { Store } from "./store";
@@ -237,7 +238,9 @@ export class CanvasService {
       let verification: Verification;
       if (!contract.ok) {
         verification = this.makeVerification(digest, null, "none", [{ id: "contract", level: "contract", pass: false, detail: contract.errors.join(" / ") }]);
-        observations = contract.errors.map((m) => ({ kind: "contract" as const, message: m }));
+        // 構文エラーには作品の行と該当行を足す（制作担当に返す文だけ。検証記録の detail は変えない）
+        const syntax = contract.errors.some((m) => m.startsWith("構文エラー")) ? syntaxErrorDetail(String(out.body?.entry ?? "")) : null;
+        observations = contract.errors.map((m) => ({ kind: "contract" as const, message: syntax !== null && m.startsWith("構文エラー") ? m + " ／ " + syntax : m }));
       } else {
         const data = this.datasetFor(out.body);
         if (out.body.dataRef && !this.datasets.has(out.body.dataRef)) {
@@ -255,7 +258,8 @@ export class CanvasService {
           if (!this.live(runId)) return;
           const dataDigest = data === null ? null : "sha256:" + (await sha256Hex(JSON.stringify(data)));
           verification = this.makeVerification(digest, dataDigest, obs.environment, [{ id: "contract", level: "contract", pass: true }, ...obs.checks]);
-          observations = obs.observations;
+          // 実行時エラーには作品の該当行を足す（制作担当に返す文だけ）
+          observations = obs.observations.map((o) => (o.kind === "runtime-error" ? { ...o, message: withSourceLine(o.message, out.body.entry) } : o));
         }
       }
       candidate.verificationId = verification.id;

@@ -3,6 +3,8 @@
 "use strict";
 // 宣言されたホスト同梱ライブラリ（src/preview/libs/*.js）が名前空間を置く場所。作品には引数として渡す。
 var __canvasLibs = {};
+// 作品本体の 1 行目の直前までの行数。プレビューの配信が作品の直前で設定する。
+var __canvasEntryLine = 0;
 var __canvasApp = (function () {
   var post = self.postMessage.bind(self);
   var addListener = self.addEventListener.bind(self);
@@ -52,11 +54,23 @@ var __canvasApp = (function () {
   var MAX_SVG_PENDING = 8;
   var bootWaiters = null; // 起動中に頼まれた復号を ready の前に待つ
 
+  // 例外のスタックから、作品本体の行と列を取り出す（行と列の数字だけ。トークンは文に入れない）。
+  // Chromium の「at f (…/w/<token>:262:17)」と WebKit の「f@…/w/<token>:262:17」の両方に一致する。
+  // ブートストラップやライブラリの中の行（作品の 1 行目より前）なら空文字。
+  function entryPos(err) {
+    var m = /\/w\/[^\s:)]+:(\d+):(\d+)/.exec(String((err && err.stack) || ""));
+    if (!m) return "";
+    var line = Number(m[1]) - __canvasEntryLine;
+    if (!(line >= 1)) return "";
+    return "（作品の " + line + " 行 " + m[2] + " 列）";
+  }
+
   function reportError(where, err) {
     if (errorsSent >= 5) return;
     errorsSent++;
     var msg = where + ": " + (err && err.message ? err.message : String(err));
-    post({ type: "error", message: msg.slice(0, 1000) });
+    // 位置の文を足しても 1000 文字（LIMITS.errorMessageChars）を超えないよう、本文は 940 文字で切る
+    post({ type: "error", message: msg.slice(0, 940) + entryPos(err) });
   }
 
   function mulberry32(a) {

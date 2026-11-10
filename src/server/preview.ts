@@ -39,7 +39,10 @@ export function assembleWorkerScript(entry: string, libs: LibrarySource[] = []):
   const params = ["canvasApp", ...libs.map((l) => l.lib.param)].join(", ");
   const args = ["__canvasApp", ...libs.map((l) => `__canvasLibs[${JSON.stringify(libKey(l.lib))}]`)].join(", ");
   const libText = libs.map((l) => `\n;// ${l.lib.id}（ホスト同梱）\n${l.source}\n`).join("");
-  return `${read("preview/bootstrap.js")}${libText}\n;(function (${params}) {\n"use strict";\n${entry}\n}).call(undefined, ${args});\n`;
+  // 作品の直前の行で、作品の 1 行目より前の行数（ずれ）を __canvasEntryLine に入れる。桁数は行数に影響しないので、0 で数えて作り直す。
+  const head = (n: number) => `${read("preview/bootstrap.js")}${libText}\n;__canvasEntryLine=${n};(function (${params}) {\n"use strict";\n`;
+  const offset = head(0).split("\n").length - 1;
+  return `${head(offset)}${entry}\n}).call(undefined, ${args});\n`;
 }
 
 /** shim が名前空間を置く __canvasLibs のキー（src/preview/libs/*.js と一致）。 */
