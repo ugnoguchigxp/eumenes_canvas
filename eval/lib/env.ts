@@ -109,11 +109,12 @@ export class EvalEnv {
   }
   narrow = false;
 
-  async start(entry: string, data: unknown, seed: number, o: { narrow?: boolean } = {}) {
+  /** libraries は作品が宣言した同梱ライブラリ（render-v1。省略・空なら従来と同じ）。 */
+  async start(entry: string, data: unknown, seed: number, o: { narrow?: boolean; libraries?: string[] } = {}) {
     this.narrow = !!o.narrow;
     this.lastPointer = null;
     await this.open(o);
-    const r = await this.page.evaluate((a) => (window as any).harness.start(a), { entry, data, seed, clock: "manual", title: "eval" });
+    const r = await this.page.evaluate((a) => (window as any).harness.start(a), { entry, data, seed, clock: "manual", title: "eval", ...(o.libraries?.length ? { libraries: o.libraries } : {}) });
     this.t = 0;
     return r;
   }

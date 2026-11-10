@@ -1,0 +1,777 @@
+{
+  "suite": "render-v1",
+  "environment": "chromium 141.0.7390.37",
+  "at": "2026-11-10T04:33:04.066Z",
+  "seconds": 226,
+  "mismatches": 0,
+  "rows": [
+    {
+      "task": "R-T1-cube",
+      "name": "黒一色",
+      "expect": "all-fail",
+      "ok": true,
+      "ms": 2007,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": false,
+          "detail": "背景 false 赤 なし 中心 (NaN,NaN)"
+        },
+        {
+          "id": "rotates-1rad-per-s",
+          "kind": "retain",
+          "pass": false,
+          "detail": "幅 0 秒 undefined π/4 秒 undefined π/2 秒 undefined"
+        },
+        {
+          "id": "space-toggles-color",
+          "kind": "retain",
+          "pass": false,
+          "detail": "1 回目 緑 0 赤 0、2 回目 赤 0"
+        },
+        {
+          "id": "click-blue",
+          "kind": "retain",
+          "pass": false,
+          "detail": "背景クリック 赤 0、立方体クリック 青 0、Space 赤 0"
+        }
+      ]
+    },
+    {
+      "task": "R-T1-cube",
+      "name": "参照 gold/render/R-T1-cube.js",
+      "expect": "all-pass",
+      "ok": true,
+      "ms": 2431,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": true,
+          "detail": "背景 true 赤 168,106,146x148 中心 (240.3,179.5)"
+        },
+        {
+          "id": "rotates-1rad-per-s",
+          "kind": "retain",
+          "pass": true,
+          "detail": "幅 0 秒 146 π/4 秒 174 π/2 秒 146"
+        },
+        {
+          "id": "space-toggles-color",
+          "kind": "retain",
+          "pass": true,
+          "detail": "1 回目 緑 21441 赤 0、2 回目 赤 21412"
+        },
+        {
+          "id": "click-blue",
+          "kind": "retain",
+          "pass": true,
+          "detail": "背景クリック 赤 21441、立方体クリック 青 21412、Space 赤 21281"
+        }
+      ]
+    },
+    {
+      "task": "R-T1-cube",
+      "name": "変異「回転が半分の速さ」",
+      "expect": "rotates-1rad-per-s だけ不合格",
+      "ok": true,
+      "ms": 2383,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": true,
+          "detail": "背景 true 赤 167,107,147x146 中心 (240.0,179.5)"
+        },
+        {
+          "id": "rotates-1rad-per-s",
+          "kind": "retain",
+          "pass": false,
+          "detail": "幅 0 秒 147 π/4 秒 162 π/2 秒 174"
+        },
+        {
+          "id": "space-toggles-color",
+          "kind": "retain",
+          "pass": true,
+          "detail": "1 回目 緑 21569 赤 0、2 回目 赤 21576"
+        },
+        {
+          "id": "click-blue",
+          "kind": "retain",
+          "pass": true,
+          "detail": "背景クリック 赤 21569、立方体クリック 青 21576、Space 赤 21589"
+        }
+      ]
+    },
+    {
+      "task": "R-T1-cube",
+      "name": "変異「背景のクリックでも青」",
+      "expect": "click-blue だけ不合格",
+      "ok": true,
+      "ms": 2366,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": true,
+          "detail": "背景 true 赤 168,106,146x148 中心 (240.3,179.5)"
+        },
+        {
+          "id": "rotates-1rad-per-s",
+          "kind": "retain",
+          "pass": true,
+          "detail": "幅 0 秒 146 π/4 秒 174 π/2 秒 146"
+        },
+        {
+          "id": "space-toggles-color",
+          "kind": "retain",
+          "pass": true,
+          "detail": "1 回目 緑 21441 赤 0、2 回目 赤 21412"
+        },
+        {
+          "id": "click-blue",
+          "kind": "retain",
+          "pass": false,
+          "detail": "背景クリック 赤 0、立方体クリック 青 21412、Space 赤 21281"
+        }
+      ]
+    },
+    {
+      "task": "R-H1-panel",
+      "name": "黒一色",
+      "expect": "all-fail",
+      "ok": true,
+      "ms": 19397,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": false,
+          "detail": "パネル なし 白 0 黄 0 なし 外の明るい画素 0"
+        },
+        {
+          "id": "up-increments",
+          "kind": "retain",
+          "pass": false,
+          "detail": "数字の画素の差 1 回目 0 2 回目 0（黄 0, 0）"
+        },
+        {
+          "id": "click-toggles",
+          "kind": "retain",
+          "pass": false,
+          "detail": "外クリック 青 0、中クリック 橙 0、もう一度 青 0"
+        }
+      ]
+    },
+    {
+      "task": "R-H1-panel",
+      "name": "参照 gold/render/R-H1-panel.js",
+      "expect": "all-pass",
+      "ok": true,
+      "ms": 1420,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": true,
+          "detail": "パネル 40,40,240x120 白 622 黄 282 58,88,18x28 外の明るい画素 0"
+        },
+        {
+          "id": "up-increments",
+          "kind": "retain",
+          "pass": true,
+          "detail": "数字の画素の差 1 回目 314 2 回目 181（黄 222, 259）"
+        },
+        {
+          "id": "click-toggles",
+          "kind": "retain",
+          "pass": true,
+          "detail": "外クリック 青 27626、中クリック 橙 27640、もう一度 青 27626"
+        }
+      ]
+    },
+    {
+      "task": "R-H1-panel",
+      "name": "変異「↑で描き直さない」",
+      "expect": "up-increments だけ不合格",
+      "ok": true,
+      "ms": 6562,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": true,
+          "detail": "パネル 40,40,240x120 白 622 黄 282 58,88,18x28 外の明るい画素 0"
+        },
+        {
+          "id": "up-increments",
+          "kind": "retain",
+          "pass": false,
+          "detail": "数字の画素の差 1 回目 0 2 回目 0（黄 282, 282）"
+        },
+        {
+          "id": "click-toggles",
+          "kind": "retain",
+          "pass": true,
+          "detail": "外クリック 青 27626、中クリック 橙 27640、もう一度 青 27626"
+        }
+      ]
+    },
+    {
+      "task": "R-H1-panel",
+      "name": "変異「パネルが 20px 右」",
+      "expect": "layout だけ不合格",
+      "ok": true,
+      "ms": 1370,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": false,
+          "detail": "パネル 60,40,240x120 白 622 黄 282 78,88,18x28 外の明るい画素 420"
+        },
+        {
+          "id": "up-increments",
+          "kind": "retain",
+          "pass": true,
+          "detail": "数字の画素の差 1 回目 314 2 回目 181（黄 222, 259）"
+        },
+        {
+          "id": "click-toggles",
+          "kind": "retain",
+          "pass": true,
+          "detail": "外クリック 青 25226、中クリック 橙 25240、もう一度 青 25226"
+        }
+      ]
+    },
+    {
+      "task": "R-P1-pile",
+      "name": "黒一色",
+      "expect": "all-fail",
+      "ok": true,
+      "ms": 6548,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": false,
+          "detail": "床 なし 左 なし 右 なし 白 0"
+        },
+        {
+          "id": "drop-and-rest",
+          "kind": "retain",
+          "pass": false,
+          "detail": "出た位置 (NaN,NaN) 1.5 秒 (NaN,NaN) 2 秒 (NaN,NaN) 面積 0"
+        },
+        {
+          "id": "stack-no-overlap",
+          "kind": "retain",
+          "pass": false,
+          "detail": "1 個の面積 0、10 個の面積 = NaN 個分、壁・床の白 0、advance(0) で不動 true"
+        },
+        {
+          "id": "max-30-and-reset",
+          "kind": "retain",
+          "pass": false,
+          "detail": "36 回クリックで NaN 個分、壁・床の白 0、R の後の白 0"
+        }
+      ]
+    },
+    {
+      "task": "R-P1-pile",
+      "name": "参照 gold/render/R-P1-pile.js",
+      "expect": "all-pass",
+      "ok": true,
+      "ms": 6716,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": true,
+          "detail": "床 20,340,440x20 左 0,0,20x320 右 460,0,20x320 白 0"
+        },
+        {
+          "id": "drop-and-rest",
+          "kind": "retain",
+          "pass": true,
+          "detail": "出た位置 (239.5,39.7) 1.5 秒 (239.5,327.5) 2 秒 (239.5,327.5) 面積 432"
+        },
+        {
+          "id": "stack-no-overlap",
+          "kind": "retain",
+          "pass": true,
+          "detail": "1 個の面積 432、10 個の面積 = 10.06 個分、壁・床の白 0、advance(0) で不動 true"
+        },
+        {
+          "id": "max-30-and-reset",
+          "kind": "retain",
+          "pass": true,
+          "detail": "36 回クリックで 30.1 個分、壁・床の白 0、R の後の白 0"
+        }
+      ]
+    },
+    {
+      "task": "R-P1-pile",
+      "name": "変異「上限なし」",
+      "expect": "max-30-and-reset だけ不合格",
+      "ok": true,
+      "ms": 6750,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": true,
+          "detail": "床 20,340,440x20 左 0,0,20x320 右 460,0,20x320 白 0"
+        },
+        {
+          "id": "drop-and-rest",
+          "kind": "retain",
+          "pass": true,
+          "detail": "出た位置 (239.5,39.7) 1.5 秒 (239.5,327.5) 2 秒 (239.5,327.5) 面積 432"
+        },
+        {
+          "id": "stack-no-overlap",
+          "kind": "retain",
+          "pass": true,
+          "detail": "1 個の面積 432、10 個の面積 = 10.06 個分、壁・床の白 0、advance(0) で不動 true"
+        },
+        {
+          "id": "max-30-and-reset",
+          "kind": "retain",
+          "pass": false,
+          "detail": "36 回クリックで 36.2 個分、壁・床の白 0、R の後の白 0"
+        }
+      ]
+    },
+    {
+      "task": "R-P1-pile",
+      "name": "変異「当たりの半径が描画の半分（重なる）」",
+      "expect": "drop-and-rest・stack-no-overlap・max-30-and-reset だけ不合格",
+      "ok": true,
+      "ms": 6666,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": true,
+          "detail": "床 20,340,440x20 左 0,0,20x320 右 460,0,20x320 白 0"
+        },
+        {
+          "id": "drop-and-rest",
+          "kind": "retain",
+          "pass": false,
+          "detail": "出た位置 (239.5,39.7) 1.5 秒 (239.5,331.5) 2 秒 (239.5,331.5) 面積 350"
+        },
+        {
+          "id": "stack-no-overlap",
+          "kind": "retain",
+          "pass": false,
+          "detail": "1 個の面積 350、10 個の面積 = 7.23 個分、壁・床の白 508、advance(0) で不動 true"
+        },
+        {
+          "id": "max-30-and-reset",
+          "kind": "retain",
+          "pass": false,
+          "detail": "36 回クリックで 20.9 個分、壁・床の白 1388、R の後の白 0"
+        }
+      ]
+    },
+    {
+      "task": "R-P2-marbles",
+      "name": "黒一色",
+      "expect": "all-fail",
+      "ok": true,
+      "ms": 7466,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": false,
+          "detail": "坂 A false 坂 B false 壁 false 床 false 玉 (NaN,NaN) 面積 0"
+        },
+        {
+          "id": "rolls-down-ramp-a",
+          "kind": "retain",
+          "pass": false,
+          "detail": "玉が見つからない"
+        },
+        {
+          "id": "collect-in-bin-no-tunnel",
+          "kind": "retain",
+          "pass": false,
+          "detail": "12 秒で箱に 0.0 個分（全体 0.0 個分）、すり抜けの跡 0 画素"
+        },
+        {
+          "id": "space-adds",
+          "kind": "retain",
+          "pass": false,
+          "detail": "Space の前 0.00 個分、後 0.00 個分"
+        }
+      ]
+    },
+    {
+      "task": "R-P2-marbles",
+      "name": "参照 gold/render/R-P2-marbles.js",
+      "expect": "all-pass",
+      "ok": true,
+      "ms": 7482,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": true,
+          "detail": "坂 A true 坂 B true 壁 true 床 true 玉 (39.5,59.6) 面積 182"
+        },
+        {
+          "id": "rolls-down-ramp-a",
+          "kind": "retain",
+          "pass": true,
+          "detail": "0.9 秒 (74.0,92.1) 線からの高さ 12.9"
+        },
+        {
+          "id": "collect-in-bin-no-tunnel",
+          "kind": "retain",
+          "pass": true,
+          "detail": "12 秒で箱に 5.7 個分（全体 9.3 個分）、すり抜けの跡 0 画素"
+        },
+        {
+          "id": "space-adds",
+          "kind": "retain",
+          "pass": true,
+          "detail": "Space の前 0.93 個分、後 1.87 個分"
+        }
+      ]
+    },
+    {
+      "task": "R-P2-marbles",
+      "name": "変異「坂 A に当たりがない（すり抜け）」",
+      "expect": "rolls-down-ramp-a・collect-in-bin-no-tunnel だけ不合格",
+      "ok": true,
+      "ms": 7552,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": true,
+          "detail": "坂 A true 坂 B true 壁 true 床 true 玉 (39.5,59.6) 面積 182"
+        },
+        {
+          "id": "rolls-down-ramp-a",
+          "kind": "retain",
+          "pass": false,
+          "detail": "0.9 秒 (39.5,304.0) 線からの高さ -208.6"
+        },
+        {
+          "id": "collect-in-bin-no-tunnel",
+          "kind": "retain",
+          "pass": false,
+          "detail": "12 秒で箱に 6.2 個分（全体 9.2 個分）、すり抜けの跡 1304 画素"
+        },
+        {
+          "id": "space-adds",
+          "kind": "retain",
+          "pass": true,
+          "detail": "Space の前 0.94 個分、後 1.86 個分"
+        }
+      ]
+    },
+    {
+      "task": "R-P2-marbles",
+      "name": "変異「Space で足さない」",
+      "expect": "space-adds だけ不合格",
+      "ok": true,
+      "ms": 8329,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": true,
+          "detail": "坂 A true 坂 B true 壁 true 床 true 玉 (39.5,59.6) 面積 182"
+        },
+        {
+          "id": "rolls-down-ramp-a",
+          "kind": "retain",
+          "pass": true,
+          "detail": "0.9 秒 (74.0,92.1) 線からの高さ 12.9"
+        },
+        {
+          "id": "collect-in-bin-no-tunnel",
+          "kind": "retain",
+          "pass": true,
+          "detail": "12 秒で箱に 5.7 個分（全体 9.3 個分）、すり抜けの跡 0 画素"
+        },
+        {
+          "id": "space-adds",
+          "kind": "retain",
+          "pass": false,
+          "detail": "Space の前 0.93 個分、後 0.94 個分"
+        }
+      ]
+    },
+    {
+      "task": "R-P3-flipper",
+      "name": "黒一色",
+      "expect": "all-fail",
+      "ok": true,
+      "ms": 28740,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": false,
+          "detail": "壁 false フリッパー なし 重心 (NaN,NaN) 球 なし"
+        },
+        {
+          "id": "flipper-up-and-back",
+          "kind": "retain",
+          "pass": false,
+          "detail": "押して 0.15 秒 (NaN,NaN) 離して 0.15 秒 (NaN,NaN)"
+        },
+        {
+          "id": "drain-and-respawn",
+          "kind": "retain",
+          "pass": false,
+          "detail": "最初の落とし直し -1ms、それまでの最低位置 0.0、4 秒で四角 0 個 "
+        },
+        {
+          "id": "flip-launches-ball",
+          "kind": "retain",
+          "pass": false,
+          "detail": "球が下りてこない"
+        }
+      ]
+    },
+    {
+      "task": "R-P3-flipper",
+      "name": "参照 gold/render/R-P3-flipper.js",
+      "expect": "all-pass",
+      "ok": true,
+      "ms": 22295,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": true,
+          "detail": "壁 true フリッパー 147,295,93x60 重心 (192.8,324.5) 球 (229.5,39.6)"
+        },
+        {
+          "id": "flipper-up-and-back",
+          "kind": "retain",
+          "pass": true,
+          "detail": "押して 0.15 秒 (192.8,274.5) 離して 0.15 秒 (192.8,324.5)"
+        },
+        {
+          "id": "drain-and-respawn",
+          "kind": "retain",
+          "pass": true,
+          "detail": "最初の落とし直し 1400ms、それまでの最低位置 355.6、4 秒で四角 2 個 8,4,8x8 20,4,8x8"
+        },
+        {
+          "id": "flip-launches-ball",
+          "kind": "retain",
+          "pass": true,
+          "detail": "←を押した時刻 848ms、その後の最高位置 y=44.2"
+        }
+      ]
+    },
+    {
+      "task": "R-P3-flipper",
+      "name": "変異「←を無視」",
+      "expect": "flipper-up-and-back・flip-launches-ball だけ不合格",
+      "ok": true,
+      "ms": 22300,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": true,
+          "detail": "壁 true フリッパー 147,295,93x60 重心 (192.8,324.5) 球 (229.5,39.6)"
+        },
+        {
+          "id": "flipper-up-and-back",
+          "kind": "retain",
+          "pass": false,
+          "detail": "押して 0.15 秒 (192.8,324.5) 離して 0.15 秒 (192.8,324.5)"
+        },
+        {
+          "id": "drain-and-respawn",
+          "kind": "retain",
+          "pass": true,
+          "detail": "最初の落とし直し 1400ms、それまでの最低位置 355.6、4 秒で四角 2 個 8,4,8x8 20,4,8x8"
+        },
+        {
+          "id": "flip-launches-ball",
+          "kind": "retain",
+          "pass": false,
+          "detail": "←を押した時刻 848ms、その後の最高位置 y=279.6"
+        }
+      ]
+    },
+    {
+      "task": "R-P3-flipper",
+      "name": "変異「落とし直しを数えない」",
+      "expect": "drain-and-respawn だけ不合格",
+      "ok": true,
+      "ms": 22265,
+      "checks": [
+        {
+          "id": "layout",
+          "kind": "start",
+          "pass": true,
+          "detail": "壁 true フリッパー 147,295,93x60 重心 (192.8,324.5) 球 (229.5,39.6)"
+        },
+        {
+          "id": "flipper-up-and-back",
+          "kind": "retain",
+          "pass": true,
+          "detail": "押して 0.15 秒 (192.8,274.5) 離して 0.15 秒 (192.8,324.5)"
+        },
+        {
+          "id": "drain-and-respawn",
+          "kind": "retain",
+          "pass": false,
+          "detail": "最初の落とし直し -1ms、それまでの最低位置 355.6、4 秒で四角 0 個 "
+        },
+        {
+          "id": "flip-launches-ball",
+          "kind": "retain",
+          "pass": true,
+          "detail": "←を押した時刻 848ms、その後の最高位置 y=44.2"
+        }
+      ]
+    },
+    {
+      "task": "R-V1-blackhole",
+      "name": "黒一色",
+      "expect": "all-fail",
+      "ok": true,
+      "ms": 1603,
+      "checks": [
+        {
+          "id": "shadow-ring-lensed-arc-stars",
+          "kind": "start",
+          "pass": false,
+          "detail": "中心の輝度 0.0、影の半径（上） NaNpx（高さの NaN%）、明るい画素 0、影の上の弧 0、星 0"
+        },
+        {
+          "id": "disk-animates",
+          "kind": "retain",
+          "pass": false,
+          "detail": "1 秒で輝度が 4 より大きく変わった画素 0（影の周りの 340×240）"
+        },
+        {
+          "id": "keys-change-inclination",
+          "kind": "retain",
+          "pass": false,
+          "detail": "明るい行の数 最初 0、↑ 1.5 秒 0、↓ 1.5 秒 0"
+        },
+        {
+          "id": "advance-1s-under-8s",
+          "kind": "retain",
+          "pass": false,
+          "detail": "advance(1000) の壁時計 66ms"
+        }
+      ]
+    },
+    {
+      "task": "R-V1-blackhole",
+      "name": "参照 gold/render/R-V1-blackhole.js",
+      "expect": "all-pass",
+      "ok": true,
+      "ms": 11844,
+      "checks": [
+        {
+          "id": "shadow-ring-lensed-arc-stars",
+          "kind": "start",
+          "pass": true,
+          "detail": "中心の輝度 0.0、影の半径（上） 72px（高さの 20.0%）、明るい画素 12057、影の上の弧 1665、星 18"
+        },
+        {
+          "id": "disk-animates",
+          "kind": "retain",
+          "pass": true,
+          "detail": "1 秒で輝度が 4 より大きく変わった画素 13542（影の周りの 340×240）"
+        },
+        {
+          "id": "keys-change-inclination",
+          "kind": "retain",
+          "pass": true,
+          "detail": "明るい行の数 最初 166、↑ 1.5 秒 254、↓ 1.5 秒 163"
+        },
+        {
+          "id": "advance-1s-under-8s",
+          "kind": "retain",
+          "pass": true,
+          "detail": "advance(1000) の壁時計 1884ms"
+        }
+      ]
+    },
+    {
+      "task": "R-V1-blackhole",
+      "name": "変異「光が曲がらない（影も弧もない）」",
+      "expect": "shadow-ring-lensed-arc-stars だけ不合格",
+      "ok": true,
+      "ms": 10008,
+      "checks": [
+        {
+          "id": "shadow-ring-lensed-arc-stars",
+          "kind": "start",
+          "pass": false,
+          "detail": "中心の輝度 0.0、影の半径（上） NaNpx（高さの NaN%）、明るい画素 6359、影の上の弧 0、星 33"
+        },
+        {
+          "id": "disk-animates",
+          "kind": "retain",
+          "pass": true,
+          "detail": "1 秒で輝度が 4 より大きく変わった画素 6816（影の周りの 340×240）"
+        },
+        {
+          "id": "keys-change-inclination",
+          "kind": "retain",
+          "pass": true,
+          "detail": "明るい行の数 最初 50、↑ 1.5 秒 219、↓ 1.5 秒 52"
+        },
+        {
+          "id": "advance-1s-under-8s",
+          "kind": "retain",
+          "pass": true,
+          "detail": "advance(1000) の壁時計 1517ms"
+        }
+      ]
+    },
+    {
+      "task": "R-V1-blackhole",
+      "name": "変異「円盤が回らない」",
+      "expect": "disk-animates だけ不合格",
+      "ok": true,
+      "ms": 11757,
+      "checks": [
+        {
+          "id": "shadow-ring-lensed-arc-stars",
+          "kind": "start",
+          "pass": true,
+          "detail": "中心の輝度 0.0、影の半径（上） 72px（高さの 20.0%）、明るい画素 12038、影の上の弧 1666、星 18"
+        },
+        {
+          "id": "disk-animates",
+          "kind": "retain",
+          "pass": false,
+          "detail": "1 秒で輝度が 4 より大きく変わった画素 0（影の周りの 340×240）"
+        },
+        {
+          "id": "keys-change-inclination",
+          "kind": "retain",
+          "pass": true,
+          "detail": "明るい行の数 最初 166、↑ 1.5 秒 254、↓ 1.5 秒 166"
+        },
+        {
+          "id": "advance-1s-under-8s",
+          "kind": "retain",
+          "pass": true,
+          "detail": "advance(1000) の壁時計 1867ms"
+        }
+      ]
+    }
+  ]
+}
