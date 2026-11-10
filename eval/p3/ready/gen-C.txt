@@ -1,8 +1,0 @@
-
-条件 C（Collaborator の共有契約）の道具:
-- 作品の提出: tools/invoke.sh <id> <title> <work/のentry.js> "<利用者への短い返答 | ->" ["<変更内容>"] [dataRef]
-  返答の text を付けると、ホストの検査に通ったときにその文で答えてターンを終えます。"-" なら text なし（TOOL_RESULT を読んでから次を決める）。
-- reply・return・discard など別の行動: partial.json に {"action":"reply","text":"..."} などを書いて tools/fill.sh gen <id> <partial.json>。
-- 形を全部自分で書くときは tools/write.sh gen <id> <file.json>。
-要求には system（規則・TOOLS・OUTPUT_SCHEMA）、参照、現在の文書、利用者の発言、TOOL_RESULT（前の提出の結果）が入ります。
-利用者はこの評価では答えません（確認の質問をしても、ターンはそこで終わります）。

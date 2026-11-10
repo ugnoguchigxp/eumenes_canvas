@@ -1,9 +1,0 @@
-
-条件 P（Pursuit 追求）の道具:
-- 要求の目的は plan（方針）・hypothesize（仮説）・propose（次の一手）など。出力の形は show.sh の「出力の形」に出ます。
-- 作品を書く一手: tools/ptool.sh <id> <title> <work/のentry.js> <ok|error> "<期待する観測>" "<こうなれば仮説は誤り（例 status:error。書き方は要求の説明に従う）>" ["<変えた点>"] [dataRef]
-  （write_artwork を選ぶ propose。entry は text で渡ります。書けるのはこの依頼で 3 回まで）
-- それ以外（plan・hypothesize・done・give_up・consult・step_back・read_artwork など）:
-  partial.json に必要な項目を書いて tools/fill.sh gen <id> <partial.json>（足りない必須項目は空の値で埋まる）。
-  例: {"kind":"done","message":"…","acceptanceCheck":[…]} 。done の主張はホストが受け入れ検査（契約・起動・操作）で確かめます。
-- consult（相談）には、ホストが「利用者は不在です。依頼文と観測の範囲で判断してください。」と答えます。

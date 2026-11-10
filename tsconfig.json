@@ -22,8 +22,5 @@
     "eval/**/*.ts",
     "scripts/**/*.ts",
     "playwright.config.ts"
-  ],
-  "exclude": [
-    "eval/p3/**"
   ]
 }

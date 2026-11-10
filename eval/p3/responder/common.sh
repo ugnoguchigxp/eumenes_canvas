@@ -1,7 +1,13 @@
 # 応答者の道具の共通部。実行ディレクトリ（tools/ の親）とその RUN_NAME だけを使う。
 HZ=$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")
 RUN=$(cat "$HZ/RUN_NAME" 2>/dev/null)
-role_dir() { case "$1" in gen) echo "$HZ/solo/gen";; rev) echo "$HZ/solo/rev";; *) echo "unknown role: $1 (gen|rev)" >&2; return 1;; esac; }
+role_dir() {
+  if [ "$1" != gen ]; then
+    echo "unknown role: $1 (gen)" >&2
+    return 1
+  fi
+  echo "$HZ/solo/gen"
+}
 # atomic_write <dir> <id> : 標準入力の JSON を検証し、一時ファイル + mv で responses/<id>.json に置く。
 atomic_write() {
   local d="$1/responses" id="$2" tmp

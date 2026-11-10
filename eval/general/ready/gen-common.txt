@@ -10,7 +10,7 @@
 
 使ってはいけないもの（読むのも禁止）:
 - @DIR@ の solo/・host/ の中を直接読むこと（show.sh を通す）。他の実行ディレクトリ（@ROOT@/ の他の *-r*、grade/、logs/、/workspace/canvas_p3）。
-- /workspace/eumenes_canvas（リポジトリ全体。eval/、docs/ を含む）、/workspace/p3-deps、/workspace/eumenes_pursuit、/workspace/eumenes_collaboration、/tmp の他人のファイル。
+- /workspace/eumenes_canvas（リポジトリ全体。eval/、docs/ を含む）、ほかのリポジトリ、作業場所の外にある他人のファイル。
 - Web 検索・Web 取得・ほかのエージェントへの相談。ブラウザでの確認。
 作品を確かめる手段は、ホストが返す観測（要求の中の「ホスト観測」など）だけです。
 

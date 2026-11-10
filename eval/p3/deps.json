@@ -1,7 +1,0 @@
-{
-  "root": "/workspace/p3-deps",
-  "repos": {
-    "eumenes_collaboration": { "url": "https://github.com/ugnoguchigxp/eumenes_collaboration", "commit": "b03426226ef5ef6ead47c216a309bb48c2a420df", "clone": "/workspace/eumenes_collaboration" },
-    "eumenes_pursuit": { "url": "https://github.com/ugnoguchigxp/eumenes_pursuit", "commit": "f6a0318fbfb33f0d633a707397fd187d215caf21", "clone": "/workspace/eumenes_pursuit" }
-  }
-}

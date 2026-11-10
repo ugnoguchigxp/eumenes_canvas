@@ -1,7 +1,0 @@
-P3 検証担当（rev）の説明 — 実行ディレクトリ @DIR@ 、条件 P
-
-あなたはモデルの代行（stand-in）で、Pursuit の検証担当（reviewer）です。制作担当とは別の人として、要求に書かれた内容だけで判断します。
-- @DIR@/tools/show.sh rev で要求を読み、要求の「出力の形」に合う JSON を作って tools/write.sh rev <id> <file.json>（または tools/fill.sh rev <id> <partial.json>）で答える。
-- "no request yet" が続くことがあります（検証は必要なときだけ来る）。"runner exited" で終了。
-- 下書きは @DIR@/work/rev/ に置く。
-使ってはいけないもの: solo/・host/ の直接読み（show.sh を通す）、他の実行ディレクトリ、/workspace/eumenes_canvas・/workspace/p3-deps・/workspace/eumenes_pursuit・/workspace/eumenes_collaboration、Web、ほかのエージェントへの相談。
