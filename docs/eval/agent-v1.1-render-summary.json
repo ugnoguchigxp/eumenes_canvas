@@ -1,0 +1,242 @@
+{
+  "suite": "render-v1",
+  "gradedAt": "2026-11-10T23:34:08.650Z",
+  "environment": "chromium 141.0.7390.37",
+  "partial": [],
+  "runs": [
+    "A-r1",
+    "D-r1"
+  ],
+  "conds": {
+    "A": {
+      "groups": {
+        "three": {
+          "pass": 1,
+          "n": 1
+        },
+        "html": {
+          "pass": 1,
+          "n": 1
+        },
+        "physics": {
+          "pass": 2,
+          "n": 3
+        },
+        "shader": {
+          "pass": 1,
+          "n": 1
+        }
+      },
+      "perTask": [
+        {
+          "task": "R-T1-cube",
+          "group": "three",
+          "pass": 1,
+          "presented": 1,
+          "n": 1,
+          "failedChecks": {},
+          "libraries": {
+            "three@0.187.0": 1
+          }
+        },
+        {
+          "task": "R-H1-panel",
+          "group": "html",
+          "pass": 1,
+          "presented": 1,
+          "n": 1,
+          "failedChecks": {},
+          "libraries": {
+            "なし": 1
+          }
+        },
+        {
+          "task": "R-P1-pile",
+          "group": "physics",
+          "pass": 1,
+          "presented": 1,
+          "n": 1,
+          "failedChecks": {},
+          "libraries": {
+            "cannon-es@0.20.0": 1
+          }
+        },
+        {
+          "task": "R-P2-marbles",
+          "group": "physics",
+          "pass": 0,
+          "presented": 1,
+          "n": 1,
+          "failedChecks": {
+            "collect-in-bin-no-tunnel": 1
+          },
+          "libraries": {
+            "cannon-es@0.20.0": 1
+          }
+        },
+        {
+          "task": "R-P3-flipper",
+          "group": "physics",
+          "pass": 1,
+          "presented": 1,
+          "n": 1,
+          "failedChecks": {},
+          "libraries": {
+            "cannon-es@0.20.0": 1
+          }
+        },
+        {
+          "task": "R-V1-blackhole",
+          "group": "shader",
+          "pass": 1,
+          "presented": 1,
+          "n": 1,
+          "failedChecks": {},
+          "libraries": {
+            "three@0.187.0": 1
+          }
+        }
+      ],
+      "n": 6,
+      "pass": 5,
+      "presentedButFailed": 1,
+      "evaluator": {
+        "agreement": {
+          "bothPass": 5,
+          "bothFail": 0,
+          "missed": 1,
+          "falseAlarm": 0
+        }
+      },
+      "calls": {
+        "maker": {
+          "total": 7,
+          "median": 1
+        },
+        "evaluator": {
+          "total": 14,
+          "median": 2
+        }
+      },
+      "hostMs": {
+        "p50": 9033,
+        "p90": 18025
+      }
+    },
+    "D": {
+      "groups": {
+        "three": {
+          "pass": 1,
+          "n": 1
+        },
+        "html": {
+          "pass": 1,
+          "n": 1
+        },
+        "physics": {
+          "pass": 2,
+          "n": 3
+        },
+        "shader": {
+          "pass": 1,
+          "n": 1
+        }
+      },
+      "perTask": [
+        {
+          "task": "R-T1-cube",
+          "group": "three",
+          "pass": 1,
+          "presented": 1,
+          "n": 1,
+          "failedChecks": {},
+          "libraries": {
+            "three@0.187.0": 1
+          }
+        },
+        {
+          "task": "R-H1-panel",
+          "group": "html",
+          "pass": 1,
+          "presented": 1,
+          "n": 1,
+          "failedChecks": {},
+          "libraries": {
+            "なし": 1
+          }
+        },
+        {
+          "task": "R-P1-pile",
+          "group": "physics",
+          "pass": 1,
+          "presented": 1,
+          "n": 1,
+          "failedChecks": {},
+          "libraries": {
+            "cannon-es@0.20.0": 1
+          }
+        },
+        {
+          "task": "R-P2-marbles",
+          "group": "physics",
+          "pass": 0,
+          "presented": 1,
+          "n": 1,
+          "failedChecks": {
+            "collect-in-bin-no-tunnel": 1
+          },
+          "libraries": {
+            "cannon-es@0.20.0": 1
+          }
+        },
+        {
+          "task": "R-P3-flipper",
+          "group": "physics",
+          "pass": 1,
+          "presented": 1,
+          "n": 1,
+          "failedChecks": {},
+          "libraries": {
+            "cannon-es@0.20.0": 1
+          }
+        },
+        {
+          "task": "R-V1-blackhole",
+          "group": "shader",
+          "pass": 1,
+          "presented": 1,
+          "n": 1,
+          "failedChecks": {},
+          "libraries": {
+            "three@0.187.0": 1
+          }
+        }
+      ],
+      "n": 6,
+      "pass": 5,
+      "presentedButFailed": 1,
+      "evaluator": {
+        "agreement": {
+          "bothPass": 0,
+          "bothFail": 0,
+          "missed": 0,
+          "falseAlarm": 0
+        }
+      },
+      "calls": {
+        "maker": {
+          "total": 6,
+          "median": 1
+        },
+        "evaluator": {
+          "total": 0,
+          "median": 0
+        }
+      },
+      "hostMs": {
+        "p50": 2208,
+        "p90": 6568
+      }
+    }
+  }
+}
