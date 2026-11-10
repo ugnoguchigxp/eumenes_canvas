@@ -435,4 +435,14 @@ export class CanvasService {
   async drain() {
     await Promise.allSettled([...this.inflight.values()]);
   }
+
+  /** 実行中の作業を止め、観測器（Playwright のブラウザなど）を閉じる。 */
+  async close() {
+    for (const t of this.timers.values()) clearTimeout(t);
+    this.timers.clear();
+    for (const a of this.aborts.values()) a.abort();
+    this.aborts.clear();
+    await this.drain();
+    await this.o.observer.close();
+  }
 }

@@ -13,7 +13,7 @@
 
 ## 2. デモ（`examples/render/`、`bun scripts/render-demos.ts`）
 
-各デモを共通プレビュー（480×360、DPR 1、手動の時計）で起動し、`examples/render/demos.json` の手順（待つ・キー・クリック・ドラッグ）で動かし、各段の画面を `eval/out/render-demos-v2/`（git の対象外）に残した。最後に製品と同じ観測 host-smoke/2 に通した。`fixtures/demo/recordings.json` からも同じファイルを読む（複製しない）。`bun scripts/seed-demo.ts` で通常の経路を通すと、ゲーム 4 題と同じく検証ホストの作品一覧に出て、クリックで開ける。
+各デモを共通プレビュー（480×360、DPR 1、手動の時計）で起動し、`examples/render/demos.json` の手順（待つ・キー・クリック・ドラッグ）で動かし、各段の画面を `eval/out/render-demos-v2/`（git の対象外）に残した。最後に製品と同じ観測 host-smoke/2 に通した。`fixtures/demo/recordings.json` からも同じファイルを読む（複製しない）。`bun scripts/seed-demo.ts` で通常の経路を通すと（検証ホストは止めたままでよい。保存済みの古い版は同じ作品の新しい版になる）、ゲーム 4 題と同じく検証ホストの作品一覧に出て、クリックで開ける。
 
 | デモ | 使うもの | 起動（ready まで） | advance(1000) の壁時計 | host-smoke/2 | 見えたこと（画面写しを目で確認） |
 | --- | --- | ---: | --- | --- | --- |
