@@ -1,6 +1,7 @@
 import type { ArtworkBody } from "../contract/artwork";
 
-export type CheckLevel = "contract" | "loaded" | "operated" | "matched";
+/** advisory は性質の観測などの助言の検査（保存の必須にしない）。 */
+export type CheckLevel = "contract" | "loaded" | "operated" | "matched" | "advisory";
 
 export interface CheckResult {
   id: string;

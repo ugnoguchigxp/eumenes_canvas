@@ -291,7 +291,8 @@ export class CanvasService {
   }
 
   private makeVerification(digest: string, dataDigest: string | null, environment: string, checks: Verification["checks"]): Verification {
-    const required = checks.filter((c) => c.level !== "matched");
+    // 必須は段階の名前で数える（matched・advisory は助言で、保存を止めない）
+    const required = checks.filter((c) => c.level === "contract" || c.level === "loaded" || c.level === "operated");
     const failed = required.find((c) => !c.pass);
     const hasLevels = ["contract", "loaded", "operated"].every((l) => checks.some((c) => c.level === l));
     return {
