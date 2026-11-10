@@ -1,0 +1,191 @@
+{
+ "note": "描画方式の拡張のデモ（design.md §7.4）。評価の参照作品ではない。scripts/render-demos.ts で共通プレビューと host-smoke の観測に通す。",
+ "demos": [
+  {
+   "id": "three-scene",
+   "title": "Three.js の場面（照明・影・HTML の名札）",
+   "entry": "three-scene.js",
+   "libraries": [
+    "three@0.187.0"
+   ],
+   "script": [
+    [
+     "wait",
+     1000
+    ],
+    [
+     "drag",
+     [
+      320,
+      300
+     ],
+     [
+      420,
+      260
+     ]
+    ],
+    [
+     "key",
+     "ArrowLeft",
+     400
+    ],
+    [
+     "click",
+     [
+      160,
+      160
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "marble-run",
+   "title": "marble run",
+   "entry": "marble-run.js",
+   "libraries": [
+    "three@0.187.0",
+    "cannon-es@0.20.0"
+   ],
+   "script": [
+    [
+     "wait",
+     3000
+    ],
+    [
+     "key",
+     "Space",
+     50
+    ],
+    [
+     "wait",
+     12000
+    ]
+   ]
+  },
+  {
+   "id": "pinball",
+   "title": "ピンボール",
+   "entry": "pinball.js",
+   "libraries": [
+    "three@0.187.0",
+    "cannon-es@0.20.0"
+   ],
+   "script": [
+    [
+     "wait",
+     500
+    ],
+    [
+     "key",
+     "Space",
+     900
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "key",
+     "ArrowLeft",
+     300
+    ],
+    [
+     "key",
+     "ArrowRight",
+     300
+    ],
+    [
+     "wait",
+     3000
+    ]
+   ]
+  },
+  {
+   "id": "black-hole",
+   "title": "ブラックホール",
+   "entry": "black-hole.js",
+   "libraries": [
+    "three@0.187.0"
+   ],
+   "script": [
+    [
+     "wait",
+     1000
+    ],
+    [
+     "key",
+     "ArrowUp",
+     500
+    ],
+    [
+     "drag",
+     [
+      240,
+      150
+     ],
+     [
+      240,
+      220
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "html-card",
+   "title": "HTML in canvas のカード",
+   "entry": "html-card.js",
+   "script": [
+    [
+     "wait",
+     500
+    ],
+    [
+     "click",
+     [
+      110,
+      270
+     ]
+    ],
+    [
+     "wait",
+     200
+    ],
+    [
+     "click",
+     [
+      250,
+      270
+     ]
+    ],
+    [
+     "click",
+     [
+      250,
+      270
+     ]
+    ],
+    [
+     "click",
+     [
+      160,
+      222
+     ]
+    ],
+    [
+     "key",
+     "KeyH",
+     30
+    ],
+    [
+     "key",
+     "KeyI",
+     30
+    ],
+    [
+     "wait",
+     300
+    ]
+   ]
+  }
+ ]
+}
