@@ -2,13 +2,19 @@
 //   bun eval/p3/run.ts --cond D --run-dir /workspace/canvas_p3/D-r<k> --host-port <port> [--tasks ID,ID]
 //   bun eval/p3/run.ts --suite general --cond D --run-dir /workspace/canvas_general/D-r<k> --host-port <port>   汎用課題 general-v1（docs/eval/general-v1.md）
 //   bun eval/p3/run.ts --suite render --cond D --run-dir /workspace/canvas_render/D-r<k> --host-port <port>    描画方式の計測基板 render-v1（docs/eval/render-v1.md）
+//   bun eval/p3/run.ts --suite <suite> --cond A --review probes|judge|full --run-dir <root>/A-r<k> --host-port <port>   条件 A（宣言つきの制作担当＋検証、docs/eval/agent-v1.md）
 // 制作は製品と同じ CanvasService（契約検査・ホスト観測・修正 2 回まで・保存）を通す。制作担当は run-dir の solo/ のファイル応答で答える。
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { artworkDigest, type ArtworkBody } from "../../src/contract/artwork";
 import type { GenerationInput, GenerationOutput, ModelPort } from "../../src/core/model-port";
+import { HostReviewer } from "../../src/core/host-reviewer";
 import { OBSERVER_SUITE, PlaywrightObserver } from "../../src/core/observer";
+import { PlaywrightProber, PROBE_SUITE } from "../../src/core/probes";
+import { PromptEvaluator } from "../../src/core/prompt-evaluator";
+import { PromptMaker } from "../../src/core/prompt-maker";
+import type { ReviewerPort, ReviewInput, ReviewMode, ReviewOutcome } from "../../src/core/review";
 import { CanvasService } from "../../src/core/service";
 import { Store } from "../../src/core/store";
 import type { Turn } from "../../src/core/types";
@@ -51,6 +57,29 @@ class SeedingModel implements ModelPort {
   }
 }
 
+/** 前処理（元作品を版 1 にする実行）では検証しない。修復の課題の元作品はわざと壊してあり、検証すると直しの生成が走るため。 */
+class SeedSkippingReviewer implements ReviewerPort {
+  readonly suite: string;
+  constructor(private inner: ReviewerPort) {
+    this.suite = inner.suite;
+  }
+  review(input: ReviewInput, signal: AbortSignal): Promise<ReviewOutcome> {
+    if (input.request === SEED_REQUEST) return Promise.resolve({ suite: this.suite, environment: "none", checks: [], findings: [], verdict: null, evaluatorCalls: 0, ms: 0, error: null });
+    return this.inner.review(input, signal);
+  }
+  close(): Promise<void> {
+    return this.inner.close();
+  }
+}
+
+export interface ReviewRecord {
+  attempt: number;
+  blocking: number;
+  findings: { severity: string; id: string; message: string }[];
+  evaluatorCalls: number;
+  ms: number;
+  error: string | null;
+}
 export interface TurnRecord {
   request: string;
   state: string;
@@ -60,6 +89,10 @@ export interface TurnRecord {
   wallMs: number;
   calls: number;
   smokeFailures: string[];
+  /** そのターンの検証担当の推論の回数。 */
+  evalCalls: number;
+  /** 候補ごとの検証の要約（検証しなかった候補は含めない）。 */
+  reviews: ReviewRecord[];
 }
 export interface TaskRecord {
   cond: string;
@@ -73,14 +106,21 @@ export interface TaskRecord {
   final: ArtworkBody | null;
   finalDigest: string | null;
   error: string | null;
+  /** 課題全体の検証担当の推論の回数。 */
+  evalCalls: number;
+  /** 最後に保存した候補の検証の要約。検証なしなら null。 */
+  finalReview: { blocking: number; verdicts: { requirement: string; verdict: string }[]; error: string | null } | null;
 }
 
 async function main() {
-  const { values } = parseArgs({ options: { cond: { type: "string" }, "run-dir": { type: "string" }, "host-port": { type: "string" }, tasks: { type: "string" }, suite: { type: "string" } } });
+  const { values } = parseArgs({ options: { cond: { type: "string" }, review: { type: "string" }, "run-dir": { type: "string" }, "host-port": { type: "string" }, tasks: { type: "string" }, suite: { type: "string" } } });
   const suite = (values.suite ?? "heldout") as "heldout" | "general" | "render";
   if (!["heldout", "general", "render"].includes(suite)) throw new Error("--suite heldout|general|render");
   const cond = values.cond;
-  if (cond !== "D") throw new Error("--cond D（直接生成）を指定してください");
+  if (cond !== "D" && cond !== "A") throw new Error("--cond D（直接生成）か --cond A（宣言つきの制作担当＋検証）を指定してください");
+  if (cond === "D" && values.review !== undefined) throw new Error("--review は条件 A だけで指定できる");
+  const review = (cond === "A" ? (values.review ?? "full") : "off") as ReviewMode;
+  if (cond === "A" && !["probes", "judge", "full"].includes(review)) throw new Error("--review probes|judge|full");
   // render-v1 はすべて新規（元作品・登録データなし）。参照の作品の libraries は制作担当に渡さない
   const SUITE_TASKS: Task[] =
     suite === "general" ? GENERAL_TASKS.map(({ fixed: _f, ...t }) => t) : suite === "render" ? RENDER_TASKS.map((t) => ({ id: t.id, group: "new" as const, seed: t.seed, turns: t.turns })) : TASKS;
@@ -97,22 +137,35 @@ async function main() {
   const app = startApp({ hostPort: port, previewPort: port + 1, devHarness: true });
   const contract = readFileSync(join(ROOT, "docs/artwork-contract-v1.md"), "utf8");
   const gen = new FileChannel(join(runDir, "solo/gen"), "gen", usage, cond);
+  // 検証担当の応答は制作担当とは別の場所（別の応答者）。judge・full のときだけ
+  const ev = cond === "A" && review !== "probes" ? new FileChannel(join(runDir, "solo/eval"), "eval", usage, cond) : null;
   const resultsFile = join(hostDir, "results.json");
   const done: TaskRecord[] = existsSync(resultsFile) ? JSON.parse(readFileSync(resultsFile, "utf8")).records : [];
   const sha = (f: string) => "sha256:" + createHash("sha256").update(readFileSync(join(ROOT, f))).digest("hex");
-  writeFileSync(join(hostDir, "run.json"), JSON.stringify({ suite, observer: OBSERVER_SUITE, contractDigest: sha("docs/artwork-contract-v1.md"), makerSkillDigest: sha("docs/maker-skill.md"), cond, run: runName, startedAt: new Date().toISOString(), tasks: tasks.map((t) => t.id), stand_in: "Grok Bot responder（Luna／Haiku ではない）" }, null, 2));
+  writeFileSync(join(hostDir, "run.json"), JSON.stringify({ suite, observer: OBSERVER_SUITE, contractDigest: sha("docs/artwork-contract-v1.md"), makerSkillDigest: sha("docs/maker-skill.md"), cond, review, probe: PROBE_SUITE, evaluatorSkillDigest: sha("docs/evaluator-skill.md"), makerPitfallsDigest: sha("docs/maker-pitfalls.md"), run: runName, startedAt: new Date().toISOString(), tasks: tasks.map((t) => t.id), stand_in: "Grok Bot responder（Luna／Haiku ではない）" }, null, 2));
 
   try {
     for (const t of tasks) {
       if (done.some((r) => r.task === t.id)) continue; // 再開時は済んだ課題を飛ばす
       const observer = new PlaywrightObserver(app.hostOrigin, (b) => app.tokens.issue(b));
-      const model = new DirectModel(gen);
-      const svc = new CanvasService({ store: new Store(null), model: new SeedingModel(model, baseBody(t)), observer, contract, datasets: SUITE_DATASETS, runTimeoutMs: RUN_TIMEOUT_MS });
+      const model: ModelPort = cond === "A" ? new PromptMaker(gen, { label: "agent-maker(stand-in)" }) : new DirectModel(gen);
+      const reviewer =
+        cond === "A" ? new SeedSkippingReviewer(new HostReviewer(new PlaywrightProber(app.hostOrigin, (b) => app.tokens.issue(b)), ev ? new PromptEvaluator(ev, { label: "agent-evaluator(stand-in)" }) : null)) : null;
+      const svc = new CanvasService({
+        store: new Store(null),
+        model: new SeedingModel(model, baseBody(t)),
+        observer,
+        contract,
+        datasets: SUITE_DATASETS,
+        runTimeoutMs: RUN_TIMEOUT_MS,
+        ...(reviewer ? { review: { reviewer, mode: review } } : {}),
+      });
       const owner = "p3-owner", session = `p3-${runName}-${t.id}`;
-      const rec: TaskRecord = { cond, run: runName, task: t.id, group: t.group, presented: false, submissions: 0, calls: 0, turns: [], final: null, finalDigest: null, error: null };
+      const rec: TaskRecord = { cond, run: runName, task: t.id, group: t.group, presented: false, submissions: 0, calls: 0, turns: [], final: null, finalDigest: null, error: null, evalCalls: 0, finalReview: null };
       let artworkId: string | null = null, revision = 0, n = 0;
       const key = () => `k_${runName}_${t.id.replace(/[^A-Za-z0-9]/g, "")}_${n++}`.slice(0, 64);
       gen.scope = { task: t.id, turn: null };
+      if (ev) ev.scope = { task: t.id, turn: null };
       try {
         if (t.base) {
           const r = await svc.startRun(owner, session, { message: SEED_REQUEST });
@@ -126,14 +179,16 @@ async function main() {
         const conversation: Turn[] = [];
         for (const [ti, turn] of t.turns.entries()) {
           gen.scope = { task: t.id, turn: ti };
-          const w0 = gen.waitedMs, c0 = gen.calls;
+          if (ev) ev.scope = { task: t.id, turn: ti };
+          const w0 = gen.waitedMs + (ev?.waitedMs ?? 0), c0 = gen.calls, e0 = ev?.calls ?? 0;
           const t0 = performance.now();
           const r = await svc.startRun(owner, session, { message: turn, artworkId, conversation: [...conversation] });
           await svc.drain();
           const st = svc.getRun(owner, r.id);
           const wallMs = performance.now() - t0;
-          const waited = gen.waitedMs - w0;
+          const waited = gen.waitedMs + (ev?.waitedMs ?? 0) - w0; // 制作担当と検証担当の両方の待ちを引く
           const calls = gen.calls - c0;
+          const evalCalls = (ev?.calls ?? 0) - e0;
           const submissions = st.attempts;
           rec.turns.push({
             request: turn,
@@ -144,15 +199,23 @@ async function main() {
             wallMs: Math.round(wallMs),
             calls,
             smokeFailures: st.candidates.flatMap((c) => (c.verification?.checks ?? []).filter((k) => !k.pass).map((k) => `${c.attempt}:${k.id}:${k.detail ?? ""}`.slice(0, 300))),
+            evalCalls,
+            reviews: st.candidates.flatMap((c) =>
+              c.review
+                ? [{ attempt: c.attempt, blocking: c.review.blocking, findings: c.review.findings.map((f) => ({ severity: f.severity, id: f.id, message: f.message.slice(0, 200) })), evaluatorCalls: c.review.evaluatorCalls, ms: c.review.ms, error: c.review.error }]
+                : [],
+            ),
           });
           rec.submissions += submissions;
           rec.calls += calls;
+          rec.evalCalls += evalCalls;
           conversation.push({ role: "user", text: turn });
           if (st.state !== "presented") break;
           const cand = st.candidates.find((c) => c.id === st.presentedCandidateId)!;
           const s = await svc.save(owner, cand.id, { expectedRevision: revision, idempotencyKey: key() });
           artworkId = (s.result as { artworkId: string }).artworkId;
           revision = (s.result as { revision: number }).revision;
+          rec.finalReview = cand.review ? { blocking: cand.review.blocking, verdicts: (cand.review.verdict?.verdicts ?? []).map((v) => ({ requirement: v.requirement, verdict: v.verdict })), error: cand.review.error } : null;
           conversation.push({ role: "assistant", text: cand.reply });
         }
         rec.presented = rec.turns.length === t.turns.length && rec.turns.every((x) => x.state === "presented");
@@ -167,8 +230,8 @@ async function main() {
       } catch (e) {
         rec.error = (e as Error).message.slice(0, 500);
       } finally {
-        await svc.drain();
-        await observer.close();
+        // 観測器と検証（HostReviewer の観測室）は CanvasService.close が閉じる
+        await svc.close();
       }
       done.push(rec);
       writeFileSync(join(hostDir, "final", `${t.id}.json`), JSON.stringify({ task: t.id, final: rec.final, finalDigest: rec.finalDigest }, null, 2));

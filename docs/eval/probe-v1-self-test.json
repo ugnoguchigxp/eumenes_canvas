@@ -1,0 +1,388 @@
+{
+  "suite": "host-probe/1",
+  "environment": "chromium 141.0.7390.37",
+  "checkedAt": "2026-11-10T15:04:23.553Z",
+  "totalMs": 181939,
+  "allOk": true,
+  "groups": {
+    "p1": {
+      "ok": 3,
+      "n": 3
+    },
+    "demo": {
+      "ok": 4,
+      "n": 4
+    },
+    "general-gold": {
+      "ok": 8,
+      "n": 8
+    },
+    "render-demo": {
+      "ok": 5,
+      "n": 5
+    },
+    "broken": {
+      "ok": 1,
+      "n": 1
+    },
+    "dt0": {
+      "ok": 1,
+      "n": 1
+    },
+    "correct": {
+      "ok": 1,
+      "n": 1
+    }
+  },
+  "results": [
+    {
+      "group": "p1",
+      "file": "fixtures/p1/artworks/falling-block.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 5552,
+      "ok": true
+    },
+    {
+      "group": "p1",
+      "file": "fixtures/p1/artworks/breakout.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 4313,
+      "ok": true
+    },
+    {
+      "group": "p1",
+      "file": "fixtures/p1/artworks/viz-filter.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 4812,
+      "ok": true
+    },
+    {
+      "group": "demo",
+      "file": "fixtures/demo/artworks/invaders.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 5835,
+      "ok": true
+    },
+    {
+      "group": "demo",
+      "file": "fixtures/demo/artworks/othello.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 4858,
+      "ok": true
+    },
+    {
+      "group": "demo",
+      "file": "fixtures/demo/artworks/solitaire.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 5726,
+      "ok": true
+    },
+    {
+      "group": "demo",
+      "file": "fixtures/demo/artworks/tetris.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 5163,
+      "ok": true
+    },
+    {
+      "group": "general-gold",
+      "file": "eval/gold/general/G-M1-breakout.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 5146,
+      "ok": true
+    },
+    {
+      "group": "general-gold",
+      "file": "eval/gold/general/G-M2-balls.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 4761,
+      "ok": true
+    },
+    {
+      "group": "general-gold",
+      "file": "eval/gold/general/G-M3-paint.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 5147,
+      "ok": true
+    },
+    {
+      "group": "general-gold",
+      "file": "eval/gold/general/G-N1-throw.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 3912,
+      "ok": true
+    },
+    {
+      "group": "general-gold",
+      "file": "eval/gold/general/G-N2-platforms.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 5161,
+      "ok": true
+    },
+    {
+      "group": "general-gold",
+      "file": "eval/gold/general/G-N3-memory.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 5179,
+      "ok": true
+    },
+    {
+      "group": "general-gold",
+      "file": "eval/gold/general/G-N4-turret.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [
+        {
+          "severity": "info",
+          "id": "P-long",
+          "message": "入力なしで 20000ms 動かすと画面が単色になった（終了画面が単色の可能性）"
+        }
+      ],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 4331,
+      "ok": true
+    },
+    {
+      "group": "general-gold",
+      "file": "eval/gold/general/G-V1-chart.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 3645,
+      "ok": true
+    },
+    {
+      "group": "render-demo",
+      "file": "examples/render/three-scene.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [
+        "長時間（描画が重い）"
+      ],
+      "ms": 11418,
+      "ok": true
+    },
+    {
+      "group": "render-demo",
+      "file": "examples/render/marble-run.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [
+        "クリック 1（時間の上限）",
+        "クリック 2（時間の上限）",
+        "クリック 3（時間の上限）",
+        "クリック 4（時間の上限）",
+        "リサイズ（時間の上限）",
+        "長時間（描画が重い）"
+      ],
+      "ms": 22342,
+      "ok": true
+    },
+    {
+      "group": "render-demo",
+      "file": "examples/render/pinball.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [
+        "リサイズ（時間の上限）",
+        "長時間（描画が重い）"
+      ],
+      "ms": 21005,
+      "ok": true
+    },
+    {
+      "group": "render-demo",
+      "file": "examples/render/black-hole.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [
+        "クリック 1（時間の上限）",
+        "クリック 2（時間の上限）",
+        "クリック 3（時間の上限）",
+        "リサイズ（時間の上限）",
+        "長時間（描画が重い）"
+      ],
+      "ms": 22352,
+      "ok": true
+    },
+    {
+      "group": "render-demo",
+      "file": "examples/render/html-card.js",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [
+        "クリック 4（時間の上限）",
+        "リサイズ（時間の上限）",
+        "長時間（描画が重い）"
+      ],
+      "ms": 21345,
+      "ok": true
+    },
+    {
+      "group": "broken",
+      "file": "fixtures/p1/artworks/breakout-broken.js",
+      "expect": "finds-error",
+      "booted": true,
+      "findings": [
+        {
+          "severity": "blocking",
+          "id": "P-input-Space",
+          "message": "キー Space の入力のあとに実行時エラー：frame: bal is not defined（作品の 30 行 46 列）"
+        },
+        {
+          "severity": "blocking",
+          "id": "P-pointer-1",
+          "message": "クリック (68,19) の入力のあとに実行時エラー：frame: bal is not defined（作品の 30 行 46 列）"
+        },
+        {
+          "severity": "blocking",
+          "id": "P-pointer-2",
+          "message": "クリック (244,332) の入力のあとに実行時エラー：frame: bal is not defined（作品の 30 行 46 列）"
+        }
+      ],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 4323,
+      "ok": true
+    },
+    {
+      "group": "dt0",
+      "file": "jumper(false)",
+      "expect": "finds-input-Space",
+      "booted": true,
+      "findings": [
+        {
+          "severity": "blocking",
+          "id": "P-input-Space",
+          "message": "宣言した操作「Space：ジャンプ」（いつでも効く）を、起動から 1000ms の時点で 200ms 押して離したが、押している間も、離して 400ms 後も、押さなかった場合と画面が 1 画素も違わない。入力が効いていない"
+        }
+      ],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 2745,
+      "ok": true
+    },
+    {
+      "group": "correct",
+      "file": "jumper(true)",
+      "expect": "no-blocking",
+      "booted": true,
+      "findings": [],
+      "warnings": 0,
+      "deterministic": true,
+      "dtZeroPixels": 0,
+      "skipped": [],
+      "ms": 2749,
+      "ok": true
+    }
+  ]
+}

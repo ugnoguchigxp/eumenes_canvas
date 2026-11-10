@@ -3,3 +3,5 @@ test-results/
 playwright-report/
 .data/
 eval/out/
+# 実モデルの接続の設定（リポジトリに入れない。docs/agent-plan/09 §7.4）
+canvas.local.json

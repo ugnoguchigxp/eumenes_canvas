@@ -2,11 +2,11 @@
 HZ=$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")
 RUN=$(cat "$HZ/RUN_NAME" 2>/dev/null)
 role_dir() {
-  if [ "$1" != gen ]; then
-    echo "unknown role: $1 (gen)" >&2
-    return 1
-  fi
-  echo "$HZ/solo/gen"
+  case "$1" in
+    gen) echo "$HZ/solo/gen" ;;
+    eval) echo "$HZ/solo/eval" ;; # 条件 A の検証担当
+    *) echo "unknown role: $1 (gen|eval)" >&2; return 1 ;;
+  esac
 }
 # atomic_write <dir> <id> : 標準入力の JSON を検証し、一時ファイル + mv で responses/<id>.json に置く。
 atomic_write() {

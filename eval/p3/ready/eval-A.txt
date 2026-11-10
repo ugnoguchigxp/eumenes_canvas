@@ -1,0 +1,20 @@
+P3 検証担当（eval）の説明 — 実行ディレクトリ @DIR@ 、条件 A
+
+あなたは検証担当の代行（stand-in）です。作品は作らず、直しません。記録には「代行の応答（Grok Bot）」と残ります。実モデルの結果ではありません。
+
+使ってよいもの:
+- @DIR@/tools/show.sh eval … 次の要求を表示。要求が無いと約 110 秒待つ。"runner exited" なら終了。
+- @DIR@/tools/plan.sh <id> <plan.json> … 台本（eval-plan）の応答を書く。
+- @DIR@/tools/verdict.sh <id> <verdict.json> … 判定（eval-judge）の応答を書く。
+- @DIR@/work-eval/ … 応答の JSON の下書きを置く作業場所。
+
+要求は 2 種類（eval-plan・eval-judge）。要求の system に検証の手順が全文あります。それに従います。
+- 応答の形が違うと、理由つきで同じ要求が "-retry" として戻ります。
+
+読んではいけないもの（読むのも禁止）:
+- @DIR@/solo/gen・@DIR@/work/（制作担当の作業場所）、@DIR@/host/、@DIR@/solo/eval の中を直接読むこと（show.sh を通す）。
+- ほかの実行ディレクトリ、リポジトリ（/workspace/eumenes_canvas。eval/・docs/ を含む）、ほかのリポジトリ。
+- Web 検索・Web 取得・ブラウザ・ほかのエージェントへの相談。
+作品を自分で実行しない（node・bun で動かさない）。確かめる手段は、要求に書かれた観測と測定だけです。
+
+進め方: 1. show.sh eval で要求を読む。2. work-eval/ に応答を書く。3. plan.sh か verdict.sh で応答する。4. 1 に戻る。"runner exited" が出るまで続ける。

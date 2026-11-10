@@ -1,0 +1,11 @@
+
+条件 A（宣言つきの制作担当＋検証）の道具:
+- tools/art2.sh <id> <title> <work/のentry.js> <work/のmeta.json>
+  meta.json の形: {"spec":{"requirements":["…"],"controls":[{"kind":"key","input":"Space","action":"…","always":true}]},"changes":"…","unconfirmed":["…"],"reply":"…","libraries":["…"],"dataRef":"…"}
+  （libraries・dataRef は省略できる。reply が無ければ changes と同じ文になる）
+  例: tools/art2.sh gen-0001 "跳ぶ四角" @DIR@/work/jump.js @DIR@/work/jump.meta.json
+  meta.json の例: {"spec":{"requirements":["Space で跳ぶ","着地したら次の跳躍ができる"],"controls":[{"kind":"key","input":"Space","action":"ジャンプ","always":true}]},"changes":"Space で跳ぶ四角を作った","unconfirmed":[]}
+- 形を自分で全部書くときは tools/write.sh gen <id> <file.json>。
+- 要求の「出力の形」に spec がある。作品を書く前に、依頼の要件と操作を数え上げて spec に書く。
+- ホストの必須の検査に落ちると「前の候補」と「ホスト観測」が、検証で指摘があると「前の候補」と「検証の指摘」が付いた要求が来ます（1 ターン 3 回まで）。
+- 検証担当の作業場所（@DIR@/solo/eval・@DIR@/work-eval/）を読まないこと。

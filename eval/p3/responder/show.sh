@@ -1,5 +1,5 @@
 #!/bin/bash
-# show.sh [gen] : いちばん古い未回答の要求を 1 件表示する（最大約 110 秒待つ）。
+# show.sh [gen|eval] : いちばん古い未回答の要求を 1 件表示する（最大約 110 秒待つ）。eval は条件 A の検証担当（solo/eval）。
 # 表示するのはホストからの通知、要求の id・目的・再提出の理由・system・prompt・出力の形。
 # ほかの実行の記録は表示しない。待っても無ければ "no request yet"、実行器が終わっていれば "runner exited"。
 . "$(dirname "$(realpath "$0")")/common.sh"
