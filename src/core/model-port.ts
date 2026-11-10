@@ -24,6 +24,8 @@ export interface GenerationInput {
   previous: ArtworkBody | null;
   previousDigest: string | null;
   observations: Observation[];
+  /** 直前の候補がホストの必須の検査に通っていたか（真なら observations は検証の指摘）。省略時は偽。 */
+  previousPassed?: boolean;
 }
 
 export interface GenerationOutput {
@@ -34,6 +36,8 @@ export interface GenerationOutput {
   unconfirmed: string[];
   /** 会話への返答。 */
   reply: string;
+  /** 制作担当の宣言（要件と操作）。形はホストが正規化する（src/core/spec.ts）。 */
+  spec?: unknown;
 }
 
 export interface ModelPort {
