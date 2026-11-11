@@ -7,6 +7,7 @@ export interface InferenceRequest {
   prompt: string;
   outputSchema: unknown; // 出力の JSON Schema
   maxOutputChars?: number;
+  images?: readonly { mediaType: "image/png" | "image/jpeg"; bytes: Uint8Array }[];
 }
 export type Validate<T> = (value: unknown) => { ok: true; value: T } | { ok: false; issues: unknown };
 export interface InferenceChannel {

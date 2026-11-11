@@ -6,7 +6,7 @@ import { HttpChannel, type HttpChannelOptions } from "../../src/server/http-chan
 interface Sent {
   url: string;
   headers: Record<string, string>;
-  body: { model: string; messages: { role: string; content: string }[]; temperature?: number; max_tokens?: number };
+  body: { model: string; messages: { role: string; content: string | { type: string; text?: string; image_url?: { url: string } }[] }[]; temperature?: number; max_tokens?: number };
 }
 /** 受け取った要求を覚え、決めた応答を順に返す偽の fetch。 */
 function fakeFetch(replies: ({ status?: number; content?: string; raw?: string } | "hang")[]) {
@@ -57,6 +57,25 @@ describe("HttpChannel", () => {
     expect(g.sent[0].headers.authorization).toBeUndefined();
     // 既定の (process.env) でも、キーの値は設定に書かない
     expect(JSON.stringify(OPTS)).not.toContain("sk-");
+  });
+
+  test("推論強度・新しい出力トークン上限・保存設定を送る", async () => {
+    const f = fakeFetch([{ content: '{"x": 1}' }]);
+    const ch = new HttpChannel({ ...OPTS, reasoningEffort: "low", maxTokens: 100, maxCompletionTokens: 200, store: false }, { fetch: f.fetch, env: {} });
+    await ch.complete(REQ, hasX, sig());
+    expect(f.sent[0].body).toMatchObject({ reasoning_effort: "low", max_completion_tokens: 200, store: false });
+    expect(f.sent[0].body).not.toHaveProperty("max_tokens");
+  });
+
+  test("画像を指定した要求では本文と同じメッセージにPNGを添付する", async () => {
+    const f = fakeFetch([{ content: '{"x": 1}' }]);
+    const ch = new HttpChannel(OPTS, { fetch: f.fetch, env: {} });
+    const bytes = new Uint8Array([137, 80, 78, 71]);
+    await ch.complete({ ...REQ, images: [{ mediaType: "image/png", bytes }] }, hasX, sig(), 0);
+    expect(f.sent[0].body.messages[1]).toEqual({ role: "user", content: [
+      { type: "text", text: "PROMPT" },
+      { type: "image_url", image_url: { url: "data:image/png;base64,iVBORw==" } },
+    ] });
   });
 
   test("囲みつきの JSON", async () => {

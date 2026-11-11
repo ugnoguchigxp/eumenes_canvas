@@ -3,7 +3,7 @@ import { afterAll, describe, expect, mock, test } from "bun:test";
 import * as messages from "../../src/shared/messages.js";
 
 mock.module("/shared/messages.js", () => messages);
-const { PreviewController, PreviewConnectError, CONNECT_TIMEOUT_MS, pageRefusal, isWebKitOnly, PAGE_WARNING } = await import("../../src/host/preview-client.js");
+const { PreviewController, PreviewConnectError, CONNECT_TIMEOUT_MS, pageRefusal, isChromium, isWebKitOnly, PAGE_WARNING } = await import("../../src/host/preview-client.js");
 
 const ORIGIN = "http://127.0.0.1:49999";
 
@@ -85,14 +85,20 @@ describe("PreviewController の接続", () => {
 describe("ページ直接モード（design.md §8）", () => {
   const SAFARI = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15";
   const CHROME = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36";
-  test("WebKit だけのブラウザと設定で無効なときは開かない。Chromium 系で設定が有効なときだけ開く", () => {
+  test("設定が有効で Chromium 系と判定できるときだけ開く", () => {
+    const FIREFOX = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14.0; rv:130.0) Gecko/20100101 Firefox/130.0";
+    const IOS_CHROME = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 CriOS/141.0.0.0 Mobile Safari/604.1";
     expect(isWebKitOnly(SAFARI)).toBe(true);
     expect(isWebKitOnly(CHROME)).toBe(false);
-    expect(pageRefusal({ pageMode: false, webkitOnly: false })).toContain("無効");
-    expect(pageRefusal({ pageMode: true, webkitOnly: true })).toContain("Safari");
-    expect(pageRefusal({ pageMode: true, webkitOnly: false })).toBeNull();
+    expect(pageRefusal({ pageMode: false, chromium: isChromium(CHROME) })).toContain("無効");
+    for (const ua of [SAFARI, FIREFOX, IOS_CHROME, ""]) {
+      expect(pageRefusal({ pageMode: true, chromium: isChromium(ua) })).toContain("Chromium");
+    }
+    expect(pageRefusal({ pageMode: true, chromium: isChromium(CHROME) })).toBeNull();
   });
-  test("警告は WebRTC の外部通信が止められないことを伝える", () => expect(PAGE_WARNING).toContain("WebRTC"));
+  test("警告は WebRTC、サイト分離と認証済みデータの扱いを伝える", () => {
+    for (const term of ["WebRTC", "プロセス分離", "認証済みのデータ"]) expect(PAGE_WARNING).toContain(term);
+  });
   test("start は runtime を page のときだけ送り、直接描画と同時には送らない", async () => {
     const env = fakeDocument({ reply: true });
     const ctl: any = new PreviewController(env.container, { previewOrigin: ORIGIN, connectTimeoutMs: 200 });

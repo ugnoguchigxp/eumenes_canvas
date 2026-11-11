@@ -157,7 +157,7 @@ export class PromptEvaluator implements EvaluatorPort {
   plan(input: EvalPlanInput, signal: AbortSignal): Promise<unknown> {
     return this.channel.complete({ purpose: "eval-plan", system: this.system, prompt: planPrompt(input), outputSchema: PLAN_SCHEMA, maxOutputChars: 16_000 }, hasArray("scripts"), signal);
   }
-  judge(input: EvalJudgeInput, signal: AbortSignal): Promise<unknown> {
-    return this.channel.complete({ purpose: "eval-judge", system: this.system, prompt: judgePrompt(input), outputSchema: VERDICT_SCHEMA, maxOutputChars: 16_000 }, hasArray("verdicts"), signal);
+  judge(input: EvalJudgeInput, signal: AbortSignal, maxRetries?: number): Promise<unknown> {
+    return this.channel.complete({ purpose: "eval-judge", system: this.system, prompt: judgePrompt(input), outputSchema: VERDICT_SCHEMA, maxOutputChars: 16_000 }, hasArray("verdicts"), signal, maxRetries);
   }
 }

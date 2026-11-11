@@ -34,7 +34,7 @@ export interface CanvasConfig {
   /** 観測のブラウザ（Chromium）に足す起動引数。既定は空。 */
   observerArgs?: string[];
   /** 候補の検証。省略時は off。 */
-  review?: { mode: "off" | "probes" | "judge" | "full"; maxReviews?: number };
+  review?: { mode: ReviewMode; maxReviews?: number };
   /** 制作担当。モデルの名前は設定にだけ書く（製品のコード・ファイル名に書かない）。 */
   model:
     | { provider: "recorded"; label: string; files: string[]; ignoreLatency?: boolean; deliverAfterAbort?: boolean }

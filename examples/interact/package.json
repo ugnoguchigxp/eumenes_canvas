@@ -1,0 +1,9 @@
+{
+  "name": "canvas-interact-example",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@playwright/mcp": "0.0.83",
+    "eumenes-interact": "file:vendor/eumenes-interact-0.1.4-dbe6f4d41597.tgz"
+  }
+}

@@ -65,7 +65,7 @@ test("ブラウザ全面へ切り替えても再起動せず、状態を保ち�
   expect((await fallingState(page)).piece.cx).toBe(cx);
 });
 
-test("全画面：対応していれば全画面化し、戻るボタンで元の表示とフォーカスに戻る。拒否時はブラウザ全面", async ({ page, browserName }) => {
+test("全画面：戻るボタンと Esc で元の表示とフォーカスに戻る。拒否時はブラウザ全面", async ({ page, browserName }) => {
   test.setTimeout(90_000);
   await openHost(page);
   await ask(page, "落ち物ゲームを作って");
@@ -82,6 +82,14 @@ test("全画面：対応していれば全画面化し、戻るボタンで元�
   else await expect(page.locator("#notice")).toContainText("ブラウザ全面");
   expect(await sameFrame(page)).toBe(true);
   await page.locator("#exit-mode").click();
+  await expect(page.locator("#preview-host")).toHaveClass(/mode-frame/);
+  expect(await page.evaluate(() => document.fullscreenElement)).toBeNull();
+  await expect(fsBtn).toBeFocused();
+  expect(await sameFrame(page)).toBe(true);
+  expect(await readyCount(page)).toBe(ready0);
+  await fsBtn.click();
+  await expect(page.locator("#preview-host")).toHaveClass(/mode-(fullscreen|fill)/);
+  await page.keyboard.press("Escape");
   await expect(page.locator("#preview-host")).toHaveClass(/mode-frame/);
   expect(await page.evaluate(() => document.fullscreenElement)).toBeNull();
   await expect(fsBtn).toBeFocused();

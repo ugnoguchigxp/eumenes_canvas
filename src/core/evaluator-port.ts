@@ -24,5 +24,5 @@ export interface EvalJudgeInput {
 export interface EvaluatorPort {
   readonly label: string;
   plan(input: EvalPlanInput, signal: AbortSignal): Promise<unknown>;
-  judge(input: EvalJudgeInput, signal: AbortSignal): Promise<unknown>;
+  judge(input: EvalJudgeInput, signal: AbortSignal, maxRetries?: number): Promise<unknown>;
 }

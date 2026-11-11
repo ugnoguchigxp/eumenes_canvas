@@ -1,6 +1,7 @@
 // 01：Worker スクリプトの組み立てで、作品の直前に行のずれ（__canvasEntryLine）を設定する。
 import { expect, test } from "bun:test";
 import { assembleWorkerScript } from "../../src/server/preview";
+import { instrumentLoops } from "../../src/server/instrument-loops";
 import { checkHostToShell } from "../../src/shared/messages.js";
 
 test("__canvasEntryLine の値は、作品の 1 行目の添字と一致する", () => {
@@ -9,6 +10,24 @@ test("__canvasEntryLine の値は、作品の 1 行目の添字と一致する",
   expect(m).not.toBeNull();
   expect(out.split("\n")[Number(m![1])]).toBe("const FIRST_LINE = 1;");
   expect(out).toContain(";(function (canvasApp) {");
+});
+
+test("ループの本体にだけ実行時間の検査を入れ、行と制御フローを保つ", () => {
+  const entry = [
+    'const example = "while (true) {}";',
+    "let n = 0;",
+    "outer: for (let i = 0; i < 3; i++)",
+    "  for (const j of [0, 1]) if (j === 0) n++; else continue outer;",
+    "while (n < 4) n++;",
+    "do { n++; } while (n < 5);",
+    "for (const key in { a: 1 }) n++;",
+    "return [n, example];",
+  ].join("\n");
+  const result = instrumentLoops(entry);
+  const visited: number[] = [];
+  expect(result.split("\n")).toHaveLength(entry.split("\n").length);
+  expect(new Function("__canvasCheckExecution", result)((line: number) => visited.push(line))).toEqual([6, "while (true) {}"]);
+  expect(visited).toEqual([3, 4, 4, 3, 4, 4, 3, 4, 4, 5, 6, 7]);
 });
 
 // 02：ホスト→シェルの poke（時間を進めない描き直し）の検査

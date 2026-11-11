@@ -4,7 +4,7 @@ import { normalizePlan, normalizeVerdict, type EvalVerdict } from "./eval-types"
 import type { EvaluatorPort } from "./evaluator-port";
 import { lineDiff } from "./line-diff";
 import { probeChecks, probeEvidenceIds, probeFindings, probeText, type ProbePort } from "./probes";
-import type { ReviewerPort, ReviewFinding, ReviewInput, ReviewOutcome } from "./review";
+import { failedOutcome, type ReviewerPort, type ReviewFinding, type ReviewInput, type ReviewOutcome } from "./review";
 import { scriptEvidenceIds, scriptText, type ScriptResult } from "./script-runner";
 import type { MakerSpec } from "./spec";
 import type { CheckResult } from "./types";
@@ -42,6 +42,7 @@ export class HostReviewer implements ReviewerPort {
   }
 
   async review(input: ReviewInput, signal: AbortSignal): Promise<ReviewOutcome> {
+    if (input.mode === "replay") return this.replay(input, signal);
     const t0 = performance.now();
     const report = await this.lab.probe(input.body, input.data, input.spec, signal);
     const out: ReviewOutcome = { suite: this.suite, environment: report.environment, checks: probeChecks(report), findings: probeFindings(report), verdict: null, evaluatorCalls: 0, ms: 0, error: null };
@@ -66,9 +67,37 @@ export class HostReviewer implements ReviewerPort {
         results = [];
       }
     }
+    await this.judge(input, spec, out, pText, results, probeEvidenceIds(report), signal);
+    return done();
+  }
+
+  private async replay(input: ReviewInput, signal: AbortSignal): Promise<ReviewOutcome> {
+    const t0 = performance.now();
+    const replay = input.replay;
+    if (!replay?.plan.scripts.length) return failedOutcome(this.suite, "測定できる操作手順がない", 0);
+    const results = await this.lab.runScripts(input.body, input.data, replay.plan, AbortSignal.any([signal, AbortSignal.timeout(15_000)]));
+    const out: ReviewOutcome = {
+      suite: this.suite, environment: "chromium", checks: [], findings: [], verdict: null, evaluatorCalls: 0, ms: 0, error: null,
+      replay: { phase: replay.phase, plan: replay.plan, results },
+    };
+    for (const r of results) {
+      if (r.skipped) out.error = r.skipped;
+      if (r.errors.length) out.findings.push({ source: "probe", severity: "blocking", id: `${r.id}-errors`, message: r.errors.join(" / ").slice(0, 400) });
+    }
+    const measured = results.some((r) => r.measures.length || r.errors.length);
+    if (!measured) out.error ??= "操作を測定できなかった";
+    if (input.spec && !replay.observeOnly && replay.phase === "initial" && measured) {
+      await this.judge(input, input.spec, out, "操作手順の測定を参照してください。purpose は制作時の予測です。", results, [], signal, 0);
+    }
+    out.ms = Math.round(performance.now() - t0);
+    return out;
+  }
+
+  private async judge(input: ReviewInput, spec: MakerSpec, out: ReviewOutcome, pText: string, results: ScriptResult[], observed: string[], signal: AbortSignal, maxRetries?: number) {
+    if (!this.evaluator) return;
     try {
       out.evaluatorCalls++;
-      const evidenceIds = [...probeEvidenceIds(report), ...scriptEvidenceIds(results)];
+      const evidenceIds = [...observed, ...scriptEvidenceIds(results)];
       let diffText: string | null = null;
       if (input.base) {
         const d = lineDiff(input.base.entry, input.body.entry);
@@ -77,6 +106,7 @@ export class HostReviewer implements ReviewerPort {
       const raw = await this.evaluator.judge(
         { request: input.request, conversation: input.conversation, spec, body: input.body, probeText: pText, scriptText: scriptText(results), diffText, evidenceIds },
         signal,
+        maxRetries,
       );
       const verdict = normalizeVerdict(raw, spec, new Set(evidenceIds));
       out.verdict = verdict;
@@ -86,7 +116,6 @@ export class HostReviewer implements ReviewerPort {
       if (signal.aborted) throw e;
       out.error = ((out.error ? out.error + " ／ " : "") + "判定の段階で失敗: " + msgOf(e)).slice(0, 500);
     }
-    return done();
   }
 
   close(): Promise<void> {

@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ArtworkBody } from "../contract/artwork";
 import { resolveLibraries, type HostLibrary } from "../contract/libraries";
+import { instrumentLoops } from "./instrument-loops";
 
 const SRC = join(import.meta.dir, "..");
 const read = (p: string) => readFileSync(join(SRC, p), "utf8");
@@ -66,7 +67,7 @@ export function pageDocument(previewOrigin: string): string {
  */
 export function assemblePageScript(entry: string, libs: LibrarySource[] = []): string {
   const libText = libs.map((l) => `\n;// ${l.lib.id}（ホスト同梱）\nvar __canvasLibs = window.__canvasLibs || {};\n${l.source}\n;var ${l.lib.param} = __canvasLibs[${JSON.stringify(libKey(l.lib))}];\n`).join("");
-  return `${libText}\n${entry}\n`;
+  return `${libText}\n${instrumentLoops(entry)}\n`;
 }
 
 export interface LibrarySource {
@@ -84,9 +85,9 @@ export function assembleWorkerScript(entry: string, libs: LibrarySource[] = []):
   const args = ["__canvasApp", ...libs.map((l) => `__canvasLibs[${JSON.stringify(libKey(l.lib))}]`)].join(", ");
   const libText = libs.map((l) => `\n;// ${l.lib.id}（ホスト同梱）\n${l.source}\n`).join("");
   // 作品の直前の行で、作品の 1 行目より前の行数（ずれ）を __canvasEntryLine に入れる。桁数は行数に影響しないので、0 で数えて作り直す。
-  const head = (n: number) => `${read("preview/bootstrap.js")}${libText}\n;__canvasEntryLine=${n};(function (${params}) {\n"use strict";\n`;
+  const head = (n: number) => `${read("preview/bootstrap.js")}\n${read("preview/execution-budget.js")}${libText}\n;__canvasEntryLine=${n};(function (${params}) {\n"use strict";\n`;
   const offset = head(0).split("\n").length - 1;
-  return `${head(offset)}${entry}\n}).call(undefined, ${args});\n`;
+  return `${head(offset)}${instrumentLoops(entry)}\n}).call(undefined, ${args});\n`;
 }
 
 /** shim が名前空間を置く __canvasLibs のキー（src/preview/libs/*.js と一致）。 */
@@ -205,7 +206,7 @@ export function previewHandler(opts: { hostOrigin: string; tokens: PreviewTokens
     if (p === "/shared/messages.js")
       return new Response(read("shared/messages.js"), { headers: { ...BASE_HEADERS, "content-type": "text/javascript; charset=utf-8" } });
     if (pageMode && p === "/page-runtime.js")
-      return new Response(read("preview/page-runtime.js"), { headers: { ...PAGE_SCRIPT_HEADERS, "content-type": "text/javascript; charset=utf-8" } });
+      return new Response(read("preview/execution-budget.js") + "\n" + read("preview/page-runtime.js"), { headers: { ...PAGE_SCRIPT_HEADERS, "content-type": "text/javascript; charset=utf-8" } });
     if (pageMode && p.startsWith("/p/")) {
       // 作品の文書は iframe としてだけ、1 回だけ返す
       if (req.headers.get("sec-fetch-dest") && req.headers.get("sec-fetch-dest") !== "iframe")

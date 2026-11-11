@@ -215,11 +215,17 @@ test.describe("P0 停止", () => {
     await hostStillOperable(page);
   });
 
+  test("起動時のループが実時間の上限でエラーになり、元の位置を返す", async ({ page }) => {
+    await openHarness(page);
+    const t0 = Date.now();
+    const result = await start(page, "canvasApp.start(() => {\n  for (;;) {}\n});");
+    expect(result.type).toBe("error");
+    expect(result.message).toContain("ループが 750ms 以内に制御を返さなかった（作品の 2 行 3 列）");
+    expect(Date.now() - t0).toBeLessThan(2000);
+  });
+
   for (const where of ["frame", "toplevel"] as const) {
-    test(`無限ループ（${where}）中でも停止から 2 秒以内に終わり、ホストを操作でき、再起動できる`, async ({ page, browserName }) => {
-      // Chromium は実行中の Worker を terminate() から約 2 秒後に強制終了する（実測 2.0–2.1 秒）。
-      // 基準（2 秒未満）は変えず、未達として記録する。docs/p0-results.md を参照。
-      test.fail(browserName === "chromium", "Chromium の Worker 強制終了は約 2 秒遅れる（未達）");
+    test(`無限ループ（${where}）中でも停止から 2 秒以内に終わり、ホストを操作でき、再起動できる`, async ({ page }) => {
       await openHarness(page);
       const closed: number[] = [];
       page.on("worker", (w) => w.on("close", () => closed.push(Date.now())));
@@ -243,6 +249,7 @@ test.describe("P0 停止", () => {
       const again = await start(page, `canvasApp.start((api) => ({ frame() { api.ctx.fillStyle = "#00f"; api.ctx.fillRect(0, 0, api.width, api.height); } }));`);
       expect(again.type).toBe("ready");
       expect(elapsed).toBeLessThan(2000);
+      expect(Date.now() - t0).toBeLessThan(2000);
     });
   }
 });

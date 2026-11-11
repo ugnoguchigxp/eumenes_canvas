@@ -18,21 +18,26 @@ export class PreviewConnectError extends Error {
 /** ページ直接モード（design.md §8）の作品を開くときの警告。作品を開くたびに出す。 */
 export const PAGE_WARNING =
   "この作品はページ直接モードで動いています（作品をブラウザの文書で直接動かす方式）。通常の方式より隔離が弱く、" +
-  "WebRTC による外部への通信は止められません。信頼できない作品は開かないでください。";
+  "WebRTC による外部への通信は止められません。サイトごとのプロセス分離が有効な Chromium 系ブラウザで開いてください。" +
+  "認証済みのデータを渡さず、信頼できない作品は開かないでください。";
 
 /** WebKit だけのブラウザ（Safari など）か。Chromium 系は UA に Chrome・Chromium・Edg/ を含む。 */
 export function isWebKitOnly(ua) {
   return /AppleWebKit/.test(ua) && !/Chrome|Chromium|Edg\//.test(ua);
 }
 
+export function isChromium(ua) {
+  return /\b(?:Chrome|Chromium)\/\d/.test(ua) && !/\b(?:iPhone|iPad|iPod)\b/.test(ua);
+}
+
 /**
  * ページ直接モードの作品を開かない理由。開いてよいときは null。
- * 設定で無効なとき、WebKit だけのブラウザ（作品の無限ループでホストの画面ごと固まる。10 の測定）では開かない。
+ * 設定が有効で、Chromium 系と判定できるブラウザで開く。
  */
-export function pageRefusal({ pageMode, webkitOnly }) {
+export function pageRefusal({ pageMode, chromium }) {
   if (!pageMode) return "ページ直接モードは設定で無効になっているため、この作品は開けません。";
-  if (webkitOnly)
-    return "ページ直接モードの作品は、作品の無限ループでホストの画面ごと固まるおそれがあるため、Safari（WebKit）では開きません。Chromium 系のブラウザで開いてください。";
+  if (!chromium)
+    return "ページ直接モードには Chromium 系のブラウザが必要です。作品の無限ループでホストの画面ごと固まるおそれがあるため、Safari（WebKit）では開きません。";
   return null;
 }
 
@@ -183,20 +188,20 @@ export class PreviewController {
 
   _wait(key, ms) {
     return new Promise((resolve) => {
-      const timer = setTimeout(() => {
-        this.waiters.delete(key);
-        resolve({ type: "timeout" });
-      }, ms);
-      this.waiters.set(key, (m) => {
+      const finish = (m) => {
         clearTimeout(timer);
+        if (this.waiters.get(key) === finish) this.waiters.delete(key);
         resolve(m);
-      });
+      };
+      const timer = setTimeout(() => finish({ type: "timeout" }), ms);
+      this.waiters.set(key, finish);
     });
   }
 
-  /** 作品を起動する。ready・error・timeout のいずれかで解決する。 */
+  /** 作品を起動する。ready・error・timeout・stopped などで解決する。 */
   async start({ token, data = null, seed = 1, clock = "raf", direct = false, runtime = undefined }) {
     await this.mount();
+    this.waiters.get("ready")?.({ type: "stopped", runId: this.runId });
     this.runId = newRunId();
     this.lastStart = { data, seed, clock, direct };
     const wait = this._wait("ready", 10_000);
@@ -229,6 +234,8 @@ export class PreviewController {
     const wait = this._wait("stopped", 300);
     this.port.postMessage({ type: "stop", runId: id });
     const r = await wait;
+    if (this.runId !== id) return { method: "none", ms: performance.now() - t0 };
+    this.waiters.get("ready")?.({ type: "stopped", runId: id });
     this.runId = null;
     if (r.type === "stopped") return { method: "terminate", ms: performance.now() - t0 };
     await this.hardReset();

@@ -126,25 +126,50 @@ const tryIt = async (k, f) => { try { await f(); out[k] = "ok"; } catch (e) { ou
     expect(new URL(page.url()).origin).toBe(PAGE_HOST);
   });
 
-  test("無限ループの作品も、サイトごとのプロセス分離のある Chromium では 2 秒以内に止まり、ホストは操作でき、次の作品を起動できる", async () => {
+  test("無限ループの作品も、サイトごとのプロセス分離のある Chromium では 2 秒以内に止まり、ホストは操作でき、次の作品を起動できる", async ({}, testInfo) => {
     // plan.md §4 のページ直接モードの条件は「サイトごとのプロセス分離のある Chromium」（実際のデスクトップの Chrome の既定）。
     // Playwright の既定の headless shell は分離が無く、ホストごと固まる（10 の測定 H1・H2）ので、--site-per-process で起動する
-    const browser = await chromium.launch({ args: ["--site-per-process"] });
+    const { channel, headless } = testInfo.project.use;
+    const browser = await chromium.launch({ channel, headless, args: ["--site-per-process"] });
     const page = await (await browser.newContext({ viewport: { width: 1000, height: 760 } })).newPage();
     try {
-    await openPageHarness(page);
-    expect((await startPage(page, `setTimeout(() => { for (;;) {} }, 50); canvasHost.status("armed");`, { clock: "raf" })).type).toBe("ready");
-    await page.waitForTimeout(300);
-    const t0 = Date.now();
-    const st = await page.evaluate(() => (window as any).harness.stop());
-    expect(Date.now() - t0).toBeLessThan(2000);
-    expect(["terminate", "reload"]).toContain(st.method);
-    await page.locator("#probe-button").click();
-    await expect(page.locator("#probe-count")).toHaveText("1");
-    expect((await startPage(page, RED_WORK)).type).toBe("ready");
+      await openPageHarness(page);
+      expect((await startPage(page, `setTimeout(() => { for (;;) {} }, 50); canvasHost.status("armed");`, { clock: "raf" })).type).toBe("ready");
+      const cdp = await browser.newBrowserCDPSession();
+      const rendererTimes = async () => new Map((await cdp.send("SystemInfo.getProcessInfo")).processInfo
+        .filter((p) => p.type === "renderer").map((p) => [p.id, p.cpuTime]));
+      await page.waitForTimeout(100);
+      const before = await rendererTimes();
+      await page.waitForTimeout(200);
+      const spinning = [...await rendererTimes()].filter(([id, cpu]) => cpu - (before.get(id) ?? cpu) >= 0.08);
+      expect(spinning.length).toBeGreaterThan(0);
+      const t0 = Date.now();
+      const st = await page.evaluate(() => (window as any).harness.stop());
+      expect(["terminate", "reload"]).toContain(st.method);
+      await page.locator("#probe-button").click();
+      await expect(page.locator("#probe-count")).toHaveText("1");
+      expect((await startPage(page, RED_WORK)).type).toBe("ready");
+      const elapsed = Date.now() - t0;
+      console.log(`[measure] page stop method=${st.method} restartMs=${elapsed}`);
+      expect(elapsed).toBeLessThan(2000);
+      const after = await rendererTimes();
+      await page.waitForTimeout(250);
+      const idle = await rendererTimes();
+      for (const [id] of spinning) {
+        expect((idle.get(id) ?? 0) - (after.get(id) ?? 0)).toBeLessThan(0.10);
+      }
     } finally {
       await browser.close();
     }
+  });
+
+  test("ページの仮想時計を止めていても、ループは実時間の上限でエラーになる", async ({ page }) => {
+    await openPageHarness(page);
+    const t0 = Date.now();
+    const result = await startPage(page, "requestAnimationFrame(() => {\n  while (true) {}\n});");
+    expect(result.type).toBe("error");
+    expect(result.message).toContain("ループが 750ms 以内に制御を返さなかった（作品の 2 行 3 列）");
+    expect(Date.now() - t0).toBeLessThan(2000);
   });
 
   test("作品の文書から窓へ送ったメッセージ・偽の通知はホストの状態を変えない", async ({ page }) => {

@@ -1,6 +1,6 @@
 // 検証ホストの画面。会話・作品一覧・プレビュー・3 表示モード・候補の保存と復元。
 import { clog } from "/client-log.js";
-import { PreviewController, PreviewConnectError, PAGE_WARNING, isWebKitOnly, pageRefusal } from "/preview-client.js";
+import { PreviewController, PreviewConnectError, PAGE_WARNING, isChromium, isWebKitOnly, pageRefusal } from "/preview-client.js";
 
 const $ = (id) => document.getElementById(id);
 const cfg = await (await fetch("/api/config")).json();
@@ -17,7 +17,7 @@ const CLOCK = new URLSearchParams(location.search).get("clock") === "manual" ? "
 // 直接描画は実時間の時計で、設定が有効で、WebKit だけのブラウザでないときだけ（WebKit では Worker から描いた内容が表示に出ないことがある）
 const WEBKIT_ONLY = isWebKitOnly(navigator.userAgent);
 const DIRECT = CLOCK === "raf" && cfg.directRender === true && !WEBKIT_ONLY;
-// ページ直接モード（design.md §8）は設定が有効で、WebKit だけのブラウザでないときだけ開く（WebKit では作品が無限ループするとホストごと固まる）
+// ページ直接モード（design.md §8）は設定が有効で、Chromium 系のブラウザのときだけ開く。
 const PAGE_MODE = cfg.pageMode === true;
 const session = sessionStorage.getItem("canvas-session") || rid();
 sessionStorage.setItem("canvas-session", session);
@@ -61,12 +61,14 @@ async function api(path, { method = "GET", body, quiet = false } = {}) {
 }
 
 const host = $("preview-host");
-const ctl = new PreviewController($("preview-frame"), {
+const frame = $("preview-frame");
+const ctl = new PreviewController(frame, {
   previewOrigin: cfg.previewOrigin,
   onEvent: (m) => {
     if (m.type === "error" || m.type === "violation") clog("preview.event", { kind: m.type, message: m.message });
     if (m.type === "error") notice("作品のエラー: " + m.message);
     if (m.type === "violation") notice("作品を停止しました（" + m.message + "）");
+    if (m.type === "error" || m.type === "violation") frame.setAttribute("aria-label", "作品プレビュー");
     if (m.type === "escape") exitMode();
   },
   onConnection: (st, err) => showConnection(st, err),
@@ -171,13 +173,14 @@ document.addEventListener("fullscreenchange", () => {
   }
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && state.mode === "fill") exitMode();
+  if (e.key === "Escape" && state.mode !== "frame") exitMode();
 });
 for (const b of host.querySelectorAll("[data-mode]")) b.addEventListener("click", () => enterMode(b.dataset.mode, b));
 $("exit-mode").addEventListener("click", exitMode);
 
 // ---- プレビュー ----
 async function showPreview(source, label) {
+  frame.setAttribute("aria-label", "作品プレビュー");
   const p = await api("/api/previews", { method: "POST", body: source });
   state.previewSource = source;
   host.dataset.ready = "0";
@@ -187,8 +190,7 @@ async function showPreview(source, label) {
   warn.hidden = !page;
   warn.textContent = "";
   if (page) {
-    // 設定で無効、または WebKit だけのブラウザでは開かない（理由を出す）
-    const refuse = pageRefusal({ pageMode: PAGE_MODE, webkitOnly: WEBKIT_ONLY });
+    const refuse = pageRefusal({ pageMode: PAGE_MODE, chromium: isChromium(navigator.userAgent) });
     if (refuse) {
       warn.textContent = refuse;
       host.dataset.ready = "0";
@@ -209,10 +211,14 @@ async function showPreview(source, label) {
   }
   clog("preview.start", { result: r.type, message: r.message, label });
   host.dataset.ready = r.type === "ready" ? "1" : "0";
+  if (r.type === "ready") frame.setAttribute("aria-label", `${label}のプレビュー表示中`);
   if (r.type !== "ready") notice("起動できませんでした: " + (r.message || r.type));
   return r;
 }
-$("stop").addEventListener("click", () => ctl.stop().catch(() => {}));
+$("stop").addEventListener("click", () => {
+  frame.setAttribute("aria-label", "作品プレビュー");
+  ctl.stop().catch(() => {});
+});
 $("restart").addEventListener("click", () => state.previewSource && showPreview(state.previewSource, $("preview-label").textContent));
 
 // ---- 会話 ----
@@ -240,6 +246,7 @@ $("composer").addEventListener("submit", async (e) => {
   try {
     run = await api("/api/runs", { method: "POST", body: { message: text, artworkId: state.artworkId, conversation: state.conversation } });
   } catch (err) {
+    setRunStatus("受け付けられませんでした");
     addMessage("assistant", "受け付けられませんでした: " + err.message);
     return;
   }
@@ -320,7 +327,7 @@ function addLine(ul, className, text) {
 }
 
 /** 候補の検証の結果（宣言・判定・指摘）。検証していない候補は隠す。 */
-function showReview(c) {
+function showReview(c, run) {
   const r = c.review;
   $("cand-review").hidden = !r;
   const reqs = $("cand-requirements");
@@ -328,7 +335,9 @@ function showReview(c) {
   reqs.textContent = "";
   finds.textContent = "";
   if (!r) return;
-  $("cand-review-head").textContent = `検証（${r.mode}）：要修正 ${r.blocking} 件` + (r.error ? `／検証の一部が失敗：${r.error}` : "");
+  $("cand-review-head").textContent = (r.mode === "replay" && !r.verdict
+    ? (r.replay?.phase === "repair" ? "修正後の操作を再生・要件の合否は未確認" : "要件の合否は未確認")
+    : `検証（${r.mode}）：要修正 ${r.blocking} 件`) + (r.error ? `／検証の一部が失敗：${r.error}` : "");
   const requirements = c.spec?.requirements ?? [];
   if (r.verdict) {
     for (const v of r.verdict.verdicts) {
@@ -338,6 +347,17 @@ function showReview(c) {
     }
   } else for (const q of requirements) addLine(reqs, "unknown", `${q.id} ${q.text} — 未確認`);
   for (const f of r.findings) addLine(finds, f.severity, `${SEVERITY_TEXT[f.severity] ?? "[参考]"} ${f.message}`);
+  if (r.replay) {
+    const initial = r.replay.phase === "repair" ? run.candidates.find((candidate) => candidate.review?.replay?.phase === "initial")?.review.replay : null;
+    for (const record of [initial, r.replay]) {
+      if (!record) continue;
+      const label = record.phase === "repair" ? "修正後" : (initial ? "修正前" : "操作の再生");
+      for (const result of record.results) {
+        if (result.skipped) addLine(finds, "info", `${label} — ${result.skipped}`);
+        for (const m of result.measures) addLine(finds, "info", `${label}・${m.t}ms・${m.label} — ${m.text}`);
+      }
+    }
+  }
 }
 
 function showCandidate(c, run) {
@@ -356,7 +376,7 @@ function showCandidate(c, run) {
     li.textContent = `${k.level}: ${k.id} ${k.pass ? "合格" : "不合格"}${k.detail ? "（" + k.detail + "）" : ""}`;
     ul.appendChild(li);
   }
-  showReview(c);
+  showReview(c, run);
   $("cand-unconfirmed").textContent = c.unconfirmed.length ? "未確認: " + c.unconfirmed.join(" / ") : "未確認: 依頼に沿うかの照合（自動では確定しない）";
   $("save-status").textContent = "";
   $("save").disabled = !c.verification?.requiredPassed;

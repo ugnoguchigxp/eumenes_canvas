@@ -44,6 +44,15 @@ describe("制作担当のプロンプト", () => {
   test("新規のプロンプト", () => {
     expect(makerPrompt(input())).toBe("## 依頼\nSpace で跳ぶ四角\n\n## 基準の作品\nなし（新規）\n\n## 登録データ\nなし\n\n## 公開された実行契約\nCONTRACT-TEXT");
   });
+  test("以前の変更を維持するときは選択中の保存版のコードを基準にする", () => {
+    const p = makerPrompt(input({
+      request: "円の色を元に戻して。点滅の間隔は半分のまま。",
+      conversation: [{ role: "user", text: "点滅の間隔を今の半分にして、円を青にして。" }],
+      base: { title: "円", entry: 'const interval = 400, color = "blue";' },
+    }));
+    expect(p).toContain("以前の依頼ですでに適用した増減を重ねて適用しません。\n題名: 円");
+    expect(p).toContain('const interval = 400, color = "blue";');
+  });
   test("必須の検査に落ちた直し", () => {
     const p = makerPrompt(input({ attempt: 1, previous: prev, observations: [{ kind: "runtime-error", message: "frame: boom" }] }));
     expect(p).toContain("## 前の候補（試行 1 回目の前。ホスト観測に通らなかった）");

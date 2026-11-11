@@ -1,6 +1,7 @@
 // 性質の観測と検証担当の指摘、検証の接続口、候補に残す検証の要約。
 import type { ArtworkBody } from "../contract/artwork";
-import type { EvalVerdict } from "./eval-types";
+import type { EvalPlan, EvalVerdict } from "./eval-types";
+import type { ScriptResult } from "./script-runner";
 import type { MakerSpec } from "./spec";
 import type { CheckResult, Observation, Turn } from "./types";
 
@@ -12,7 +13,13 @@ export interface ReviewFinding {
 }
 
 /** off：検証しない（従来どおり）。probes：ホストの性質の観測だけ。judge：観測＋検証担当の判定 1 回。full：観測＋検証担当の台本と判定。 */
-export type ReviewMode = "off" | "probes" | "judge" | "full";
+export type ReviewMode = "off" | "probes" | "judge" | "full" | "replay";
+
+export interface ReplayRecord {
+  phase: "initial" | "repair";
+  plan: EvalPlan;
+  results: ScriptResult[];
+}
 
 export interface ReviewInput {
   request: string;
@@ -22,6 +29,7 @@ export interface ReviewInput {
   data: unknown;
   spec: MakerSpec | null;
   mode: Exclude<ReviewMode, "off">;
+  replay?: { plan: EvalPlan; phase: ReplayRecord["phase"]; observeOnly?: boolean };
 }
 export interface ReviewOutcome {
   suite: string;
@@ -32,6 +40,7 @@ export interface ReviewOutcome {
   evaluatorCalls: number; // 検証担当の推論の回数
   ms: number;
   error: string | null; // 検証そのものが途中で失敗した理由（候補の失敗ではない）
+  replay?: ReplayRecord;
 }
 export interface ReviewerPort {
   readonly suite: string;
@@ -49,6 +58,7 @@ export interface CandidateReview {
   evaluatorCalls: number;
   ms: number;
   error: string | null;
+  replay?: ReplayRecord;
 }
 
 export function blockingCount(findings: ReviewFinding[]): number {

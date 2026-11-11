@@ -9,6 +9,9 @@ export interface HttpChannelOptions {
   apiKeyEnv?: string; // API キーを入れた環境変数の名前（キーそのものは設定に書かない）
   temperature?: number; // 省略時は送らない
   maxTokens?: number; // 省略時は送らない
+  maxCompletionTokens?: number;
+  reasoningEffort?: string;
+  store?: boolean;
   timeoutMs?: number; // 既定 120_000
   format?: "json" | "fenced"; // 既定 "json"。制作担当には "fenced" も使える
 }
@@ -88,7 +91,7 @@ export class HttpChannel implements InferenceChannel {
     const system = req.system + (fenced ? FENCED_INSTRUCTION + JSON.stringify(withoutEntry(req.outputSchema)) : JSON_INSTRUCTION + JSON.stringify(req.outputSchema));
     let user = req.prompt;
     for (let k = 0; ; k++) {
-      const text = await this.post(system, user, signal);
+      const text = await this.post(system, user, req.images, signal);
       let issues: unknown;
       if (req.maxOutputChars !== undefined && text.length > req.maxOutputChars) issues = "応答が長すぎる";
       else {
@@ -105,18 +108,28 @@ export class HttpChannel implements InferenceChannel {
     }
   }
 
-  private async post(system: string, user: string, signal: AbortSignal): Promise<string> {
+  private async post(system: string, user: string, images: InferenceRequest["images"], signal: AbortSignal): Promise<string> {
     const headers: Record<string, string> = { "content-type": "application/json" };
     const key = this.o.apiKeyEnv ? this.env[this.o.apiKeyEnv] : undefined;
     if (key) headers.authorization = `Bearer ${key}`;
+    const content = images?.length
+      ? [{ type: "text", text: user }, ...images.map(({ mediaType, bytes }) => ({
+          type: "image_url",
+          image_url: { url: `data:${mediaType};base64,${Buffer.from(bytes).toString("base64")}` },
+        }))]
+      : user;
     const body = {
       model: this.o.model,
       messages: [
         { role: "system", content: system },
-        { role: "user", content: user },
+        { role: "user", content },
       ],
       ...(this.o.temperature !== undefined ? { temperature: this.o.temperature } : {}),
-      ...(this.o.maxTokens !== undefined ? { max_tokens: this.o.maxTokens } : {}),
+      ...(this.o.maxCompletionTokens !== undefined
+        ? { max_completion_tokens: this.o.maxCompletionTokens }
+        : this.o.maxTokens !== undefined ? { max_tokens: this.o.maxTokens } : {}),
+      ...(this.o.reasoningEffort !== undefined ? { reasoning_effort: this.o.reasoningEffort } : {}),
+      ...(this.o.store !== undefined ? { store: this.o.store } : {}),
     };
     // signal と timeoutMs の両方で打ち切る
     const ac = new AbortController();

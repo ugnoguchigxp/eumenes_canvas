@@ -10,20 +10,24 @@ import { parseArgs } from "node:util";
 import { artworkDigest, type ArtworkBody } from "../../src/contract/artwork";
 import type { GenerationInput, GenerationOutput, ModelPort } from "../../src/core/model-port";
 import { HostReviewer } from "../../src/core/host-reviewer";
+import { loadMakerSkill, MAKER_SKILL_PATH } from "../../src/core/maker-skill";
 import { OBSERVER_SUITE, PlaywrightObserver } from "../../src/core/observer";
 import { PlaywrightProber, PROBE_SUITE } from "../../src/core/probes";
 import { PromptEvaluator } from "../../src/core/prompt-evaluator";
 import { PromptMaker } from "../../src/core/prompt-maker";
-import type { ReviewerPort, ReviewInput, ReviewMode, ReviewOutcome } from "../../src/core/review";
+import type { ReplayRecord, ReviewerPort, ReviewInput, ReviewMode, ReviewOutcome } from "../../src/core/review";
 import { CanvasService } from "../../src/core/service";
 import { Store } from "../../src/core/store";
 import type { Turn } from "../../src/core/types";
 import { startApp } from "../../src/server/app";
+import type { HttpChannelOptions } from "../../src/server/http-channel";
 import { FileChannel } from "./channel";
-import { DirectModel } from "./cond-d";
+import { LiveChannel, LIVE_MAX_OUTPUT, LIVE_TASK_MS } from "./live-channel";
+import { DirectModel, directSystem } from "./cond-d";
 import { createHash } from "node:crypto";
 import { GENERAL_DATASETS, GENERAL_TASKS } from "../general/suite";
 import { RENDER_TASKS } from "../render/suite";
+import { REPLAY_TASKS } from "../replay/suite";
 
 const ROOT = resolve(import.meta.dir, "../..");
 const EVAL = resolve(import.meta.dir, "..");
@@ -38,11 +42,12 @@ export interface Task {
   baseTitle?: string;
   dataRef?: string;
   turns: string[];
+  start?: ArtworkBody;
 }
 export const TASKS = (JSON.parse(readFileSync(join(EVAL, "tasks/heldout.json"), "utf8")) as { tasks: Task[] }).tasks;
 // P2 の実行器（eval/runner.ts）と同じ登録データ
 export const DATASETS = [{ ref: "synthetic-sensors", description: "合成センサー値（温度・湿度・気圧の 3 系列×25 点。groups[{name,color}], points[{group,x,y}]、x・y は 0〜100）", data: JSON.parse(readFileSync(join(EVAL, "data/synthetic-sensors.json"), "utf8")) }];
-const baseBody = (t: Task): ArtworkBody | null => (t.base ? { title: t.baseTitle!, entry: readFileSync(join(EVAL, t.base), "utf8"), ...(t.dataRef ? { dataRef: t.dataRef } : {}) } : null);
+const baseBody = (t: Task): ArtworkBody | null => t.start ?? (t.base ? { title: t.baseTitle!, entry: readFileSync(join(EVAL, t.base), "utf8"), ...(t.dataRef ? { dataRef: t.dataRef } : {}) } : null);
 const SEED_REQUEST = "[評価の準備] 元作品を版 1 にする";
 
 /** 元作品を版 1 として置く前処理（P2 と同じ。制作担当の推論には数えない）。 */
@@ -60,11 +65,14 @@ class SeedingModel implements ModelPort {
 /** 前処理（元作品を版 1 にする実行）では検証しない。修復の課題の元作品はわざと壊してあり、検証すると直しの生成が走るため。 */
 class SeedSkippingReviewer implements ReviewerPort {
   readonly suite: string;
-  constructor(private inner: ReviewerPort) {
+  constructor(private inner: ReviewerPort, private canJudge?: () => boolean) {
     this.suite = inner.suite;
   }
   review(input: ReviewInput, signal: AbortSignal): Promise<ReviewOutcome> {
     if (input.request === SEED_REQUEST) return Promise.resolve({ suite: this.suite, environment: "none", checks: [], findings: [], verdict: null, evaluatorCalls: 0, ms: 0, error: null });
+    if (input.replay && this.canJudge && !this.canJudge()) {
+      return this.inner.review({ ...input, replay: { ...input.replay, observeOnly: true } }, signal);
+    }
     return this.inner.review(input, signal);
   }
   close(): Promise<void> {
@@ -79,8 +87,11 @@ export interface ReviewRecord {
   evaluatorCalls: number;
   ms: number;
   error: string | null;
+  replay?: ReplayRecord;
+  digest?: string;
 }
 export interface TurnRecord {
+  saved?: ArtworkBody;
   request: string;
   state: string;
   submissions: number;
@@ -113,51 +124,83 @@ export interface TaskRecord {
 }
 
 async function main() {
-  const { values } = parseArgs({ options: { cond: { type: "string" }, review: { type: "string" }, "run-dir": { type: "string" }, "host-port": { type: "string" }, tasks: { type: "string" }, suite: { type: "string" } } });
-  const suite = (values.suite ?? "heldout") as "heldout" | "general" | "render";
-  if (!["heldout", "general", "render"].includes(suite)) throw new Error("--suite heldout|general|render");
+  const { values } = parseArgs({ options: {
+    cond: { type: "string" }, review: { type: "string" }, "run-dir": { type: "string" },
+    "host-port": { type: "string" }, tasks: { type: "string" }, suite: { type: "string" },
+    "live-config": { type: "string" }, "max-calls": { type: "string" },
+    "live-evaluator-config": { type: "string" }, "max-eval-calls": { type: "string" },
+    "maker-skill": { type: "string" },
+  } });
+  const suite = values.suite ?? "heldout";
+  if (!["heldout", "general", "render", "replay"].includes(suite)) throw new Error("--suite heldout|general|render|replay");
   const cond = values.cond;
   if (cond !== "D" && cond !== "A") throw new Error("--cond D（直接生成）か --cond A（宣言つきの制作担当＋検証）を指定してください");
+  if (cond !== "D" && values["maker-skill"]) throw new Error("--maker-skill は条件 D で指定してください");
+  const makerSkillPath = values["maker-skill"] ?? MAKER_SKILL_PATH;
+  const directPromptSystem = cond === "D" ? directSystem(loadMakerSkill(makerSkillPath)) : undefined;
   if (cond === "D" && values.review !== undefined) throw new Error("--review は条件 A だけで指定できる");
   const review = (cond === "A" ? (values.review ?? "full") : "off") as ReviewMode;
-  if (cond === "A" && !["probes", "judge", "full"].includes(review)) throw new Error("--review probes|judge|full");
+  if (cond === "A" && !["off", "probes", "judge", "full", "replay"].includes(review)) throw new Error("--review off|probes|judge|full|replay");
+  const live = values["live-config"] ? JSON.parse(readFileSync(values["live-config"], "utf8")) as HttpChannelOptions : null;
+  const liveEvaluator = values["live-evaluator-config"] ? JSON.parse(readFileSync(values["live-evaluator-config"], "utf8")) as HttpChannelOptions : null;
+  const maxCalls = Number(values["max-calls"]);
+  const maxEvalCalls = Number(values["max-eval-calls"]);
+  if (live && (!Number.isSafeInteger(maxCalls) || maxCalls < 1)) throw new Error("実モデルの実行には --max-calls が必要");
+  const useEvaluator = review === "judge" || review === "full" || review === "replay";
+  if (live && useEvaluator && !liveEvaluator) throw new Error("実モデルの検証担当には --live-evaluator-config が必要");
+  if (liveEvaluator && (!live || !useEvaluator || !Number.isSafeInteger(maxEvalCalls) || maxEvalCalls < 1))
+    throw new Error("実モデルの検証担当には --live-config と正の --max-eval-calls が必要");
   // render-v1 はすべて新規（元作品・登録データなし）。参照の作品の libraries は制作担当に渡さない
   const SUITE_TASKS: Task[] =
-    suite === "general" ? GENERAL_TASKS.map(({ fixed: _f, ...t }) => t) : suite === "render" ? RENDER_TASKS.map((t) => ({ id: t.id, group: "new" as const, seed: t.seed, turns: t.turns })) : TASKS;
-  const SUITE_DATASETS = suite === "general" ? GENERAL_DATASETS : suite === "render" ? [] : DATASETS;
+    suite === "replay" ? REPLAY_TASKS : suite === "general" ? GENERAL_TASKS.map(({ fixed: _f, ...t }) => t) : suite === "render" ? RENDER_TASKS.map((t) => ({ id: t.id, group: "new" as const, seed: t.seed, turns: t.turns })) : TASKS;
+  const SUITE_DATASETS = suite === "general" ? GENERAL_DATASETS : suite === "render" || suite === "replay" ? [] : DATASETS;
   const runDir = resolve(values["run-dir"]!);
   const runName = runDir.split("/").pop()!;
   const port = Number(values["host-port"]);
   const hostDir = join(runDir, "host");
-  mkdirSync(join(hostDir, "final"), { recursive: true });
   const usage = join(hostDir, "usage.jsonl");
   const only = values.tasks ? new Set(values.tasks.split(",")) : null;
   const tasks = SUITE_TASKS.filter((t) => !only || only.has(t.id));
+  if (live && (existsSync(join(hostDir, "run.json")) || existsSync(usage))) throw new Error("実モデルの実行には新しい --run-dir が必要");
+  const gen = live
+    ? new LiveChannel({ ...live, maxCompletionTokens: LIVE_MAX_OUTPUT, store: false }, usage, maxCalls)
+    : new FileChannel(join(runDir, "solo/gen"), "gen", usage, cond);
+  // 検証担当は制作担当と別の要求・使用量で動く。代行の場合は応答場所も別にする。
+  const ev = liveEvaluator
+    ? new LiveChannel({ ...liveEvaluator, maxCompletionTokens: LIVE_MAX_OUTPUT, store: false }, join(hostDir, "evaluator-usage.jsonl"), maxEvalCalls, review === "replay" ? { task: 1, turn: 1 } : { task: 12, turn: 6 })
+    : useEvaluator ? new FileChannel(join(runDir, "solo/eval"), "eval", usage, cond) : null;
+  mkdirSync(join(hostDir, "final"), { recursive: true });
 
   const app = startApp({ hostPort: port, previewPort: port + 1, devHarness: true });
   const contract = readFileSync(join(ROOT, "docs/artwork-contract-v1.md"), "utf8");
-  const gen = new FileChannel(join(runDir, "solo/gen"), "gen", usage, cond);
-  // 検証担当の応答は制作担当とは別の場所（別の応答者）。judge・full のときだけ
-  const ev = cond === "A" && review !== "probes" ? new FileChannel(join(runDir, "solo/eval"), "eval", usage, cond) : null;
   const resultsFile = join(hostDir, "results.json");
   const done: TaskRecord[] = existsSync(resultsFile) ? JSON.parse(readFileSync(resultsFile, "utf8")).records : [];
   const sha = (f: string) => "sha256:" + createHash("sha256").update(readFileSync(join(ROOT, f))).digest("hex");
-  writeFileSync(join(hostDir, "run.json"), JSON.stringify({ suite, observer: OBSERVER_SUITE, contractDigest: sha("docs/artwork-contract-v1.md"), makerSkillDigest: sha("docs/maker-skill.md"), cond, review, probe: PROBE_SUITE, evaluatorSkillDigest: sha("docs/evaluator-skill.md"), makerPitfallsDigest: sha("docs/maker-pitfalls.md"), run: runName, startedAt: new Date().toISOString(), tasks: tasks.map((t) => t.id), stand_in: "Grok Bot responder（Luna／Haiku ではない）" }, null, 2));
+  const liveMetadata = live && {
+    model: live.model, reasoningEffort: live.reasoningEffort, format: live.format ?? "json",
+    maxCalls, maxCompletionTokens: LIVE_MAX_OUTPUT, taskTimeLimitMs: LIVE_TASK_MS,
+    ...(liveEvaluator ? { evaluatorModel: liveEvaluator.model, evaluatorReasoningEffort: liveEvaluator.reasoningEffort, maxEvalCalls } : {}),
+  };
+  const makerSkillDigest = "sha256:" + createHash("sha256").update(readFileSync(makerSkillPath)).digest("hex");
+  writeFileSync(join(hostDir, "run.json"), JSON.stringify({ suite, observer: OBSERVER_SUITE, contractDigest: sha("docs/artwork-contract-v1.md"), makerSkillDigest, cond, review, probe: PROBE_SUITE, evaluatorSkillDigest: sha("docs/evaluator-skill.md"), makerPitfallsDigest: sha("docs/maker-pitfalls.md"), run: runName, startedAt: new Date().toISOString(), tasks: tasks.map((t) => t.id), ...(liveMetadata ?? { stand_in: "Grok Bot responder（Luna／Haiku ではない）" }) }, null, 2));
 
   try {
     for (const t of tasks) {
       if (done.some((r) => r.task === t.id)) continue; // 再開時は済んだ課題を飛ばす
       const observer = new PlaywrightObserver(app.hostOrigin, (b) => app.tokens.issue(b));
-      const model: ModelPort = cond === "A" ? new PromptMaker(gen, { label: "agent-maker(stand-in)" }) : new DirectModel(gen);
+      const model: ModelPort = cond === "A" ? new PromptMaker(gen, { label: live?.model ?? "agent-maker(stand-in)" }) : new DirectModel(gen, directPromptSystem, live?.model);
       const reviewer =
-        cond === "A" ? new SeedSkippingReviewer(new HostReviewer(new PlaywrightProber(app.hostOrigin, (b) => app.tokens.issue(b)), ev ? new PromptEvaluator(ev, { label: "agent-evaluator(stand-in)" }) : null)) : null;
+        review !== "off" ? new SeedSkippingReviewer(
+          new HostReviewer(new PlaywrightProber(app.hostOrigin, (b) => app.tokens.issue(b)), ev ? new PromptEvaluator(ev, { label: liveEvaluator?.model ?? "agent-evaluator(stand-in)" }) : null),
+          review === "replay" && ev instanceof LiveChannel ? () => ev.canCallInTask() : undefined,
+        ) : null;
       const svc = new CanvasService({
         store: new Store(null),
         model: new SeedingModel(model, baseBody(t)),
         observer,
         contract,
         datasets: SUITE_DATASETS,
-        runTimeoutMs: RUN_TIMEOUT_MS,
+        runTimeoutMs: live ? LIVE_TASK_MS : RUN_TIMEOUT_MS,
         ...(reviewer ? { review: { reviewer, mode: review } } : {}),
       });
       const owner = "p3-owner", session = `p3-${runName}-${t.id}`;
@@ -167,7 +210,7 @@ async function main() {
       gen.scope = { task: t.id, turn: null };
       if (ev) ev.scope = { task: t.id, turn: null };
       try {
-        if (t.base) {
+        if (t.base || t.start) {
           const r = await svc.startRun(owner, session, { message: SEED_REQUEST });
           await svc.drain();
           const st = svc.getRun(owner, r.id);
@@ -177,6 +220,7 @@ async function main() {
           revision = 1;
         }
         const conversation: Turn[] = [];
+        const taskStart = performance.now();
         for (const [ti, turn] of t.turns.entries()) {
           gen.scope = { task: t.id, turn: ti };
           if (ev) ev.scope = { task: t.id, turn: ti };
@@ -202,7 +246,7 @@ async function main() {
             evalCalls,
             reviews: st.candidates.flatMap((c) =>
               c.review
-                ? [{ attempt: c.attempt, blocking: c.review.blocking, findings: c.review.findings.map((f) => ({ severity: f.severity, id: f.id, message: f.message.slice(0, 200) })), evaluatorCalls: c.review.evaluatorCalls, ms: c.review.ms, error: c.review.error }]
+                ? [{ attempt: c.attempt, blocking: c.review.blocking, findings: c.review.findings.map((f) => ({ severity: f.severity, id: f.id, message: f.message.slice(0, 200) })), evaluatorCalls: c.review.evaluatorCalls, ms: c.review.ms, error: c.review.error, ...(c.review.replay ? { replay: c.review.replay, digest: c.digest } : {}) }]
                 : [],
             ),
           });
@@ -215,10 +259,15 @@ async function main() {
           const s = await svc.save(owner, cand.id, { expectedRevision: revision, idempotencyKey: key() });
           artworkId = (s.result as { artworkId: string }).artworkId;
           revision = (s.result as { revision: number }).revision;
+          if (suite === "replay") rec.turns.at(-1)!.saved = svc.resolvePreview(owner, { artworkId }).body;
           rec.finalReview = cand.review ? { blocking: cand.review.blocking, verdicts: (cand.review.verdict?.verdicts ?? []).map((v) => ({ requirement: v.requirement, verdict: v.verdict })), error: cand.review.error } : null;
           conversation.push({ role: "assistant", text: cand.reply });
         }
         rec.presented = rec.turns.length === t.turns.length && rec.turns.every((x) => x.state === "presented");
+        if (live && performance.now() - taskStart > LIVE_TASK_MS) {
+          rec.presented = false;
+          rec.error = "課題の時間上限を超えた";
+        }
         if (rec.submissions > SUBMISSIONS_PER_TASK) {
           rec.presented = false;
           rec.error = `提出が ${SUBMISSIONS_PER_TASK} 回を超えた`;
@@ -237,8 +286,8 @@ async function main() {
       writeFileSync(join(hostDir, "final", `${t.id}.json`), JSON.stringify({ task: t.id, final: rec.final, finalDigest: rec.finalDigest }, null, 2));
       writeFileSync(resultsFile, JSON.stringify({ cond, run: runName, records: done }, null, 2));
       // 応答者への知らせはホスト観測の結果だけ（隠れた判定の結果は書かない）
-      gen.notice("task-end", `課題が終わりました（ホスト観測：${rec.presented ? "全ターンで候補を提示・保存" : "候補を提示できずに終了"}）。次の要求を待ってください。`);
-      console.log(`${t.id}: ${rec.presented ? "提示" : "未提示"} 提出 ${rec.submissions} 推論 ${rec.calls} ${rec.turns.map((x) => `${x.state}/${x.hostMs}ms`).join(" → ")}${rec.error ? " " + rec.error : ""}`);
+      if (gen instanceof FileChannel) gen.notice("task-end", `課題が終わりました（ホスト観測：${rec.presented ? "全ターンで候補を提示・保存" : "候補を提示できずに終了"}）。次の要求を待ってください。`);
+      console.log(`${t.id}: ${rec.presented ? "提示" : "未提示"} 提出 ${rec.submissions} 推論 ${rec.calls} ${rec.turns.map((x) => `${x.state}/${live ? x.wallMs : x.hostMs}ms`).join(" → ")}${rec.error ? " " + rec.error : ""}`);
     }
   } finally {
     app.stop();

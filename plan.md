@@ -79,15 +79,16 @@ Playwright で実際の入力と描画を確認する。固定データ、画面
 
 ## 6. 着手時の残作業
 
-- [x] P0 の固定作品、脅威ごとの試験、対象ブラウザを準備し、実行境界を決める（専用プレビューオリジン方式。Chromium の無限ループ停止 2 秒は未達）。
-- [x] P1 で作品・候補・検証・保存の契約を通し、3表示モードを受け入れる（headless の Chromium・WebKit。実ブラウザの全画面と Esc は未測定）。
+- [x] P0 の固定作品、脅威ごとの試験、対象ブラウザを準備し、実行境界を決める。専用プレビューオリジン方式にループの実時間上限を追加し、デスクトップ Chrome で Worker とページ直接モードの停止・再起動を確認した。 [停止のレビューと実測](docs/preview-stop-review.md)
+- [x] P1 で作品・候補・検証・保存の契約を通し、3表示モードを受け入れる（headless の Chromium・WebKit、デスクトップ Chrome 157 の全画面と Esc）。 [取り込み前の検証結果](docs/pre-integration-results.md)
 - [x] 調整用と未使用の課題を分け、試験・上限・判定条件を凍結する（[凍結記録](docs/p2-eval.md)、commit 0edd712）。
-- [ ] Luna・Haiku の基準版と候補版を比較し、本体取込の合否を記録する（Grok Bot が代行した記録済み推論で経路だけ評価。ゲーム 31/36・新規 7/12 で未達。実モデルは未測定）。
+- [ ] Luna・Haiku の基準版と候補版を比較し、本体取込の合否を記録する。旧課題の回帰測定では、制作手順を改善した Luna low が固定判定でゲーム31/36、非ゲーム3/3。新規制作は7/12、課題別ではN1とN3が基準未達。Haiku は CLI の内部で追加推論が走り、同条件での比較は未成立。 [Luna low の再計測](docs/luna-low-quality-review.md)・[停止修正時の計測](docs/preview-stop-review.md)
+- [x] 製品の制作経路で Luna low を新しい2D課題に適用し、操作の再生あり・なしを比較する。両版ともゲーム36/36、非ゲーム3/3。再生ありでは独立判定から修正に進んだ試行がなく、合格率への上積みは未確認。 [比較結果](docs/replay-comparison.md)
 - [x] P3 で Collaborator・Pursuit を直接生成と比べる（[P3 結果](docs/p3-results.md)。3 条件とも §4 未達、主因は契約の書き漏れと観測器の偽陰性で経路の差ではない。代行の推論で、実モデルは未測定）。
-- [ ] P3 の改善（契約の明示・制作手順 `docs/maker-skill.md`・観測 host-smoke/2）を直接生成の経路に入れ、汎用課題 general-v1（[凍結記録](docs/eval/general-v1.md)、10 件）で汎用度を測る。合格率の生成は未実施。
+- [x] P3 の改善（契約の明示・制作手順 `docs/maker-skill.md`・観測 host-smoke/2）を直接生成の経路に入れ、汎用課題 general-v1（[凍結記録](docs/eval/general-v1.md)、10 件）で汎用度を測る。Luna low の直接生成は 24/30 合格。
 - [ ] Claude Code を制作担当の候補として評価する（実行環境の準備待ち）。
-- [x] 描画方式の拡張（§7、design.md §7）：Three.js・物理・HTML の描画の契約とプレビューの実装、デモ、最小化した試験、計測基板 render-v1 の入れ物と自己確認（対照 24 件すべて期待どおり、[docs/render-results.md](docs/render-results.md)）。制作担当による合格率の生成は未実施（未測定）。
-- [ ] 候補の検証（設定 `review`、design.md §3・docs/agent-plan/08）を実際の画面で確かめる（`"review": { "mode": "probes" }` の別設定で検証ホストを起動し、候補の欄に検証の見出しと指摘が出て保存できること。起動は利用者。実モデルの検証担当は 09 で接続、未測定）。
+- [x] 描画方式の拡張（§7、design.md §7）：Three.js・物理・HTML の描画の契約とプレビューの実装、デモ、最小化した試験、計測基板 render-v1 と自己確認。Luna low は直接生成 10/18、観測のみ 11/18、検証担当あり 11/18。 [取り込み前の検証結果](docs/pre-integration-results.md)
+- [x] 候補の検証（設定 `review`、design.md §3・docs/agent-plan/08）を実際の画面で確かめる。デスクトップ Chrome 157 で観測のみの候補に見出しと指摘が出て保存できた。実モデルによる検証は render-v1 で測定した。
 - [ ] 検証済みの配布物を本体へ接続し、固定・実モデル・実ブラウザの受入を行う（§4 の合格後に本体側で実施）。
 
 ## 7. 描画方式の拡張（P5 の Three.js の一部を先行）

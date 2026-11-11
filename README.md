@@ -54,4 +54,22 @@ bun scripts/seed-demo.ts [設定ファイル]
 tail -f .data/logs/server.log .data/logs/client.log
 ```
 
-検証ホストは `canvas.config.json` を読む。モデルの提供者は設定の `model` で選ぶ。現在は記録済み推論（`recorded`）だけを実装している。
+検証ホストは `canvas.config.json` を読む。既定の `model` は記録済み推論（`recorded`）。実モデルは別の設定ファイルで `provider: "openai-compatible"` と接続先・モデルを指定する。API キーは `apiKeyEnv` に環境変数の名前を書く。推論強度や出力トークン上限を指定する接続先では `reasoningEffort` と `maxCompletionTokens` を使える。
+
+### 実モデルの計測と配布候補
+
+`eval/p3/run.ts` の `--live-config` には、モデルの接続設定だけを入れた JSON を指定する。各反復は新しい実行ディレクトリを使う。実 API の呼び出し数と応答に含まれるトークン数は各実行の `host/usage.jsonl` に残る。
+
+```sh
+bun eval/p3/run.ts --cond D --suite heldout --run-dir eval/out/live/D-r1 --host-port 4740 --live-config /tmp/canvas-model.json --max-calls 42
+bun eval/p3/grade.ts --root eval/out/live
+bun scripts/pack-canvas.ts
+```
+
+パッケージ作成コマンドはコア、プレビューと公開契約を `eval/out/dist/` にまとめ、SHA-256 を添える。パッケージ内の `canvas-package.json` に版、元の Git コミット、配布対象に未コミット変更があるか、同梱ファイルの SHA-256 を記録する。
+
+Luna low の制作評価、ブラウザの確認、取込条件の進捗は [取り込み前の検証結果](docs/pre-integration-results.md) を参照。
+
+### Interact での撮影と画像検証
+
+[撮影の例](examples/interact/README.md)では、隔離したChromeで依頼を送り、候補のプレビューをPNGとして保存できます。画像を受け取れるモデルを指定すると、スクリーンショットを根拠に見た目の条件を判定できます。

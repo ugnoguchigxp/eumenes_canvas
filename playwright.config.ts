@@ -8,7 +8,7 @@ export default defineConfig({
   reporter: [["list"]],
   use: { baseURL: "http://localhost:4310", viewport: { width: 1000, height: 760 } },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1000, height: 760 }, deviceScaleFactor: 1 } },
+    { name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1000, height: 760 }, deviceScaleFactor: 1, ...(process.env.CANVAS_DESKTOP_CHROME === "1" ? { channel: "chrome", headless: false } : {}) } },
     { name: "webkit", use: { ...devices["Desktop Safari"], viewport: { width: 1000, height: 760 }, deviceScaleFactor: 1 } },
   ],
   webServer: {

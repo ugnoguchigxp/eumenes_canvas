@@ -3,18 +3,19 @@
 import type { GenerationInput, GenerationOutput, ModelPort } from "../../src/core/model-port";
 import { ModelError } from "../../src/core/model-port";
 import { loadMakerSkill, makerSystemPrompt, type MakerSkill } from "../../src/core/maker-skill";
-import type { FileChannel, Validate } from "./channel";
+import { SAVED_BASE_GUIDANCE } from "../../src/core/prompt-maker";
+import type { InferenceChannel, Validate } from "../../src/core/inference";
 
 export const ARTWORK_OUTPUT_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["title", "entry", "changes", "unconfirmed", "reply"],
+  required: ["title", "changes", "entry", "unconfirmed", "reply"],
   properties: {
     title: { type: "string", minLength: 1, maxLength: 80, description: "作品の題名" },
+    changes: { type: "string", maxLength: 2000, description: "本文を書く前に決めた実装の要点。編集では今回変える点と、現在の保存版から引き継ぐ指定を短く説明する" },
     entry: { type: "string", minLength: 1, description: "作品の JavaScript 本文（公開された実行契約に従う）" },
     dataRef: { type: "string", description: "登録データを使うときだけ、その ref" },
     libraries: { type: "array", items: { type: "string" }, maxItems: 4, description: "同梱ライブラリを使うときだけ、その id（公開された実行契約の表。例 three@0.187.0）" },
-    changes: { type: "string", maxLength: 2000, description: "変更内容の説明" },
     unconfirmed: { type: "array", items: { type: "string" }, maxItems: 20, description: "依頼のうち確かめられていない点" },
     reply: { type: "string", maxLength: 2000, description: "利用者への返答" },
   },
@@ -62,7 +63,7 @@ export const DIRECT_SYSTEM_P3 = [
 /** 役割と応答の形だけの短い前置き。振る舞いの規則は docs/maker-skill.md（制作手順）に置く。 */
 export const DIRECT_PREAMBLE = [
   "あなたは Canvas の作品（ゲーム・シミュレーション・可視化・3D・物理・HTML の描画）を作る制作担当です。次の制作手順と、要求に含まれる公開された実行契約に従います。",
-  "返すのは指定の JSON 一つです（title・entry・changes・unconfirmed・reply、データを使うときだけ dataRef、同梱ライブラリを使うときだけ libraries）。",
+  "返すのは指定の JSON 一つです（title・changes・entry・unconfirmed・reply、データを使うときだけ dataRef、同梱ライブラリを使うときだけ libraries）。changes を entry より先に書き、今回の依頼で実現することを短く確定してください。編集で値や挙動を維持する指定があれば、現在の保存版から引き継ぐ値や挙動も確定してください。",
 ].join("\n");
 
 /** 直接生成の system：前置き＋制作手順（docs/maker-skill.md を読む）。 */
@@ -75,7 +76,7 @@ export function directPrompt(input: GenerationInput): string {
   const parts: string[] = [];
   parts.push(`## 依頼\n${input.request}`);
   if (input.conversation.length) parts.push(`## これまでの会話（古い順）\n${input.conversation.map((t) => `${t.role === "user" ? "利用者" : "あなた"}: ${t.text}`).join("\n")}`);
-  if (input.base) parts.push(`## 基準の作品（保存版）\n題名: ${input.base.title}${input.base.dataRef ? `\ndataRef: ${input.base.dataRef}` : ""}${input.base.libraries?.length ? `\nlibraries: ${input.base.libraries.join(", ")}` : ""}\n\`\`\`js\n${input.base.entry}\n\`\`\``);
+  if (input.base) parts.push(`## 基準の作品（保存版）\n${SAVED_BASE_GUIDANCE}\n題名: ${input.base.title}${input.base.dataRef ? `\ndataRef: ${input.base.dataRef}` : ""}${input.base.libraries?.length ? `\nlibraries: ${input.base.libraries.join(", ")}` : ""}\n\`\`\`js\n${input.base.entry}\n\`\`\``);
   else parts.push("## 基準の作品\nなし（新規）");
   parts.push(`## 登録データ\n${input.datasets.length ? input.datasets.map((d) => `- ${d.ref}: ${d.description}`).join("\n") : "なし"}`);
   if (input.previous) {
@@ -87,8 +88,7 @@ export function directPrompt(input: GenerationInput): string {
 }
 
 export class DirectModel implements ModelPort {
-  readonly label = "p3-direct(stand-in: Grok Bot responder)";
-  constructor(private ch: FileChannel, private system: string = DIRECT_SYSTEM) {}
+  constructor(private ch: InferenceChannel, private system: string = DIRECT_SYSTEM, readonly label = "p3-direct(stand-in: Grok Bot responder)") {}
   async generate(input: GenerationInput, signal: AbortSignal): Promise<GenerationOutput> {
     try {
       return await this.ch.complete({ purpose: "direct", system: this.system, prompt: directPrompt(input), outputSchema: ARTWORK_OUTPUT_SCHEMA }, validateArtwork, signal);

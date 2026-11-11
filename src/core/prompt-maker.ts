@@ -7,6 +7,7 @@ import type { ArtworkBody } from "../contract/artwork";
 import type { InferenceChannel, Validate } from "./inference";
 import { loadMakerSkill, makerSystemPrompt } from "./maker-skill";
 import { ModelError, type GenerationInput, type GenerationOutput, type ModelPort } from "./model-port";
+import { PLAN_SCHEMA } from "./prompt-evaluator";
 
 export const MAKER_PITFALLS_PATH = resolve(import.meta.dir, "../../docs/maker-pitfalls.md");
 
@@ -51,6 +52,20 @@ export const MAKER_OUTPUT_SCHEMA = {
   },
 } as const;
 
+const { title: makerTitle, spec: makerSpec, ...makerBodyProperties } = MAKER_OUTPUT_SCHEMA.properties;
+const REPLAY_OUTPUT_SCHEMA = {
+  ...MAKER_OUTPUT_SCHEMA,
+  properties: {
+    title: makerTitle,
+    spec: makerSpec,
+    replay: {
+      ...PLAN_SCHEMA.properties.scripts.items,
+      description: "依頼の中で実装を誤りやすい挙動を一つ選んで測る手順。purpose に期待する画面の変化を具体的に書く。適切な測定がなければ省略できる",
+    },
+    ...makerBodyProperties,
+  },
+};
+
 /** 役割・応答の形・宣言の書き方の前置き。振る舞いの規則は docs/maker-skill.md（制作手順）に置く。 */
 export const MAKER_PREAMBLE = [
   "あなたは Canvas の作品（ゲーム・シミュレーション・可視化・3D・物理・HTML の描画）を作る制作担当です。次の制作手順と、要求に含まれる公開された実行契約に従います。",
@@ -74,12 +89,14 @@ function artworkText(b: ArtworkBody, withDataRef: boolean): string {
   return `題名: ${b.title}${withDataRef && b.dataRef ? `\ndataRef: ${b.dataRef}` : ""}${b.libraries?.length ? `\nlibraries: ${b.libraries.join(", ")}` : ""}\n\`\`\`js\n${b.entry}\n\`\`\``;
 }
 
+export const SAVED_BASE_GUIDANCE = "この本文は、今回の依頼の直前に選ばれている編集元です。今回の依頼で維持するよう指定された既存の値や挙動は、この版のコードから引き継ぎます。以前の依頼ですでに適用した増減を重ねて適用しません。";
+
 /** 制作担当のプロンプト。条件 D の directPrompt と同じ並び・見出しで、前の候補の節だけが 2 通り。 */
 export function makerPrompt(input: GenerationInput): string {
   const parts: string[] = [];
   parts.push(`## 依頼\n${input.request}`);
   if (input.conversation.length) parts.push(`## これまでの会話（古い順）\n${input.conversation.map((t) => `${t.role === "user" ? "利用者" : "あなた"}: ${t.text}`).join("\n")}`);
-  if (input.base) parts.push(`## 基準の作品（保存版）\n${artworkText(input.base, true)}`);
+  if (input.base) parts.push(`## 基準の作品（保存版）\n${SAVED_BASE_GUIDANCE}\n${artworkText(input.base, true)}`);
   else parts.push("## 基準の作品\nなし（新規）");
   parts.push(`## 登録データ\n${input.datasets.length ? input.datasets.map((d) => `- ${d.ref}: ${d.description}`).join("\n") : "なし"}`);
   if (input.previous) {
@@ -98,10 +115,14 @@ export function makerPrompt(input: GenerationInput): string {
 
 /** 応答の検査。条件 D の validateArtwork と同じ検査に spec の検査を足す。spec は受け取った値をそのまま入れる（正規化はサービスが行う）。 */
 export const validateMakerOutput: Validate<GenerationOutput> = (v) => {
+  return validateOutput(v, false);
+};
+
+function validateOutput(v: unknown, replay: boolean): ReturnType<Validate<GenerationOutput>> {
   const o = v as Record<string, unknown>;
   const issues: string[] = [];
   if (!o || typeof o !== "object" || Array.isArray(o)) return { ok: false, issues: ["オブジェクトではない"] };
-  for (const k of Object.keys(o)) if (!(k in MAKER_OUTPUT_SCHEMA.properties)) issues.push(`不明な項目: ${k}`);
+  for (const k of Object.keys(o)) if (!(k in MAKER_OUTPUT_SCHEMA.properties) && !(replay && k === "replay")) issues.push(`不明な項目: ${k}`);
   for (const k of MAKER_OUTPUT_SCHEMA.required) if (!(k in o)) issues.push(`項目がない: ${k}`);
   if (typeof o.title !== "string" || !o.title.trim()) issues.push("title は空でない文字列");
   const spec = o.spec as Record<string, unknown> | undefined;
@@ -128,9 +149,10 @@ export const validateMakerOutput: Validate<GenerationOutput> = (v) => {
       unconfirmed: o.unconfirmed as string[],
       reply: o.reply as string,
       spec: o.spec,
+      ...(replay && o.replay !== undefined ? { replay: o.replay } : {}),
     },
   };
-};
+}
 
 /** 1 回の推論で作品と宣言を返す制作担当。 */
 export class PromptMaker implements ModelPort {
@@ -142,7 +164,11 @@ export class PromptMaker implements ModelPort {
   }
   async generate(input: GenerationInput, signal: AbortSignal): Promise<GenerationOutput> {
     try {
-      return await this.channel.complete({ purpose: "maker", system: this.system, prompt: makerPrompt(input), outputSchema: MAKER_OUTPUT_SCHEMA }, validateMakerOutput, signal);
+      const replay = input.requestReplay === true;
+      const system = replay
+        ? this.system + "\n\n依頼の中で間違いやすい挙動を一つ選び、entry の前に replay を提案できます。requirement は spec.requirements の順に R1、R2 … で参照し、purpose に期待する変化、steps に入力と複数時点の shot または track を書きます。測定はホストが行います。"
+        : this.system;
+      return await this.channel.complete({ purpose: "maker", system, prompt: makerPrompt(input), outputSchema: replay ? REPLAY_OUTPUT_SCHEMA : MAKER_OUTPUT_SCHEMA }, replay ? (v) => validateOutput(v, true) : validateMakerOutput, signal);
     } catch (e) {
       throw new ModelError((e as Error).message);
     }

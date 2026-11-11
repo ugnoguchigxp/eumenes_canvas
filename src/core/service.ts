@@ -7,6 +7,7 @@ import type { DatasetInfo, GenerationInput, ModelPort } from "./model-port";
 import type { ObserverPort } from "./observer";
 import { blockingCount, failedOutcome, findingsAsObservations, type ReviewerPort, type ReviewMode, type ReviewOutcome } from "./review";
 import { normalizeSpec } from "./spec";
+import { normalizePlan, type EvalPlan } from "./eval-types";
 import type { Store } from "./store";
 import type { Artwork, Candidate, CheckResult, Observation, Revision, Run, Turn, Verification } from "./types";
 
@@ -209,7 +210,8 @@ export class CanvasService {
   private async execute(runId: string, base: ArtworkBody | null, signal: AbortSignal) {
     const run = this.o.store.runs[runId];
     const review = this.o.review && this.o.review.mode !== "off" ? this.o.review : null;
-    const maxReviews = review?.maxReviews ?? MAX_FIX_ATTEMPTS + 1;
+    const maxReviews = review?.mode === "replay" ? Math.min(1, review.maxReviews ?? 1) : review?.maxReviews ?? MAX_FIX_ATTEMPTS + 1;
+    let repairPlan: EvalPlan | undefined;
     let reviewsUsed = 0;
     let best: { id: string; blocking: number } | null = null;
     let previous: ArtworkBody | null = null;
@@ -230,6 +232,7 @@ export class CanvasService {
         previousDigest,
         observations,
         previousPassed,
+        ...(review?.mode === "replay" && !repairPlan && reviewsUsed < maxReviews ? { requestReplay: true } : {}),
       };
       let out;
       try {
@@ -295,12 +298,18 @@ export class CanvasService {
       }
       const requiredOk = requiredPassed(checks);
       let outcome: ReviewOutcome | null = null;
-      if (requiredOk && review && reviewsUsed < maxReviews && run.deadline - this.now() >= REVIEW_MIN_REMAINING_MS) {
-        reviewsUsed++;
+      const firstReview = reviewsUsed < maxReviews && run.deadline - this.now() >= REVIEW_MIN_REMAINING_MS;
+      if (requiredOk && review && (firstReview || repairPlan)) {
+        if (!repairPlan) reviewsUsed++;
+        const plan = review.mode === "replay" ? repairPlan ?? normalizePlan({ scripts: [out.replay] }, candidate.spec ?? null) : undefined;
         const t0 = this.now();
         try {
           outcome = await review.reviewer.review(
-            { request: run.request.message, conversation: run.request.conversation, base, body: out.body, data: this.datasetFor(out.body), spec: candidate.spec ?? null, mode: review.mode as Exclude<ReviewMode, "off"> },
+            {
+              request: run.request.message, conversation: run.request.conversation, base, body: out.body,
+              data: this.datasetFor(out.body), spec: candidate.spec ?? null, mode: review.mode as Exclude<ReviewMode, "off">,
+              ...(plan ? { replay: { plan, phase: repairPlan ? "repair" : "initial" } } : {}),
+            },
             signal,
           );
         } catch (e) {
@@ -317,6 +326,7 @@ export class CanvasService {
           evaluatorCalls: outcome.evaluatorCalls,
           ms: outcome.ms,
           error: outcome.error,
+          ...(outcome.replay ? { replay: outcome.replay } : {}),
         };
       }
       const verification = this.makeVerification(digest, dataDigest, environment, [...checks, ...(outcome?.checks ?? [])]);
@@ -334,8 +344,18 @@ export class CanvasService {
         continue;
       }
       const blocking = candidate.review?.blocking ?? 0; // 検証していない候補は重い指摘 0 件として扱う
-      if (!best || blocking <= best.blocking) best = { id: candidate.id, blocking };
-      if (!outcome || blocking === 0) break;
+      if (repairPlan) {
+        // 再生できた修正版は要件未判定の候補として提示する。再生の失敗は改善の根拠にしない。
+        if (!outcome?.replay || outcome.error) break;
+        if (blocking === 0) {
+          best = { id: candidate.id, blocking };
+          break;
+        }
+      } else {
+        if (!best || blocking <= best.blocking) best = { id: candidate.id, blocking };
+        if (!outcome || blocking === 0) break;
+        if (outcome.replay) repairPlan = outcome.replay.plan;
+      }
       previousPassed = true;
       observations = findingsAsObservations(outcome.findings);
     }

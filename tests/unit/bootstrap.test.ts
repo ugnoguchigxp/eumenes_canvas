@@ -7,6 +7,7 @@ import { assembleWorkerScript } from "../../src/server/preview";
 import { ROOT } from "./support";
 
 const BOOT = readFileSync(join(ROOT, "src/preview/bootstrap.js"), "utf8");
+const EXECUTION_BUDGET = readFileSync(join(ROOT, "src/preview/execution-budget.js"), "utf8");
 
 /** 偽の面（OffscreenCanvas の代わり）。描画の呼び出しは何もしない。 */
 class FakeSurface {
@@ -85,7 +86,7 @@ describe("ブートストラップ（偽の Worker 環境）", () => {
   });
   test("ずれの値", () => {
     const w = boot("canvasApp.start((api) => ({ frame() {} }));");
-    expect(w.offset).toBe(BOOT.split("\n").length - 1 + 3);
+    expect(w.offset).toBe(BOOT.split("\n").length - 1 + EXECUTION_BUDGET.split("\n").length + 3);
   });
   // 02：時間を進めない描き直し（poke）
   test("poke は t を変えずに frame(t, 0) を count 回呼び、advanced を返す", () => {

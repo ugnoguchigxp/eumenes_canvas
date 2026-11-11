@@ -1,5 +1,5 @@
 // 描画方式の拡張（design.md §7）の最小化した試験。デモ（examples/render/）で成功を見分けた画素・振る舞いだけを残した小さな作品で確かめる。
-// WebGL は Chromium だけ（WebKit 26.0 の Linux では Worker の WebGL が作れず、実行時エラーになることを確かめる）。
+// WebKit は Worker 内で WebGL を作れる環境と作れない環境を区別して検証する。
 import { test, expect, type Page } from "@playwright/test";
 import { openHarness, start, advance, events, waitStatus, canaryHits, CANARY } from "./support/harness";
 import { shot, find, hex, diffRatio, px, near } from "./support/pixels";
@@ -32,24 +32,28 @@ const webglQuad = (copy = true) => `canvasApp.start((api) => {
   };
 });`;
 
+async function expectWebglQuad(page: Page) {
+  const s0 = await shot(frame(page));
+  const red = find(s0, hex("#ff0000"), 30), blue = find(s0, hex("#0000ff"), 30);
+  expect(red.count).toBeGreaterThan(5000); // 板（中央）
+  expect(blue.count).toBeGreaterThan(50000); // 背景
+  expect(Math.abs(red.cx - s0.width / 2)).toBeLessThan(6);
+  expect(near(px(s0, 4, 4), hex("#0000ff"), 30)).toBe(true);
+  await advance(page, 400);
+  const s1 = await shot(frame(page));
+  expect(diffRatio(s0, s1)).toBeGreaterThan(0.005); // 回った
+  await key(page, "Space", 50);
+  const s2 = await shot(frame(page));
+  expect(find(s2, hex("#00ff00"), 30).count).toBeGreaterThan(5000);
+  expect(await errorsOf(page)).toEqual([]);
+}
+
 test.describe("Three.js（WebGL）", () => {
   test("同梱の Three.js で描いた WebGL の画素が作品の面に写り、時間とキーで変わる", async ({ page, browserName }) => {
-    test.skip(browserName !== "chromium", "WebGL は Chromium だけで確かめる");
+    test.skip(browserName !== "chromium", "Chromium の WebGL の描画");
     await openHarness(page);
     expect((await start(page, webglQuad(), { libraries: [THREE_ID] })).type).toBe("ready");
-    const s0 = await shot(frame(page));
-    const red = find(s0, hex("#ff0000"), 30), blue = find(s0, hex("#0000ff"), 30);
-    expect(red.count).toBeGreaterThan(5000); // 板（中央）
-    expect(blue.count).toBeGreaterThan(50000); // 背景
-    expect(Math.abs(red.cx - s0.width / 2)).toBeLessThan(6);
-    expect(near(px(s0, 4, 4), hex("#0000ff"), 30)).toBe(true);
-    await advance(page, 400);
-    const s1 = await shot(frame(page));
-    expect(diffRatio(s0, s1)).toBeGreaterThan(0.005); // 回った
-    await key(page, "Space", 50);
-    const s2 = await shot(frame(page));
-    expect(find(s2, hex("#00ff00"), 30).count).toBeGreaterThan(5000);
-    expect(await errorsOf(page)).toEqual([]);
+    await expectWebglQuad(page);
   });
 
   test("作品の面へ写し忘れた WebGL は表示されず、観測では単色になる（無言の成功にはならない）", async ({ page, browserName }) => {
@@ -62,12 +66,25 @@ test.describe("Three.js（WebGL）", () => {
     expect(find(s, hex("#0000ff"), 30).count).toBe(0);
   });
 
-  test("WebKit では WebGL の文脈が作れず、実行時エラーとして報告される", async ({ page, browserName }) => {
+  test("WebKit で Worker の WebGL 対応に応じて描画または実行時エラーを確かめる", async ({ page, browserName }) => {
     test.skip(browserName !== "webkit", "WebKit の挙動の記録");
     await openHarness(page);
+    const capability = await start(page, `canvasApp.start((api) => {
+      let webgl2 = false;
+      try { webgl2 = Boolean(new OffscreenCanvas(1, 1).getContext("webgl2")); } catch {}
+      api.status({ webgl2 });
+      return { frame() {} };
+    });`);
+    expect(capability.type).toBe("ready");
+    const { webgl2 } = await waitStatus(page, (s) => typeof s.webgl2 === "boolean");
     const r = await start(page, webglQuad(), { libraries: [THREE_ID] });
-    expect(r.type).toBe("error");
-    expect((await errorsOf(page)).join(" ")).toContain("WebGL");
+    if (webgl2) {
+      expect(r.type).toBe("ready");
+      await expectWebglQuad(page);
+    } else {
+      expect(r.type).toBe("error");
+      expect((await errorsOf(page)).join(" ")).toContain("WebGL");
+    }
   });
 
   // ブラックホールのデモから：全画面のシェーダー。中心は暗い影、その外に明るい輪、時間で模様が回る。

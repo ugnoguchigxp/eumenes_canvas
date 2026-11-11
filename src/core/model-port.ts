@@ -26,6 +26,8 @@ export interface GenerationInput {
   observations: Observation[];
   /** 直前の候補がホストの必須の検査に通っていたか（真なら observations は検証の指摘）。省略時は偽。 */
   previousPassed?: boolean;
+  /** 制作時に、確認したい挙動を測る操作手順を一つ提案する。 */
+  requestReplay?: boolean;
 }
 
 export interface GenerationOutput {
@@ -38,6 +40,7 @@ export interface GenerationOutput {
   reply: string;
   /** 制作担当の宣言（要件と操作）。形はホストが正規化する（src/core/spec.ts）。 */
   spec?: unknown;
+  replay?: unknown;
 }
 
 export interface ModelPort {
