@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, renameSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { artworkDigest } from "../../src/contract/artwork";
+import { CanvasService } from "../../src/core/service";
 import { Store } from "../../src/core/store";
 import { art, CONV, FakeObserver, makeService, runToEnd } from "./support";
 
@@ -55,6 +56,60 @@ describe("新規・修正・保存", () => {
 });
 
 describe("競合・所有者", () => {
+  test("ファイルに同時保存しても同じ受領キーには同じ結果を返す", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "canvas-parallel-save-"));
+    try {
+      const { svc } = makeService({ dataDir: dir });
+      const run = await runToEnd(svc, A, S1, { message: "落ち物ゲームを作って" });
+      const options = { expectedRevision: 0, idempotencyKey: key("parallel") };
+      const save = () => svc.save(A, run.candidates[0].id, options);
+      const results = await Promise.all([save(), save()]);
+      expect(results.map((r) => r.replay).sort()).toEqual([false, true]);
+      expect(results[0].result).toEqual(results[1].result);
+      expect(svc.listArtworks(A).map((a) => a.currentRevision)).toEqual([1]);
+      expect(new Store(dir).receipt(A, options.idempotencyKey)?.result).toEqual(results[0].result);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test.each(["restore", "save"] as const)("復元と同じ版からの %s が重なっても一方だけ確定する", async (operation) => {
+    const { svc } = makeService();
+    const { saved } = await createFallingBlock(svc);
+    const run = await runToEnd(svc, A, S2, { message: "背景を紺色にして", artworkId: saved.artworkId, conversation: CONV });
+    const restore = (k: string) => svc.restore(A, saved.artworkId, { revision: 1, expectedRevision: 1, idempotencyKey: key(k) });
+    const first = restore("first");
+    const second = operation === "restore" ? restore("second") : svc.save(A, run.candidates[0].id, { expectedRevision: 1, idempotencyKey: key("second") });
+    const results = await Promise.allSettled([first, second]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(results.find((r) => r.status === "rejected")).toMatchObject({ reason: { status: 409, extra: { code: "conflict" } } });
+    expect(svc.getArtwork(A, saved.artworkId).revisions.map((r) => r.revision)).toEqual([1, 2]);
+  });
+
+  test("同時の復元で同じ受領キーに同じ結果を返す", async () => {
+    const { svc } = makeService();
+    const { saved } = await createFallingBlock(svc);
+    const restore = () => svc.restore(A, saved.artworkId, { revision: 1, expectedRevision: 1, idempotencyKey: key("restore") });
+    const results = await Promise.all([restore(), restore()]);
+    expect(results.map((r) => r.replay).sort()).toEqual([false, true]);
+    expect(results[0].result).toEqual(results[1].result);
+    expect(svc.getArtwork(A, saved.artworkId).revisions.map((r) => r.revision)).toEqual([1, 2]);
+  });
+
+  test("保存と復元で同じ受領キーを同時に使うと一方を拒否する", async () => {
+    const { svc } = makeService();
+    const { saved } = await createFallingBlock(svc);
+    const run = await runToEnd(svc, A, S2, { message: "背景を紺色にして", artworkId: saved.artworkId, conversation: CONV });
+    const options = { expectedRevision: 1, idempotencyKey: key("mixed") };
+    const results = await Promise.allSettled([
+      svc.restore(A, saved.artworkId, { ...options, revision: 1 }),
+      svc.save(A, run.candidates[0].id, options),
+    ]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(results.find((r) => r.status === "rejected")).toMatchObject({ reason: { status: 409, extra: { code: "idempotency-mismatch" } } });
+    expect(svc.getArtwork(A, saved.artworkId).revisions).toHaveLength(2);
+  });
+
   test("同じ版から作った 2 つの候補は、後に保存した方が競合になり、候補は残る", async () => {
     const { svc } = makeService();
     const { saved } = await createFallingBlock(svc);
@@ -85,6 +140,170 @@ describe("競合・所有者", () => {
 });
 
 describe("失敗・取消・期限・撤回", () => {
+  test("先の書き込みが終わらなくても期限に制作を中断し、確定後に期限切れを返す", async () => {
+    const entered = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    const aborted = Promise.withResolvers<void>();
+    const store = new Store(null);
+    const svc = new CanvasService({
+      store, contract: "contract", observer: new FakeObserver(), runTimeoutMs: 200,
+      model: {
+        label: "deadline-test",
+        async generate(_input, signal) {
+          return new Promise<never>((_, reject) => signal.addEventListener("abort", () => {
+            aborted.resolve();
+            reject(new Error("aborted"));
+          }, { once: true }));
+        },
+      },
+    });
+    const run = await svc.startRun(A, S1, { message: "落ち物ゲームを作って" });
+    const blocked = store.write(async () => { entered.resolve(); await release.promise; });
+    let deadline: ReturnType<typeof setTimeout> | undefined;
+    try {
+      await entered.promise;
+      await Promise.race([aborted.promise, new Promise<never>((_, reject) => {
+        deadline = setTimeout(() => reject(new Error("書き込みを待つ間に制作が中断されなかった")), 900);
+      })]);
+      expect(svc.getRun(A, run.id).state).toBe("running");
+      release.resolve();
+      await store.idle();
+      expect(svc.getRun(A, run.id)).toMatchObject({ state: "expired", candidateIds: [] });
+    } finally {
+      clearTimeout(deadline);
+      release.resolve();
+      await blocked;
+      await svc.close();
+    }
+  });
+
+  test("終了は観測器を閉じて待機中の制作を中断し、新しい制作を受け付けない", async () => {
+    const entered = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    let closes = 0;
+    const observer = new class extends FakeObserver {
+      async observe(body: Parameters<FakeObserver["observe"]>[0]) {
+        entered.resolve();
+        await release.promise;
+        return super.observe(body);
+      }
+      async close() {
+        closes++;
+        release.resolve();
+      }
+    }();
+    const { svc } = makeService({ observer });
+    const request = { message: "落ち物ゲームを作って" };
+    try {
+      const run = await svc.startRun(A, S1, request);
+      await entered.promise;
+      const closing = svc.close();
+      expect(svc.close()).toBe(closing);
+      await expect(svc.startRun(A, S2, request)).rejects.toMatchObject({ status: 503 });
+      await closing;
+      expect(closes).toBe(1);
+      expect(svc.getRun(A, run.id)).toMatchObject({ state: "failed", failure: "ホストの終了で中断", candidateIds: [] });
+    } finally {
+      release.resolve();
+      await svc.close();
+    }
+  });
+
+  test("同時実行が満杯なら受け付けず、取消の処理が終われば再試行できる", async () => {
+    const release = Promise.withResolvers<void>();
+    const store = new Store(null);
+    let calls = 0;
+    const svc = new CanvasService({
+      store,
+      contract: "contract",
+      observer: new FakeObserver(),
+      model: {
+        label: "capacity-test",
+        async generate() {
+          calls++;
+          await release.promise;
+          return { body: { title: "作品", entry: art("falling-block.js") }, changes: "", unconfirmed: [], reply: "" };
+        },
+      },
+    });
+    const req = { message: "落ち物ゲームを作って" };
+    try {
+      const runs = await Promise.all(Array.from({ length: 5 }, (_, i) => svc.startRun(A, "session-" + i, req)));
+      await expect(svc.startRun(A, runs[0].session, req)).rejects.toMatchObject({ status: 429, extra: { code: "run-capacity" } });
+      expect(svc.getRun(A, runs[0].id).state).toBe("running");
+      await svc.cancelRun(A, runs[0].id);
+      await expect(svc.startRun(A, S1, req)).rejects.toMatchObject({ status: 429, extra: { code: "run-capacity" } });
+      expect(Object.keys(store.runs)).toHaveLength(5);
+      expect(calls).toBe(5);
+      release.resolve();
+      await svc.drain();
+      expect(svc.getRun(A, runs[0].id).candidates).toEqual([]);
+      expect((await runToEnd(svc, A, S1, req)).state).toBe("presented");
+    } finally {
+      release.resolve();
+      await svc.close();
+    }
+  });
+
+  test.each(["generation", "deadline"] as const)("実行中の %s で書き込めないときは中断し、次の依頼を受ける", async (stage) => {
+    const dir = mkdtempSync(join(tmpdir(), "canvas-run-io-"));
+    const blocked = join(dir, "store.json.tmp");
+    const generated = Promise.withResolvers<void>();
+    let first = true;
+    const svc = new CanvasService({
+      store: new Store(dir),
+      contract: "contract",
+      observer: new FakeObserver(),
+      runTimeoutMs: stage === "deadline" ? 100 : 10_000,
+      model: {
+        label: "fault-test",
+        async generate(_input, signal) {
+          if (first) {
+            first = false;
+            if (stage === "deadline")
+              signal.addEventListener("abort", () => generated.resolve(), { once: true });
+            await generated.promise;
+          }
+          return { body: { title: "作品", entry: art("falling-block.js") }, changes: "", unconfirmed: [], reply: "" };
+        },
+      },
+    });
+    const req = { message: "落ち物ゲームを作って" };
+    try {
+      const run = await svc.startRun(A, S1, req);
+      const running = svc.inflight.get(run.id);
+      mkdirSync(blocked);
+      if (stage === "generation") generated.resolve();
+      await expect(running).resolves.toBeUndefined();
+      const result = svc.getRun(A, run.id);
+      expect(result.state).toBe("failed");
+      expect(result.failure).toBeTruthy();
+      expect(result.candidates).toEqual([]);
+      expect(svc.listArtworks(A)).toEqual([]);
+      rmSync(blocked, { recursive: true });
+      expect((await runToEnd(svc, A, S1, req)).state).toBe("presented");
+    } finally {
+      generated.resolve();
+      await svc.close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, 2500);
+
+  test.each(["cancelled", "superseded"] as const)("ハッシュの照合中に %s になった候補は保存しない", async (state) => {
+    const { svc } = makeService();
+    const req = { message: "落ち物ゲームを作って" };
+    const run = await runToEnd(svc, A, S1, req);
+    const pending = svc.save(A, run.candidates[0].id, { expectedRevision: 0, idempotencyKey: key("stale") });
+    if (state === "cancelled") await svc.cancelRun(A, run.id);
+    else await svc.startRun(A, S1, req);
+    try {
+      await expect(pending).rejects.toMatchObject({ status: 409, extra: { code: "run-" + state } });
+      expect(svc.listArtworks(A)).toEqual([]);
+    } finally {
+      await svc.drain();
+    }
+  });
+
   test("起動後のエラーを観測として返し、修正候補が合格する", async () => {
     const observer = new FakeObserver();
     await observer.failFor({ title: "ブロック崩し", entry: art("breakout-broken.js") }, "frame: bal is not defined");
@@ -114,7 +333,7 @@ describe("失敗・取消・期限・撤回", () => {
     const { svc, observer } = makeService({ deliverAfterAbort: true });
     const run = await svc.startRun(A, S1, { message: "回避ゲームを作って" });
     await new Promise((r) => setTimeout(r, 50));
-    expect(svc.cancelRun(A, run.id).state).toBe("cancelled");
+    expect((await svc.cancelRun(A, run.id)).state).toBe("cancelled");
     await svc.inflight.get(run.id);
     const r = svc.getRun(A, run.id);
     expect(r.state).toBe("cancelled");
@@ -145,19 +364,108 @@ describe("失敗・取消・期限・撤回", () => {
   test("提示後に取消した候補は保存できない", async () => {
     const { svc } = makeService();
     const r = await runToEnd(svc, A, S1, { message: "落ち物ゲームを作って" });
-    svc.cancelRun(A, r.id);
+    await svc.cancelRun(A, r.id);
     await expect(svc.save(A, r.candidates[0].id, { expectedRevision: 0, idempotencyKey: key("c") })).rejects.toMatchObject({ status: 409, extra: { code: "run-cancelled" } });
   });
 
   test("検証後に実体を書き換えた候補は digest 不一致で保存できない", async () => {
     const { svc, store } = makeService();
     const r = await runToEnd(svc, A, S1, { message: "落ち物ゲームを作って" });
-    store.candidates[r.candidates[0].id].body.entry += "\n// 改ざん";
+    const id = r.candidates[0].id;
+    await store.write((commit) => commit(["candidates"], (state) => {
+      const candidate = state.candidates[id];
+      state.candidates[id] = { ...candidate, body: { ...candidate.body, entry: candidate.body.entry + "\n// 改ざん" } };
+    }));
     await expect(svc.save(A, r.candidates[0].id, { expectedRevision: 0, idempotencyKey: key("t") })).rejects.toMatchObject({ status: 409, extra: { code: "digest-mismatch" } });
   });
 });
 
 describe("復元・再起動", () => {
+  test("プレビューの応答を変更しても、保存した版と候補の記録は同じまま再起動後に読める", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "canvas-preview-copy-"));
+    try {
+      const { svc, store } = makeService({ dataDir: dir });
+      const { saved, cand } = await createFallingBlock(svc);
+      const candidate = svc.resolvePreview(A, { candidateId: cand.id });
+      const revision = svc.resolvePreview(A, { artworkId: saved.artworkId });
+      const candidateView = svc.getRun(A, cand.runId).candidates[0];
+      candidate.body.entry += "\n// 候補の表示だけを変更";
+      revision.body.entry += "\n// 保存版の表示だけを変更";
+      candidateView.unconfirmed.push("返却データだけに追記");
+      await svc.restore(A, saved.artworkId, { revision: 1, expectedRevision: 1, idempotencyKey: key("readonly") });
+      const reopened = new Store(dir);
+      expect(reopened.candidates[cand.id].body).toEqual(store.candidates[cand.id].body);
+      expect(reopened.candidates[cand.id].unconfirmed).not.toContain("返却データだけに追記");
+      for (const row of reopened.revisionsOf(saved.artworkId)) {
+        expect(row.body.entry).toBe(art("falling-block.js"));
+        expect(await artworkDigest(row.body)).toBe(saved.digest);
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("制作担当が入力を変更しても保存済みの元版は変わらない", async () => {
+    const entry = art("falling-block.js");
+    const svc = new CanvasService({
+      store: new Store(null),
+      contract: "contract",
+      observer: new FakeObserver(),
+      model: {
+        label: "base-copy-test",
+        async generate(input) {
+          if (input.base) input.base.entry += "\n// 制作中の変更";
+          return { body: { title: "落ち物ゲーム", entry }, changes: "", unconfirmed: [], reply: "" };
+        },
+      },
+    });
+    const { saved } = await createFallingBlock(svc);
+    await runToEnd(svc, A, S1, { message: "作品を修正して", artworkId: saved.artworkId });
+    expect(svc.resolvePreview(A, { artworkId: saved.artworkId, revision: 1 }).body.entry).toBe(entry);
+    await expect(svc.restore(A, saved.artworkId, { revision: 1, expectedRevision: 1, idempotencyKey: key("base-copy") }))
+      .resolves.toMatchObject({ result: { revision: 2, digest: saved.digest } });
+  });
+
+  test.each([
+    ["save", "write"],
+    ["save", "rename"],
+    ["restore", "write"],
+    ["restore", "rename"],
+  ] as const)("%s の %s 失敗後に同じキーで再試行し、再起動できる", async (operation, fault) => {
+    const dir = mkdtempSync(join(tmpdir(), "canvas-store-"));
+    try {
+      const { svc, store } = makeService({ dataDir: dir });
+      const { saved } = await createFallingBlock(svc);
+      const run = await runToEnd(svc, A, S2, { message: "背景を紺色にして", artworkId: saved.artworkId, conversation: CONV });
+      const options = { expectedRevision: 1, idempotencyKey: key("failed") };
+      const update = () => operation === "save"
+        ? svc.save(A, run.candidates[0].id, options)
+        : svc.restore(A, saved.artworkId, { ...options, revision: 1 });
+      const file = join(dir, "store.json");
+      const backup = file + ".backup";
+      const blocked = fault === "write" ? file + ".tmp" : file;
+      if (fault === "rename") renameSync(file, backup);
+      mkdirSync(blocked);
+      try {
+        await expect(update()).rejects.toThrow();
+        expect(svc.getArtwork(A, saved.artworkId).revisions.map((r) => r.revision)).toEqual([1]);
+        expect(store.receipt(A, options.idempotencyKey)).toBeUndefined();
+      } finally {
+        rmSync(blocked, { recursive: true, force: true });
+        if (fault === "rename") renameSync(backup, file);
+      }
+      const retried = await update();
+      expect(retried).toMatchObject({ status: 200, replay: false, result: { revision: 2 } });
+      const reopened = makeService({ dataDir: dir });
+      expect(reopened.svc.getArtwork(A, saved.artworkId).revisions.map((r) => r.revision)).toEqual([1, 2]);
+      expect(reopened.svc.resolvePreview(A, { artworkId: saved.artworkId }).body.entry)
+        .toBe(art(operation === "save" ? "falling-block-navy.js" : "falling-block.js"));
+      expect(reopened.store.receipt(A, options.idempotencyKey)?.result).toEqual(retried.result);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   test("過去の版を新しい revision として復元し、履歴をたどれる", async () => {
     const { svc } = makeService();
     const { saved } = await createFallingBlock(svc);

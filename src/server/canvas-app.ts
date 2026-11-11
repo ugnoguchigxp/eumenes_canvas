@@ -2,7 +2,8 @@
 // そうでなければ HttpOnly cookie で区別する（design.md §3）。
 import { randomBytes } from "node:crypto";
 import { CanvasService, ServiceError } from "../core/service";
-import { HttpError, json, readJson, startApp } from "./app";
+import type { Turn } from "../core/types";
+import { HttpError, json, readJsonObject, startApp } from "./app";
 import { PreviewTokens } from "./preview";
 
 const OWNER_COOKIE = "canvas_owner";
@@ -14,6 +15,29 @@ function cookieOwner(req: Request): string | null {
   const c = req.headers.get("cookie") ?? "";
   const m = c.match(/(?:^|;\s*)canvas_owner=([A-Za-z0-9_-]{16,64})/);
   return m ? m[1] : null;
+}
+
+function requiredString(value: unknown, name: string): string {
+  if (typeof value !== "string") throw new HttpError(400, name + " は文字列");
+  return value;
+}
+
+function revisionNumber(value: unknown, name: string, min: number): number {
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < min)
+    throw new HttpError(400, name + " は " + min + " 以上の整数");
+  return value;
+}
+
+function conversationOf(value: unknown): Turn[] {
+  if (!Array.isArray(value)) return [];
+  const turns: Turn[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const { role, text } = item as Record<string, unknown>;
+    if ((role === "user" || role === "assistant") && typeof text === "string")
+      turns.push({ role, text: text.slice(0, 4000) });
+  }
+  return turns;
 }
 
 export interface CanvasAppOptions {
@@ -53,26 +77,41 @@ export function startCanvasApp(o: CanvasAppOptions) {
         if (parts[1] === "runs" && parts.length === 2 && m === "POST") {
           const session = req.headers.get("x-canvas-session") ?? "";
           if (!SESSION_RE.test(session)) throw new HttpError(400, "x-canvas-session がない");
-          const b = (await readJson(req)) as any;
-          return json(await svc.startRun(owner, session, { message: b.message, artworkId: b.artworkId ?? null, conversation: Array.isArray(b.conversation) ? b.conversation.filter((t: any) => t && (t.role === "user" || t.role === "assistant") && typeof t.text === "string").map((t: any) => ({ role: t.role, text: t.text.slice(0, 4000) })) : [] }), 201);
+          const b = await readJsonObject(req);
+          return json(await svc.startRun(owner, session, {
+            message: requiredString(b.message, "message"),
+            artworkId: b.artworkId == null ? null : requiredString(b.artworkId, "artworkId"),
+            conversation: conversationOf(b.conversation),
+          }), 201);
         }
         if (parts[1] === "runs" && parts.length === 3 && m === "GET") return json(svc.getRun(owner, parts[2]));
-        if (parts[1] === "runs" && parts[3] === "cancel" && m === "POST") return json(svc.cancelRun(owner, parts[2]));
+        if (parts[1] === "runs" && parts[3] === "cancel" && m === "POST") return json(await svc.cancelRun(owner, parts[2]));
         if (parts[1] === "candidates" && parts[3] === "save" && m === "POST") {
-          const b = (await readJson(req)) as any;
-          const r = await svc.save(owner, parts[2], { expectedRevision: Number(b.expectedRevision), idempotencyKey: b.idempotencyKey });
+          const b = await readJsonObject(req);
+          const r = await svc.save(owner, parts[2], {
+            expectedRevision: revisionNumber(b.expectedRevision, "expectedRevision", 0),
+            idempotencyKey: requiredString(b.idempotencyKey, "idempotencyKey"),
+          });
           return json({ ...(r.result as object), replay: r.replay }, r.status);
         }
         if (parts[1] === "artworks" && parts.length === 2 && m === "GET") return json(svc.listArtworks(owner));
         if (parts[1] === "artworks" && parts.length === 3 && m === "GET") return json(svc.getArtwork(owner, parts[2]));
         if (parts[1] === "artworks" && parts[3] === "restore" && m === "POST") {
-          const b = (await readJson(req)) as any;
-          const r = await svc.restore(owner, parts[2], { revision: Number(b.revision), expectedRevision: Number(b.expectedRevision), idempotencyKey: b.idempotencyKey });
+          const b = await readJsonObject(req);
+          const r = await svc.restore(owner, parts[2], {
+            revision: revisionNumber(b.revision, "revision", 1),
+            expectedRevision: revisionNumber(b.expectedRevision, "expectedRevision", 1),
+            idempotencyKey: requiredString(b.idempotencyKey, "idempotencyKey"),
+          });
           return json({ ...(r.result as object), replay: r.replay }, r.status);
         }
         if (parts[1] === "previews" && m === "POST") {
-          const b = (await readJson(req)) as any;
-          const { body, data } = svc.resolvePreview(owner, { candidateId: b.candidateId, artworkId: b.artworkId, revision: b.revision === undefined ? undefined : Number(b.revision) });
+          const b = await readJsonObject(req);
+          const { body, data } = svc.resolvePreview(owner, {
+            candidateId: b.candidateId === undefined ? undefined : requiredString(b.candidateId, "candidateId"),
+            artworkId: b.artworkId === undefined ? undefined : requiredString(b.artworkId, "artworkId"),
+            revision: b.revision === undefined ? undefined : revisionNumber(b.revision, "revision", 1),
+          });
           return json({ token: tokens.issue(body), data, title: body.title, ...(body.runtime === "page" ? { runtime: "page" } : {}) });
         }
       } catch (e) {
@@ -82,6 +121,11 @@ export function startCanvasApp(o: CanvasAppOptions) {
       return null;
     },
   });
-  service = o.makeService({ tokens, hostOrigin: app.hostOrigin, singleUser: !!o.singleUser });
+  try {
+    service = o.makeService({ tokens, hostOrigin: app.hostOrigin, singleUser: !!o.singleUser });
+  } catch (err) {
+    app.stop();
+    throw err;
+  }
   return { ...app, service };
 }

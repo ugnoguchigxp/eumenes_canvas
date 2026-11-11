@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { checkArtwork } from "../contract/artwork";
 import { PreviewTokens, previewHandler } from "./preview";
 import { CLIENT_LOG_LIMITS, MinuteLimiter, openLogs, requestFields, sanitizeClientEvents, type ServerLogs } from "./logs";
+import { BodyLimitError, readBoundedText } from "./read-body";
 
 const SRC = join(import.meta.dir, "..");
 
@@ -61,15 +62,21 @@ export function json(value: unknown, status = 200, headers: Record<string, strin
 }
 
 export async function readJson(req: Request, maxBytes = 256 * 1024): Promise<unknown> {
-  const len = Number(req.headers.get("content-length") ?? "0");
-  if (len > maxBytes) throw new HttpError(413, "本文が大きすぎる");
-  const text = await req.text();
-  if (new TextEncoder().encode(text).length > maxBytes) throw new HttpError(413, "本文が大きすぎる");
+  const text = await readBoundedText(req, maxBytes, req.signal).catch((error: unknown) => {
+    if (error instanceof BodyLimitError) throw new HttpError(413, "本文が大きすぎる");
+    throw error;
+  });
   try {
     return JSON.parse(text);
   } catch {
     throw new HttpError(400, "JSON ではない");
   }
+}
+
+export async function readJsonObject(req: Request): Promise<Record<string, unknown>> {
+  const body = await readJson(req);
+  if (!body || typeof body !== "object" || Array.isArray(body)) throw new HttpError(400, "本文は JSON オブジェクト");
+  return body as Record<string, unknown>;
 }
 
 export class HttpError extends Error {
@@ -176,18 +183,26 @@ export function startApp(opts: AppOptions) {
         return json({ error: "internal" }, 500);
       }
   }
-  const hosts = hostNames.map((hostname) => Bun.serve({ port: opts.hostPort, hostname, ...handlerFor(hostname) }));
-  logs?.server.write({ server: "host", pid: process.pid, event: "start", hostOrigin, previewOrigin, listen: hostNames.join(",") });
+  const listeners = [preview];
+  function stop() {
+    for (const listener of listeners.splice(0)) void listener.stop(true);
+  }
+  try {
+    for (const hostname of hostNames) {
+      listeners.push(Bun.serve({ port: opts.hostPort, hostname, ...handlerFor(hostname) }));
+    }
+    logs?.server.write({ server: "host", pid: process.pid, event: "start", hostOrigin, previewOrigin, listen: hostNames.join(",") });
+  } catch (err) {
+    stop();
+    throw err;
+  }
 
   return {
     hostOrigin,
     previewOrigin,
     tokens,
     logDir: logs?.dir ?? null,
-    stop() {
-      for (const h of hosts) h.stop(true);
-      preview.stop(true);
-    },
+    stop,
   };
 }
 

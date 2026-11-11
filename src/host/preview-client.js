@@ -199,8 +199,9 @@ export class PreviewController {
   }
 
   /** 作品を起動する。ready・error・timeout・stopped などで解決する。 */
-  async start({ token, data = null, seed = 1, clock = "raf", direct = false, runtime = undefined }) {
+  async start({ token, data = null, seed = 1, clock = "raf", direct = false, runtime = undefined, signal = /** @type {AbortSignal | undefined} */ (undefined) }) {
     await this.mount();
+    if (signal?.aborted) return { type: "stopped" };
     this.waiters.get("ready")?.({ type: "stopped", runId: this.runId });
     this.runId = newRunId();
     this.lastStart = { data, seed, clock, direct };

@@ -1,5 +1,6 @@
 // 03：性質の観測 host-probe/1 を実ブラウザ（Chromium）で動かす。observer.test.ts と同じ形。
 import { afterAll, expect, test } from "bun:test";
+import type { Browser } from "@playwright/test";
 import { PlaywrightProber, probeFindings, probeText } from "../../src/core/probes";
 import type { MakerSpec } from "../../src/core/spec";
 import { startApp } from "../../src/server/app";
@@ -36,6 +37,58 @@ const jumper = (guard: boolean) => `canvasApp.start((api) => {
   };
 });`;
 const body = (entry: string) => ({ title: "probe", entry });
+
+test("同時に始まった観測は Chromium を共有し、切断後は起動し直す", async () => {
+  class Prober extends PlaywrightProber {
+    connect() { return this.getBrowser(); }
+  }
+  const local = new Prober(app.hostOrigin, (b) => app.tokens.issue(b));
+  const browsers = new Set<Browser>();
+  try {
+    const open = async () => {
+      const browser = await local.connect();
+      browsers.add(browser);
+      return browser;
+    };
+    const [first, second] = await Promise.all([open(), open()]);
+    expect(first).toBe(second);
+    await first.close();
+    const next = await open();
+    expect(next).not.toBe(first);
+    expect(next.isConnected()).toBe(true);
+  } finally {
+    await local.close();
+    await Promise.allSettled([...browsers].map((browser) => browser.close()));
+  }
+}, T);
+
+test("取消済みの観測は起動しない", async () => {
+  const reason = new Error("事前に取消");
+  await expect(prober.probe(body(jumper(true)), null, SPEC, AbortSignal.abort(reason))).rejects.toBe(reason);
+}, T);
+
+test("観測中に Chromium が切断されたら失敗し、次の観測で復帰する", async () => {
+  class Prober extends PlaywrightProber {
+    connect() { return this.getBrowser(); }
+  }
+  let interrupt: Browser | undefined;
+  const local = new Prober(app.hostOrigin, (b) => {
+    if (interrupt) {
+      void interrupt.close();
+      interrupt = undefined;
+    }
+    return app.tokens.issue(b);
+  });
+  try {
+    interrupt = await local.connect();
+    await expect(local.probe(body(jumper(true)), null, SPEC, sig())).rejects.toThrow();
+    const recovered = await local.probe(body(jumper(true)), null, SPEC, sig());
+    expect(recovered.booted).toBe(true);
+    expect(recovered.inputs.some((input) => input.input === "Space" && input.during.pixels > 0)).toBe(true);
+  } finally {
+    await local.close();
+  }
+}, T);
 
 test("正しい作品", async () => {
   const r = await prober.probe(body(jumper(true)), null, SPEC, sig());

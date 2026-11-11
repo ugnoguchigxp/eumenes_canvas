@@ -9,12 +9,14 @@
     "test:unit": "bun test tests/unit",
     "test:e2e": "playwright test",
     "verify": "bun run typecheck && bun test tests/unit && playwright test",
+    "verify:package": "bun scripts/verify-canvas-package.ts",
+    "release:prepare": "bun scripts/prepare-canvas-release.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "eval:p2": "bun eval/runner.ts",
     "p3:typecheck": "tsc --noEmit -p eval/p3/tsconfig.json"
   },
   "devDependencies": {
-    "@playwright/test": "1.56.1",
+    "@playwright/test": "1.65.0",
     "@types/bun": "1.4.4",
     "@types/pngjs": "6.0.5",
     "pngjs": "7.0.0"

@@ -63,10 +63,12 @@
 | 8 | [08-orchestration.md](08-orchestration.md) | 制作のループに検証を組み込む、設定、画面の表示 | — | `src/core/service.ts`・`types.ts`、`src/host/app.js` |
 | 9 | [09-eval-and-models.md](09-eval-and-models.md) | 評価の実行器（条件 A）、応答者の道具、自己確認、集計、実モデルの接続 | 使う | `eval/`、新規 `src/server/http-channel.ts` |
 | 10 | [10-page-mode.md](10-page-mode.md) | ページ直接モード（DOM・音）。境界の実測と、利用者の判断が先 | — | 実測の試験だけ |
+| 11 | [11-maker-harness.md](11-maker-harness.md) | 制作担当のハーネス（2026-11-11 追加）：測る土台、出力の経路、静的検査、標準形、差し替え、差分出力、期待値の照合、保存の接続面 | 使わない（効果の計測にだけ使う） | 新規 `src/core/lint.ts`・`edits.ts`・`records.ts`、`src/contract/storage.ts`、`eval/harness/` ほか |
 
 - 1〜3 と 5 は推論を使わないので、記録済み推論だけの今の環境で実装と確認ができる。
 - 6〜8 は偽の担当（試験用の固定応答）で単体試験ができる。実際の合格率は 9 の実行器で測る。
 - 10 は、実測の結果と利用者の判断が出るまで本体の実装に入らない。
+- 11 は 1〜10 のあとに足した冊。節ごとに設定で有効にし、節の順に 1 つずつ実装して測る。既定はすべて無効。
 
 付録（文書の下書き。該当の冊に置き場所を書いてある）:
 

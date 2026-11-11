@@ -1,5 +1,6 @@
 // 作品のループが同じタスクの中で実時間を使い続けたら、例外で制御をブラウザへ戻す。
 // 実行時の仮想時計を差し替える前に、実時間と別タスクへの通知手段を確保する。
+let __canvasResetExecution = () => {};
 const __canvasCheckExecution = (() => {
   const now = performance.now.bind(performance);
   const BudgetError = Error;
@@ -8,6 +9,8 @@ const __canvasCheckExecution = (() => {
   let deadline = null;
   let failure = null;
   channel.port1.onmessage = () => { deadline = null; };
+  // 作品の関数を 1 回呼ぶごとに期限を解く（advance などが 1 タスクで何度も呼ぶ場合に、合計時間で誤検出しないため）。failure は消さない。
+  __canvasResetExecution = () => { deadline = null; };
   return (line, column) => {
     if (failure) throw failure;
     const time = now();

@@ -1,6 +1,6 @@
 // ブラウザ観測の接続口。候補を実際に起動し、起動・操作を画素で確かめる。
 import type { ArtworkBody } from "../contract/artwork";
-import { playwrightKey } from "./harness-session";
+import { ObservationBrowser, playwrightKey } from "./harness-session";
 import type { Control } from "./spec";
 import type { CheckResult, Observation } from "./types";
 
@@ -26,20 +26,17 @@ type IssueToken = (body: ArtworkBody) => string;
 /** Playwright（Chromium）で検証ホストのハーネスを開いて観測する。 */
 export class PlaywrightObserver implements ObserverPort {
   readonly suite = OBSERVER_SUITE;
-  private browser: any = null;
-  constructor(private hostOrigin: string, private issue: IssueToken, private launchArgs: string[] = []) {}
-
-  private async getBrowser() {
-    if (!this.browser) {
-      const { chromium } = await import("@playwright/test");
-      this.browser = await chromium.launch({ args: ["--mute-audio", ...this.launchArgs] });
-    }
-    return this.browser;
+  private readonly browser: ObservationBrowser;
+  constructor(private hostOrigin: string, private issue: IssueToken, launchArgs: string[] = [], handleProcessSignals = true) {
+    this.browser = new ObservationBrowser(launchArgs, handleProcessSignals);
   }
 
   async observe(body: ArtworkBody, data: unknown, signal: AbortSignal, controls: readonly Control[] = []): Promise<ObservationResult> {
+    signal.throwIfAborted();
     const { PNG } = await import("pngjs");
-    const browser = await this.getBrowser();
+    signal.throwIfAborted();
+    const browser = await this.browser.get();
+    signal.throwIfAborted();
     const environment = `chromium ${browser.version()}`;
     const ctx = await browser.newContext({ viewport: { width: 640, height: 480 } });
     const checks: CheckResult[] = [];
@@ -47,6 +44,7 @@ export class PlaywrightObserver implements ObserverPort {
     const abort = () => ctx.close().catch(() => {});
     signal.addEventListener("abort", abort, { once: true });
     try {
+      signal.throwIfAborted();
       const page = await ctx.newPage();
       await page.goto(this.hostOrigin + "/harness.html");
       await page.waitForFunction(() => document.title === "ready", null, { timeout: 10_000 });
@@ -128,9 +126,8 @@ export class PlaywrightObserver implements ObserverPort {
     }
   }
 
-  async close() {
-    if (this.browser) await this.browser.close();
-    this.browser = null;
+  close() {
+    return this.browser.close();
   }
 }
 

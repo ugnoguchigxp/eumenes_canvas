@@ -43,6 +43,8 @@ bun scripts/seed-demo.ts [設定ファイル]
 
 既定の設定（`"singleUser": true`、項目が無い場合も同じ）では、ブラウザごとに作品を分けない。`http://localhost:<hostPort>` を開いたどのブラウザにも `dataDir` の全作品が並ぶ。以前の版で別のブラウザから保存した作品も、再起動すれば一覧に出る。所有者ごとに分ける試験（plan.md の「別所有者による参照」）では `"singleUser": false` にする。
 
+独立版の更新前に作品と履歴を退避し、起動に失敗した場合は [更新と復旧の手順](docs/dependency-maintenance.md#独立版のデータを守って更新する) で元の状態へ戻せる。
+
 ### 診断ログ
 
 検証ホストは `<dataDir>/logs/` に JSON Lines を追記する（既定の設定では `.data/logs/`。`.data/` は git の対象外）。設定の `logDir` で場所を変えられる。各 5 MB を超えると `.1` に移して 1 世代だけ残す。
@@ -63,10 +65,14 @@ tail -f .data/logs/server.log .data/logs/client.log
 ```sh
 bun eval/p3/run.ts --cond D --suite heldout --run-dir eval/out/live/D-r1 --host-port 4740 --live-config /tmp/canvas-model.json --max-calls 42
 bun eval/p3/grade.ts --root eval/out/live
-bun scripts/pack-canvas.ts
+bun run release:prepare
 ```
 
-パッケージ作成コマンドはコア、プレビューと公開契約を `eval/out/dist/` にまとめ、SHA-256 を添える。パッケージ内の `canvas-package.json` に版、元の Git コミット、配布対象に未コミット変更があるか、同梱ファイルの SHA-256 を記録する。
+`bun run release:prepare` は一時的な作業コピーで依存の固定インストール、型検査、部分・結合試験、ブラウザ試験、配布物の検証を行う。合格した候補だけを `eval/out/dist/` に出力し、SHA-256 を添える。出力先を引数で指定できる。配布物の `canvas-package.json` に版、元の Git コミット、配布対象に未コミット変更があるか、同梱ファイルの SHA-256 を記録する。
+
+展開先では同梱の `bun.lock` を使い、`bun install --frozen-lockfile` で依存を入れる。依存とブラウザの確認方法は [依存と配布物の保守](docs/dependency-maintenance.md) を参照。
+
+`bun run verify:package` は配布候補を時刻をずらして2回作成し、同じバイト列になることを確認する。その後、ファイルの照合、展開先での固定インストール、ブラウザ観測、旧保存版の再表示・復元、Workerの停止を確認する。作成済みの候補を確認するときは引数に `.tgz` を渡す。必要な依存がローカルにある場合は `--offline` を指定できる。
 
 Luna low の制作評価、ブラウザの確認、取込条件の進捗は [取り込み前の検証結果](docs/pre-integration-results.md) を参照。
 

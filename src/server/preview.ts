@@ -102,11 +102,14 @@ export function librarySource(lib: HostLibrary): Promise<string> {
   let p = libCache.get(lib.id);
   if (!p) {
     p = (async () => {
-      const pkg = JSON.parse(readFileSync(join(SRC, "..", "node_modules", lib.pkg, "package.json"), "utf8")) as { version: string };
+      const packageDir = join(SRC, "..", "node_modules", lib.pkg);
+      const pkg = JSON.parse(readFileSync(join(packageDir, "package.json"), "utf8")) as { version: string };
       if (pkg.version !== lib.version) throw new Error(`${lib.pkg} の版が固定と違う（実際 ${pkg.version}、固定 ${lib.version}）`);
       const r = await Bun.build({ entrypoints: [join(SRC, "preview/libs", lib.shim)], format: "iife", minify: true, target: "browser" });
       if (!r.success || r.outputs.length !== 1) throw new Error(`${lib.id} を束ねられない: ${r.logs.map(String).join(" / ")}`);
-      return await r.outputs[0].text();
+      // 圧縮した実行コードにも、配信する版の通知を添える。
+      const notice = readFileSync(join(packageDir, "LICENSE"), "utf8").trimEnd().split(/\r?\n/).map((line) => "// " + line).join("\n");
+      return (await r.outputs[0].text()) + "\n" + notice + "\n";
     })();
     p.catch(() => libCache.delete(lib.id));
     libCache.set(lib.id, p);

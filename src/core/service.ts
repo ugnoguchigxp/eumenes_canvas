@@ -13,6 +13,7 @@ import type { Artwork, Candidate, CheckResult, Observation, Revision, Run, Turn,
 
 export const MAX_FIX_ATTEMPTS = 2; // 初回 1 回＋修正 2 回
 export const MAX_TURN_INFERENCES = 6; // 複数ターンの制作推論の合計
+const MAX_CONCURRENT_RUNS = 5;
 
 /** 期限までの残りがこれより短いときは検証を始めない。 */
 export const REVIEW_MIN_REMAINING_MS = 45_000;
@@ -55,6 +56,9 @@ const id = (p: string) => p + randomBytes(9).toString("base64url");
 export class CanvasService {
   private aborts = new Map<string, AbortController>();
   private timers = new Map<string, ReturnType<typeof setTimeout>>();
+  private closeTask?: Promise<void>;
+  private admitting = 0;
+  private expiring = new Map<string, Promise<void>>();
   private datasets = new Map<string, Dataset>();
   private now: () => number;
   readonly runTimeoutMs: number;
@@ -87,55 +91,76 @@ export class CanvasService {
 
   // ---- 受付 ----
   async startRun(owner: string, session: string, req: { message: string; artworkId?: string | null; conversation?: Turn[] }): Promise<Run> {
+    if (this.closeTask) throw new ServiceError(503, "ホストを終了しています");
     if (typeof req.message !== "string" || !req.message.trim() || req.message.length > 4000) throw new ServiceError(400, "依頼は 1〜4000 文字");
     const conversation = (req.conversation ?? []).slice(-20);
     if (conversation.filter((t) => t.role === "user").length >= MAX_TURN_INFERENCES) throw new ServiceError(429, "複数ターンの上限");
-    let artworkId: string;
-    let isNew = false;
-    let base: Revision | null = null;
-    if (req.artworkId) {
-      const a = this.ownArtwork(owner, req.artworkId);
-      artworkId = a.id;
-      base = this.o.store.revisionsOf(a.id).find((r) => r.revision === a.currentRevision) ?? null;
-    } else {
-      artworkId = id("a_");
-      isNew = true;
+    const isNew = !req.artworkId;
+    const artworkId = req.artworkId ? this.ownArtwork(owner, req.artworkId).id : id("a_");
+    // 取消済みでも、下流が終了するまで枠を返さない。
+    if (this.inflight.size + this.admitting >= MAX_CONCURRENT_RUNS) {
+      throw new ServiceError(429, "制作の同時実行数が上限です。実行が終わってから再試行してください", { code: "run-capacity" });
     }
-    const run = this.o.store.tx((s) => {
-      const generation = this.o.store.nextGeneration(s, owner, session, isNew ? "new" : artworkId);
-      // 同じ制作画面の古い実行は撤回する（後から届いた結果を採用しない）
-      for (const r of Object.values(s.runs))
-        if (r.owner === owner && r.session === session && (isNew ? r.isNew : r.artworkId === artworkId) && r.generation < generation && (r.state === "running" || r.state === "presented")) {
-          r.state = "superseded";
-          r.finishedAt = this.now();
-          this.aborts.get(r.id)?.abort();
+    this.admitting++;
+    const superseded: string[] = [];
+    let base: Revision | undefined;
+    let run: Run;
+    try {
+      run = await this.o.store.write((commit) => {
+        if (this.closeTask) throw new ServiceError(503, "ホストを終了しています");
+        if (!isNew) {
+          const art = this.ownArtwork(owner, artworkId);
+          base = this.o.store.revisionsOf(artworkId).find((r) => r.revision === art.currentRevision);
         }
-      const run: Run = {
-        id: id("run_"),
-        owner,
-        session,
-        artworkId,
-        isNew,
-        baseRevision: base?.revision ?? 0,
-        baseDigest: base?.digest ?? null,
-        generation,
-        request: { message: req.message, conversation },
-        state: "running",
-        deadline: this.now() + this.runTimeoutMs,
-        attempts: 0,
-        candidateIds: [],
-        presentedCandidateId: null,
-        failure: null,
-        createdAt: this.now(),
-        finishedAt: null,
-      };
-      s.runs[run.id] = run;
-      return run;
-    });
+        return commit(["runs", "sessions"], (s) => {
+          const generation = this.o.store.nextGeneration(s, owner, session, isNew ? "new" : artworkId);
+          // 同じ制作画面の古い実行は撤回する（後から届いた結果を採用しない）
+          for (const r of Object.values(s.runs))
+            if (r.owner === owner && r.session === session && (isNew ? r.isNew : r.artworkId === artworkId) && r.generation < generation && (r.state === "running" || r.state === "presented")) {
+              r.state = "superseded";
+              r.finishedAt = this.now();
+              superseded.push(r.id);
+            }
+          const run: Run = {
+            id: id("run_"),
+            owner,
+            session,
+            artworkId,
+            isNew,
+            baseRevision: base?.revision ?? 0,
+            baseDigest: base?.digest ?? null,
+            generation,
+            request: { message: req.message, conversation },
+            state: "running",
+            deadline: this.now() + this.runTimeoutMs,
+            attempts: 0,
+            candidateIds: [],
+            presentedCandidateId: null,
+            failure: null,
+            createdAt: this.now(),
+            finishedAt: null,
+          };
+          s.runs[run.id] = run;
+          return run;
+        });
+      });
+    } finally {
+      this.admitting--;
+    }
+    if (this.closeTask) throw new ServiceError(503, "ホストを終了しています");
+    for (const runId of superseded) this.aborts.get(runId)?.abort();
     const ac = new AbortController();
     this.aborts.set(run.id, ac);
     this.timers.set(run.id, setTimeout(() => this.expire(run.id), Math.max(0, run.deadline - this.now())));
-    const p = this.execute(run.id, base?.body ?? null, ac.signal).finally(() => {
+    const p = this.execute(run.id, base ? structuredClone(base.body) : null, ac.signal).catch(async (error) => {
+      console.error("[canvas] 制作の中断", error);
+      try {
+        await this.finish(run.id, "failed", "制作処理が中断しました");
+      } catch {
+        // 台帳を書けないときは、getRun が実行の終了を表示する。
+      }
+    }).finally(async () => {
+      await this.expiring.get(run.id);
       this.aborts.delete(run.id);
       clearTimeout(this.timers.get(run.id));
       this.timers.delete(run.id);
@@ -146,7 +171,8 @@ export class CanvasService {
   }
 
   /** 実行が受付時の状態のままで、結果を採用できるか。 */
-  private live(runId: string): boolean {
+  private live(runId: string, signal: AbortSignal): boolean {
+    if (signal.aborted) return false;
     const r = this.o.store.runs[runId];
     if (!r || r.state !== "running") return false;
     if (this.now() > r.deadline) {
@@ -156,33 +182,52 @@ export class CanvasService {
     return true;
   }
 
-  private expire(runId: string) {
-    const r = this.o.store.runs[runId];
-    if (!r || r.state !== "running") return;
-    this.o.store.tx(() => {
-      r.state = "expired";
-      r.finishedAt = this.now();
+  private expire(runId: string): void {
+    if (this.closeTask || this.expiring.has(runId) || this.o.store.runs[runId]?.state !== "running") return;
+    const expiration = this.o.store.write(async (commit) => {
+      if (this.closeTask || this.o.store.runs[runId]?.state !== "running") return;
+      try {
+        await commit(["runs"], (s) => {
+          const next = s.runs[runId];
+          next.state = "expired";
+          next.finishedAt = this.now();
+        });
+      } catch (error) {
+        console.error("[canvas] 期限切れを記録できませんでした", error);
+      }
+    }).finally(() => {
+      this.expiring.delete(runId);
     });
+    this.expiring.set(runId, expiration);
     this.aborts.get(runId)?.abort();
   }
 
-  cancelRun(owner: string, runId: string): Run {
-    const r = this.o.store.runs[runId];
-    if (!r || !this.sees(r.owner, owner)) throw new ServiceError(404, "実行が見つからない");
-    if (r.state === "running" || r.state === "presented")
-      this.o.store.tx(() => {
-        r.state = "cancelled";
-        r.finishedAt = this.now();
+  cancelRun(owner: string, runId: string): Promise<Run> {
+    return this.o.store.write(async (commit) => {
+      if (this.closeTask) throw new ServiceError(503, "ホストを終了しています");
+      const r = this.o.store.runs[runId];
+      if (!r || !this.sees(r.owner, owner)) throw new ServiceError(404, "実行が見つからない");
+      if (r.state === "running" || r.state === "presented") await commit(["runs"], (s) => {
+        const next = s.runs[runId];
+        next.state = "cancelled";
+        next.finishedAt = this.now();
       });
-    this.aborts.get(runId)?.abort();
-    return structuredClone(r);
+      this.aborts.get(runId)?.abort();
+      return structuredClone(this.o.store.runs[runId]);
+    });
   }
 
   getRun(owner: string, runId: string) {
     const r = this.o.store.runs[runId];
     if (!r || !this.sees(r.owner, owner)) throw new ServiceError(404, "実行が見つからない");
     const cands = r.candidateIds.map((c) => this.candidateView(this.o.store.candidates[c]));
-    return { ...structuredClone(r), candidates: cands };
+    const run = structuredClone(r);
+    const interrupted = !this.inflight.has(runId) || this.aborts.get(runId)?.signal.aborted;
+    if (run.state === "running" && (this.closeTask || (interrupted && !this.expiring.has(runId)))) {
+      run.state = "failed";
+      run.failure = this.closeTask ? "ホストの終了で中断" : "実行状態を保存できなかったため中断しました";
+    }
+    return { ...run, candidates: structuredClone(cands) };
   }
 
   private candidateView(c: Candidate) {
@@ -219,7 +264,7 @@ export class CanvasService {
     let previousPassed = false;
     let observations: Observation[] = [];
     for (let attempt = 0; attempt <= MAX_FIX_ATTEMPTS; attempt++) {
-      if (!this.live(runId)) return;
+      if (!this.live(runId, signal)) return;
       const input: GenerationInput = {
         request: run.request.message,
         conversation: run.request.conversation,
@@ -238,17 +283,19 @@ export class CanvasService {
       try {
         out = await this.o.model.generate(input, signal);
       } catch (e) {
-        if (!this.live(runId)) return;
-        if (best) return this.present(runId, best.id);
-        this.finish(runId, "failed", "生成に失敗: " + (e as Error).message);
-        return;
+        if (!this.live(runId, signal)) return;
+        if (best) return this.present(runId, best.id, signal);
+        return this.finish(runId, "failed", "生成に失敗: " + (e as Error).message);
       }
-      if (!this.live(runId)) return; // 取消・期限切れ・撤回後に届いた結果は採用しない
-      this.o.store.tx(() => {
-        run.attempts = attempt + 1;
+      if (!this.live(runId, signal)) return; // 取消・期限切れ・撤回後に届いた結果は採用しない
+      await this.o.store.write((commit) => {
+        if (!this.live(runId, signal)) return;
+        return commit(["runs"], (s) => { s.runs[runId].attempts = attempt + 1; });
       });
+      if (!this.live(runId, signal)) return;
       const contract = checkArtwork(out.body, { pageMode: this.o.pageMode === true });
       const digest = contract.ok ? await artworkDigest(out.body) : "sha256:invalid";
+      if (!this.live(runId, signal)) return;
       const candidate: Candidate = {
         id: id("c_"),
         runId,
@@ -284,13 +331,13 @@ export class CanvasService {
         try {
           obs = await this.o.observer.observe(out.body, data, signal, candidate.spec?.controls);
         } catch (e) {
-          if (!this.live(runId)) return;
-          if (best) return this.present(runId, best.id);
-          this.finish(runId, "failed", "観測に失敗: " + (e as Error).message);
-          return;
+          if (!this.live(runId, signal)) return;
+          if (best) return this.present(runId, best.id, signal);
+          return this.finish(runId, "failed", "観測に失敗: " + (e as Error).message);
         }
-        if (!this.live(runId)) return;
+        if (!this.live(runId, signal)) return;
         dataDigest = data === null ? null : "sha256:" + (await sha256Hex(JSON.stringify(data)));
+        if (!this.live(runId, signal)) return;
         environment = obs.environment;
         checks = [{ id: "contract", level: "contract", pass: true }, ...obs.checks];
         // 実行時エラーには作品の該当行を足す（制作担当に返す文だけ）
@@ -316,7 +363,7 @@ export class CanvasService {
           // 検証の失敗は候補の失敗にしない
           outcome = failedOutcome(review.reviewer.suite, String((e as Error)?.message ?? e), this.now() - t0);
         }
-        if (!this.live(runId)) return;
+        if (!this.live(runId, signal)) return;
         candidate.review = {
           mode: review.mode,
           suite: outcome.suite,
@@ -331,19 +378,27 @@ export class CanvasService {
       }
       const verification = this.makeVerification(digest, dataDigest, environment, [...checks, ...(outcome?.checks ?? [])]);
       candidate.verificationId = verification.id;
-      // 候補と検証記録を保存する（ここでは実行の状態を変えない。提示はループのあと）
-      this.o.store.tx((s) => {
-        s.verifications[verification.id] = verification;
-        s.candidates[candidate.id] = candidate;
-        run.candidateIds.push(candidate.id);
+      const blocking = candidate.review?.blocking ?? 0; // 検証していない候補は重い指摘 0 件として扱う
+      // 重い指摘がなく再生修正でもなければ、この候補が最終候補。検証記録と同時に提示を確定する。
+      const readyToPresent = verification.requiredPassed && !repairPlan && blocking === 0;
+      const recorded = await this.o.store.write((commit) => {
+        if (!this.live(runId, signal)) return false;
+        return commit(["runs", "verifications", "candidates"], (s) => {
+          const next = s.runs[runId];
+          s.verifications[verification.id] = verification;
+          s.candidates[candidate.id] = structuredClone(candidate);
+          next.candidateIds.push(candidate.id);
+          if (readyToPresent) this.markPresented(next, candidate.id);
+          return true;
+        });
       });
+      if (!recorded || readyToPresent) return;
       previous = out.body;
       previousDigest = digest;
       if (!verification.requiredPassed) {
         previousPassed = false;
         continue;
       }
-      const blocking = candidate.review?.blocking ?? 0; // 検証していない候補は重い指摘 0 件として扱う
       if (repairPlan) {
         // 再生できた修正版は要件未判定の候補として提示する。再生の失敗は改善の根拠にしない。
         if (!outcome?.replay || outcome.error) break;
@@ -353,34 +408,38 @@ export class CanvasService {
         }
       } else {
         if (!best || blocking <= best.blocking) best = { id: candidate.id, blocking };
-        if (!outcome || blocking === 0) break;
-        if (outcome.replay) repairPlan = outcome.replay.plan;
+        if (outcome?.replay) repairPlan = outcome.replay.plan;
       }
       previousPassed = true;
-      observations = findingsAsObservations(outcome.findings);
+      observations = findingsAsObservations(outcome?.findings ?? []);
     }
-    if (!this.live(runId)) return;
-    if (best) return this.present(runId, best.id);
-    this.finish(runId, "failed", "修正の上限（初回＋2 回）に達した");
+    if (!this.live(runId, signal)) return;
+    if (best) return this.present(runId, best.id, signal);
+    return this.finish(runId, "failed", "修正の上限（初回＋2 回）に達した");
   }
 
-  private present(runId: string, candidateId: string) {
-    const r = this.o.store.runs[runId];
-    if (!r || r.state !== "running") return;
-    this.o.store.tx(() => {
-      r.presentedCandidateId = candidateId;
-      r.state = "presented";
-      r.finishedAt = this.now();
+  private present(runId: string, candidateId: string, signal: AbortSignal) {
+    return this.o.store.write((commit) => {
+      if (!this.live(runId, signal)) return;
+      return commit(["runs"], (s) => this.markPresented(s.runs[runId], candidateId));
     });
   }
 
+  private markPresented(run: Run, candidateId: string) {
+    run.presentedCandidateId = candidateId;
+    run.state = "presented";
+    run.finishedAt = this.now();
+  }
+
   private finish(runId: string, state: "failed", failure: string) {
-    const r = this.o.store.runs[runId];
-    if (!r || r.state !== "running") return;
-    this.o.store.tx(() => {
-      r.state = state;
-      r.failure = failure;
-      r.finishedAt = this.now();
+    return this.o.store.write((commit) => {
+      if (this.closeTask || this.o.store.runs[runId]?.state !== "running") return;
+      return commit(["runs"], (s) => {
+        const next = s.runs[runId];
+        next.state = state;
+        next.failure = failure;
+        next.finishedAt = this.now();
+      });
     });
   }
 
@@ -401,97 +460,119 @@ export class CanvasService {
   }
 
   // ---- 保存 ----
+  private replayReceipt(owner: string, key: string, fingerprint: string) {
+    const prior = this.o.store.receipt(owner, key);
+    if (!prior) return null;
+    if (prior.fingerprint !== fingerprint) throw new ServiceError(409, "同じ受領キーで別の操作", { code: "idempotency-mismatch" });
+    return { status: prior.status, result: prior.result, replay: true };
+  }
+
   async save(owner: string, candidateId: string, req: { expectedRevision: number; idempotencyKey: string }) {
     const key = String(req.idempotencyKey ?? "");
     if (!/^[A-Za-z0-9_-]{8,80}$/.test(key)) throw new ServiceError(400, "idempotencyKey の形式");
-    const fingerprint = `save:${candidateId}:${req.expectedRevision}`;
-    const prior = this.o.store.receipt(owner, key);
-    if (prior) {
-      if (prior.fingerprint !== fingerprint) throw new ServiceError(409, "同じ受領キーで別の操作", { code: "idempotency-mismatch" });
-      return { status: prior.status, result: prior.result, replay: true };
-    }
-    const c = this.o.store.candidates[candidateId];
-    if (!c || !this.sees(c.owner, owner)) throw new ServiceError(404, "候補が見つからない");
-    const run = this.o.store.runs[c.runId];
-    if (!run || run.state !== "presented" || run.presentedCandidateId !== c.id)
-      throw new ServiceError(409, "この候補は採用できない状態", { code: "run-" + (run?.state ?? "missing") });
-    const v = c.verificationId ? this.o.store.verifications[c.verificationId] : null;
-    const recomputed = await artworkDigest(c.body);
-    if (!v || !v.requiredPassed) throw new ServiceError(409, "必須の検証に合格していない", { code: "unverified" });
-    if (v.digest !== c.digest || recomputed !== c.digest) throw new ServiceError(409, "検証した digest と一致しない", { code: "digest-mismatch" });
-    const art = this.o.store.artworks[c.artworkId];
-    if (art && !this.sees(art.owner, owner)) throw new ServiceError(404, "候補が見つからない");
-    const current = art?.currentRevision ?? 0;
-    if (req.expectedRevision !== current || c.baseRevision !== current) {
-      // 競合。候補は残し、差分の確認に戻す
-      throw new ServiceError(409, "現在版が変わっている", { code: "conflict", currentRevision: current, candidateBase: c.baseRevision });
-    }
-    const result = this.o.store.tx((s) => {
-      const t = this.now();
-      let a = s.artworks[c.artworkId];
-      if (!a) {
-        a = { id: c.artworkId, owner, title: c.body.title, currentRevision: 0, createdAt: t, updatedAt: t };
-        s.artworks[a.id] = a;
+    const { expectedRevision } = req;
+    const fingerprint = `save:${candidateId}:${expectedRevision}`;
+    const prior = this.replayReceipt(owner, key, fingerprint);
+    if (prior) return prior;
+    const candidate = this.o.store.candidates[candidateId];
+    if (!candidate || !this.sees(candidate.owner, owner)) throw new ServiceError(404, "候補が見つからない");
+    const body = structuredClone(candidate.body);
+    const recomputed = await artworkDigest(body);
+
+    return this.o.store.write(async (commit) => {
+      if (this.closeTask) throw new ServiceError(503, "ホストを終了しています");
+      const concurrent = this.replayReceipt(owner, key, fingerprint);
+      if (concurrent) return concurrent;
+      const c = this.o.store.candidates[candidateId];
+      if (!c || !this.sees(c.owner, owner)) throw new ServiceError(404, "候補が見つからない");
+      const run = this.o.store.runs[c.runId];
+      if (!run || run.state !== "presented" || run.presentedCandidateId !== c.id)
+        throw new ServiceError(409, "この候補は採用できない状態", { code: "run-" + (run?.state ?? "missing") });
+      const v = c.verificationId ? this.o.store.verifications[c.verificationId] : null;
+      if (!v || !v.requiredPassed) throw new ServiceError(409, "必須の検証に合格していない", { code: "unverified" });
+      if (v.digest !== c.digest || recomputed !== c.digest) throw new ServiceError(409, "検証した digest と一致しない", { code: "digest-mismatch" });
+      const art = this.o.store.artworks[c.artworkId];
+      if (art && !this.sees(art.owner, owner)) throw new ServiceError(404, "候補が見つからない");
+      const current = art?.currentRevision ?? 0;
+      if (expectedRevision !== current || c.baseRevision !== current) {
+        // 競合。候補は残し、差分の確認に戻す
+        throw new ServiceError(409, "現在版が変わっている", { code: "conflict", currentRevision: current, candidateBase: c.baseRevision });
       }
-      const rev: Revision = {
-        artworkId: a.id,
-        revision: a.currentRevision + 1,
-        parent: a.currentRevision || null,
-        body: structuredClone(c.body),
-        digest: c.digest,
-        verificationId: v.id,
-        candidateId: c.id,
-        restoredFrom: null,
-        createdAt: t,
-      };
-      this.o.store.pushRevision(s, rev);
-      a.currentRevision = rev.revision;
-      a.title = c.body.title;
-      a.updatedAt = t;
-      const result = { artworkId: a.id, revision: rev.revision, digest: rev.digest };
-      this.o.store.putReceipt(s, { key, owner, fingerprint, status: 200, result });
-      return result;
+      const result = await commit(["artworks", "revisions", "receipts"], (s) => {
+        const t = this.now();
+        let a = s.artworks[c.artworkId];
+        if (!a) {
+          a = { id: c.artworkId, owner, title: body.title, currentRevision: 0, createdAt: t, updatedAt: t };
+          s.artworks[a.id] = a;
+        }
+        const rev: Revision = {
+          artworkId: a.id,
+          revision: a.currentRevision + 1,
+          parent: a.currentRevision || null,
+          body,
+          digest: c.digest,
+          verificationId: v.id,
+          candidateId: c.id,
+          restoredFrom: null,
+          createdAt: t,
+        };
+        this.o.store.pushRevision(s, rev);
+        a.currentRevision = rev.revision;
+        a.title = body.title;
+        a.updatedAt = t;
+        const result = { artworkId: a.id, revision: rev.revision, digest: rev.digest };
+        this.o.store.putReceipt(s, { key, owner, fingerprint, status: 200, result });
+        return result;
+      });
+      return { status: 200, result, replay: false };
     });
-    return { status: 200, result, replay: false };
   }
 
   // ---- 復元 ----
   async restore(owner: string, artworkId: string, req: { revision: number; expectedRevision: number; idempotencyKey: string }) {
     const key = String(req.idempotencyKey ?? "");
     if (!/^[A-Za-z0-9_-]{8,80}$/.test(key)) throw new ServiceError(400, "idempotencyKey の形式");
-    const fingerprint = `restore:${artworkId}:${req.revision}:${req.expectedRevision}`;
-    const prior = this.o.store.receipt(owner, key);
-    if (prior) {
-      if (prior.fingerprint !== fingerprint) throw new ServiceError(409, "同じ受領キーで別の操作", { code: "idempotency-mismatch" });
-      return { status: prior.status, result: prior.result, replay: true };
-    }
-    const a = this.ownArtwork(owner, artworkId);
-    const src = this.o.store.revisionsOf(a.id).find((r) => r.revision === req.revision);
+    const { revision, expectedRevision } = req;
+    const fingerprint = `restore:${artworkId}:${revision}:${expectedRevision}`;
+    const prior = this.replayReceipt(owner, key, fingerprint);
+    if (prior) return prior;
+    this.ownArtwork(owner, artworkId);
+    const src = this.o.store.revisionsOf(artworkId).find((r) => r.revision === revision);
     if (!src) throw new ServiceError(404, "版が見つからない");
-    if (req.expectedRevision !== a.currentRevision) throw new ServiceError(409, "現在版が変わっている", { code: "conflict", currentRevision: a.currentRevision });
-    if ((await artworkDigest(src.body)) !== src.digest) throw new ServiceError(409, "保存版の digest が一致しない", { code: "digest-mismatch" });
-    const result = this.o.store.tx((s) => {
-      const t = this.now();
-      const rev: Revision = {
-        artworkId: a.id,
-        revision: a.currentRevision + 1,
-        parent: a.currentRevision,
-        body: structuredClone(src.body),
-        digest: src.digest,
-        verificationId: src.verificationId,
-        candidateId: null,
-        restoredFrom: src.revision,
-        createdAt: t,
-      };
-      this.o.store.pushRevision(s, rev);
-      a.currentRevision = rev.revision;
-      a.title = src.body.title;
-      a.updatedAt = t;
-      const result = { artworkId: a.id, revision: rev.revision, digest: rev.digest, restoredFrom: src.revision };
-      this.o.store.putReceipt(s, { key, owner, fingerprint, status: 200, result });
-      return result;
+    const body = structuredClone(src.body);
+    const recomputed = await artworkDigest(body);
+
+    return this.o.store.write(async (commit) => {
+      if (this.closeTask) throw new ServiceError(503, "ホストを終了しています");
+      const concurrent = this.replayReceipt(owner, key, fingerprint);
+      if (concurrent) return concurrent;
+      const artwork = this.ownArtwork(owner, artworkId);
+      if (expectedRevision !== artwork.currentRevision) throw new ServiceError(409, "現在版が変わっている", { code: "conflict", currentRevision: artwork.currentRevision });
+      if (recomputed !== src.digest) throw new ServiceError(409, "保存版の digest が一致しない", { code: "digest-mismatch" });
+      const result = await commit(["artworks", "revisions", "receipts"], (s) => {
+        const t = this.now();
+        const a = s.artworks[artworkId];
+        const rev: Revision = {
+          artworkId: a.id,
+          revision: a.currentRevision + 1,
+          parent: a.currentRevision,
+          body,
+          digest: src.digest,
+          verificationId: src.verificationId,
+          candidateId: null,
+          restoredFrom: src.revision,
+          createdAt: t,
+        };
+        this.o.store.pushRevision(s, rev);
+        a.currentRevision = rev.revision;
+        a.title = body.title;
+        a.updatedAt = t;
+        const result = { artworkId: a.id, revision: rev.revision, digest: rev.digest, restoredFrom: src.revision };
+        this.o.store.putReceipt(s, { key, owner, fingerprint, status: 200, result });
+        return result;
+      });
+      return { status: 200, result, replay: false };
     });
-    return { status: 200, result, replay: false };
   }
 
   // ---- 参照 ----
@@ -518,13 +599,13 @@ export class CanvasService {
       const v = c.verificationId ? this.o.store.verifications[c.verificationId] : null;
       // 契約の検査と起動を通った候補だけをプレビューできる
       if (!v || !v.checks.some((k) => k.level === "loaded" && k.pass)) throw new ServiceError(409, "起動を確認していない候補", { code: "not-loaded" });
-      return { body: c.body, data: this.datasetFor(c.body) };
+      return { body: structuredClone(c.body), data: this.datasetFor(c.body) };
     }
     if (src.artworkId) {
       const a = this.ownArtwork(owner, src.artworkId);
       const rev = this.o.store.revisionsOf(a.id).find((r) => r.revision === (src.revision ?? a.currentRevision));
       if (!rev) throw new ServiceError(404, "版が見つからない");
-      return { body: rev.body, data: this.datasetFor(rev.body) };
+      return { body: structuredClone(rev.body), data: this.datasetFor(rev.body) };
     }
     throw new ServiceError(400, "プレビュー対象がない");
   }
@@ -534,13 +615,15 @@ export class CanvasService {
   }
 
   /** 実行中の作業を止め、観測器（Playwright のブラウザなど）を閉じる。 */
-  async close() {
-    for (const t of this.timers.values()) clearTimeout(t);
-    this.timers.clear();
-    for (const a of this.aborts.values()) a.abort();
-    this.aborts.clear();
-    await this.drain();
-    await this.o.observer.close();
-    await this.o.review?.reviewer.close();
+  close(): Promise<void> {
+    return this.closeTask ??= Promise.resolve().then(async () => {
+      for (const timer of this.timers.values()) clearTimeout(timer);
+      this.timers.clear();
+      for (const abort of this.aborts.values()) abort.abort();
+      // 観測がブラウザの応答を待っていても、ブラウザを閉じれば実行を終えられる。
+      const results = await Promise.allSettled([this.drain(), this.o.store.idle(), this.o.observer.close(), this.o.review?.reviewer.close()]);
+      const errors = results.flatMap((result) => result.status === "rejected" ? [result.reason] : []);
+      if (errors.length) throw new AggregateError(errors, "観測を終了できませんでした");
+    });
   }
 }

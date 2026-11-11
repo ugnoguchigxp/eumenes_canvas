@@ -3,7 +3,7 @@
 // クリックの点は作品が描いた領域（paintedTargets）だけから取る。observer.ts の固定点は使わない。
 import type { ArtworkBody } from "../contract/artwork";
 import type { EvalPlan } from "./eval-types";
-import { HarnessSession, type IssueToken } from "./harness-session";
+import { HarnessSession, ObservationBrowser, type IssueToken } from "./harness-session";
 import { paintedTargets } from "./observer";
 import { describeScene, diffShots, isSingleColor, sceneText, type DiffResult, type Shot } from "./pixels";
 import type { ReviewFinding } from "./review";
@@ -167,19 +167,18 @@ export function probeText(r: ProbeReport): string {
 /** Playwright（Chromium）で検証ホストのハーネスを開き、性質を調べる。観測 1 回につき HarnessSession を 1 つ使う。 */
 export class PlaywrightProber implements ProbePort {
   readonly suite = PROBE_SUITE;
-  private browser: any = null;
-  constructor(private hostOrigin: string, private issue: IssueToken, private launchArgs: string[] = []) {}
+  private readonly browser: ObservationBrowser;
+  constructor(private hostOrigin: string, private issue: IssueToken, launchArgs: string[] = [], handleProcessSignals = true) {
+    this.browser = new ObservationBrowser(launchArgs, handleProcessSignals);
+  }
 
-  protected async getBrowser() {
-    if (!this.browser) {
-      const { chromium } = await import("@playwright/test");
-      this.browser = await chromium.launch({ args: ["--mute-audio", ...this.launchArgs] });
-    }
-    return this.browser;
+  protected getBrowser() {
+    return this.browser.get();
   }
 
   async probe(body: ArtworkBody, data: unknown, spec: MakerSpec | null, signal: AbortSignal): Promise<ProbeReport> {
     const t0 = performance.now();
+    signal.throwIfAborted();
     const browser = await this.getBrowser();
     const report: ProbeReport = {
       suite: PROBE_SUITE,
@@ -201,7 +200,7 @@ export class PlaywrightProber implements ProbePort {
     const abort = () => void s.close();
     signal.addEventListener("abort", abort, { once: true });
     try {
-      await s.open();
+      await s.open(signal);
       const boot = async () => (await s.start(body, data, PROBE.seed)).type === "ready" && (await s.advance(PROBE.preMs), true);
       /** advance(holdMs) → 撮る → （間の操作）→ advance(postMs) → 撮る */
       const twoShots = async (between?: () => Promise<void>): Promise<[Shot, Shot]> => {
@@ -289,13 +288,14 @@ export class PlaywrightProber implements ProbePort {
   /** 台本を 1 つの HarnessSession で順に実行する。全体の実時間が PROBE.scriptBudgetMs を超えたら、残りは実行しない。 */
   async runScripts(body: ArtworkBody, data: unknown, plan: EvalPlan, signal: AbortSignal): Promise<ScriptResult[]> {
     const t0 = performance.now();
+    signal.throwIfAborted();
     const browser = await this.getBrowser();
     const s = new HarnessSession(browser, this.hostOrigin, this.issue);
     const abort = () => void s.close();
     signal.addEventListener("abort", abort, { once: true });
     const out: ScriptResult[] = [];
     try {
-      await s.open();
+      await s.open(signal);
       for (const script of plan.scripts) {
         if (performance.now() - t0 > PROBE.scriptBudgetMs) {
           out.push({ id: script.id, requirement: script.requirement, purpose: script.purpose, measures: [], errors: [], skipped: "時間の上限" });
@@ -310,8 +310,7 @@ export class PlaywrightProber implements ProbePort {
     }
   }
 
-  async close() {
-    if (this.browser) await this.browser.close();
-    this.browser = null;
+  close() {
+    return this.browser.close();
   }
 }

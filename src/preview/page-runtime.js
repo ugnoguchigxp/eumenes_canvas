@@ -57,6 +57,8 @@
     const timers = new Map();
     let timerId = 0;
     const call = (f, ...a) => {
+      // ループの予算は作品の関数 1 回の呼び出しごとに数える（advance は 1 タスクで何度も呼ぶため）
+      if (typeof __canvasResetExecution === "function") __canvasResetExecution();
       try {
         f(...a);
       } catch (e) {

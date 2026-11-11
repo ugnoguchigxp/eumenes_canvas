@@ -2,6 +2,7 @@
 // 接続先がこの形でない場合は、このファイルだけを別の実装に差し替える（PromptMaker・PromptEvaluator は変えない）。
 // モデルの名前は設定にだけ書く。API キーは環境変数の名前だけを設定に書き、例外の文・ログに入れない。
 import type { InferenceChannel, InferenceRequest, Validate } from "../core/inference";
+import { BodyLimitError, readBoundedText } from "./read-body";
 
 export interface HttpChannelOptions {
   baseUrl: string; // 例 "http://127.0.0.1:11434/v1"
@@ -16,7 +17,16 @@ export interface HttpChannelOptions {
   format?: "json" | "fenced"; // 既定 "json"。制作担当には "fenced" も使える
 }
 
-type FetchLike = (url: string, init: { method: string; headers: Record<string, string>; body: string; signal: AbortSignal }) => Promise<{ ok: boolean; status: number; text(): Promise<string> }>;
+type FetchLike = (url: string, init: { method: string; headers: Record<string, string>; body: string; signal: AbortSignal; redirect: "error" }) => Promise<Response>;
+
+export const MAX_MODEL_RESPONSE_BYTES = 2 * 1024 * 1024;
+
+/** 評価器が外部接続の前に適用する上限。診断に使う文は接続先から受け取らない。 */
+export class InferenceLimitError extends Error {
+  constructor(limit: "calls" | "request" | "time") {
+    super({ calls: "実モデルの呼び出し上限", request: "実モデルに送る本文が上限を超えた", time: "課題の時間上限" }[limit]);
+  }
+}
 
 const JSON_INSTRUCTION = "\n\n# 出力\n次の JSON Schema に合う JSON を 1 つだけ返してください。説明やコードの囲みは付けません。\n";
 const FENCED_INSTRUCTION = [
@@ -79,7 +89,7 @@ export function extractFenced(text: string): Parsed {
 export class HttpChannel implements InferenceChannel {
   private fetch: FetchLike;
   constructor(private o: HttpChannelOptions, deps: { fetch?: FetchLike; env?: Record<string, string | undefined> } = {}) {
-    this.fetch = deps.fetch ?? (globalThis.fetch as unknown as FetchLike);
+    this.fetch = deps.fetch ?? globalThis.fetch;
     this.env = deps.env ?? process.env;
   }
   private env: Record<string, string | undefined>;
@@ -138,32 +148,30 @@ export class HttpChannel implements InferenceChannel {
     signal.addEventListener("abort", onAbort, { once: true });
     const timer = setTimeout(() => ac.abort(), this.o.timeoutMs ?? 120_000);
     try {
-      let res;
+      let res: Response;
+      let text = "";
       try {
-        res = await this.fetch(`${this.o.baseUrl.replace(/\/+$/, "")}/chat/completions`, { method: "POST", headers, body: JSON.stringify(body), signal: ac.signal });
+        res = await this.fetch(`${this.o.baseUrl.replace(/\/+$/, "")}/chat/completions`, { method: "POST", headers, body: JSON.stringify(body), signal: ac.signal, redirect: "error" });
+        if (res.ok) text = await readBoundedText(res, MAX_MODEL_RESPONSE_BYTES, ac.signal);
+        else void res.body?.cancel().catch(() => {});
       } catch (e) {
         if (signal.aborted) throw new Error("aborted");
-        throw new Error("モデルの応答が得られない: " + (ac.signal.aborted ? "時間切れ" : this.redact(String((e as Error)?.message ?? e)).slice(0, 200)));
+        const detail = e instanceof BodyLimitError ? "応答本文が大きすぎる"
+          : e instanceof InferenceLimitError ? e.message : "通信を完了できませんでした";
+        throw new Error("モデルの応答が得られない: " + (ac.signal.aborted ? "時間切れ" : detail));
       }
-      const text = await res.text();
-      if (!res.ok) throw new Error(`モデルの応答が得られない: ${res.status} ${this.redact(text).slice(0, 200)}`);
+      if (!res.ok) throw new Error(`モデルの応答が得られない: ${res.status}`);
       let content: unknown;
       try {
         content = (JSON.parse(text) as { choices?: { message?: { content?: unknown } }[] }).choices?.[0]?.message?.content;
       } catch {
         content = undefined;
       }
-      if (typeof content !== "string") throw new Error(`モデルの応答が得られない: ${res.status} ${this.redact(text).slice(0, 200)}`);
+      if (typeof content !== "string") throw new Error(`モデルの応答が得られない: ${res.status} 応答の形式が違います`);
       return content;
     } finally {
       clearTimeout(timer);
       signal.removeEventListener("abort", onAbort);
     }
-  }
-
-  /** 例外の文に API キーが入らないようにする。 */
-  private redact(s: string): string {
-    const key = this.o.apiKeyEnv ? this.env[this.o.apiKeyEnv] : undefined;
-    return key ? s.split(key).join("***") : s;
   }
 }

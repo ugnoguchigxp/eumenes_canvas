@@ -191,10 +191,8 @@ test.describe("ページ直接モードの境界：通信", () => {
     expect(bad.filter((k) => k !== "wasm")).toEqual([]);
   });
 
-  // WebKit では、wasm-unsafe-eval の無い CSP でも WebAssembly.compile が通った（実測）。条件は緩めず、
-  // 止まらないことを test.fail で記録する（WebKit が止めるようになれば、この試験は「予期せず通った」で落ちて知らせる）。
+  // WebKit 27.2 では、wasm-unsafe-eval の無い CSP で WebAssembly.compile が拒否された。
   test("C7-wasm WebAssembly.compile が失敗する", async ({ page, browserName }) => {
-    test.fail(browserName === "webkit", "WebKit では CSP（wasm-unsafe-eval なし）で WebAssembly.compile が止まらない（実測）");
     const f = await openWork(page, work(`
       try { await WebAssembly.compile(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0])); r.wasm = "ran"; } catch (e) { r.wasm = "blocked:" + e.name; }
     `));

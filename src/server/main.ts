@@ -72,9 +72,9 @@ export function makeEvaluator(cfg: CanvasConfig["evaluator"]): PromptEvaluator |
 }
 
 /** 設定から検証を組み立てる。無い・off なら undefined（今と同じ動作）。検証担当は設定 evaluator から（無ければ観測だけ）。 */
-export function makeReview(cfg: Pick<CanvasConfig, "review" | "observerArgs" | "evaluator">, hostOrigin: string, issue: (b: Parameters<PlaywrightProber["probe"]>[0]) => string) {
+export function makeReview(cfg: Pick<CanvasConfig, "review" | "observerArgs" | "evaluator">, hostOrigin: string, issue: (b: Parameters<PlaywrightProber["probe"]>[0]) => string, handleBrowserSignals = true) {
   if (!cfg.review || cfg.review.mode === "off") return undefined;
-  const reviewer = new HostReviewer(new PlaywrightProber(hostOrigin, issue, cfg.observerArgs ?? []), makeEvaluator(cfg.evaluator));
+  const reviewer = new HostReviewer(new PlaywrightProber(hostOrigin, issue, cfg.observerArgs ?? [], handleBrowserSignals), makeEvaluator(cfg.evaluator));
   return { reviewer, mode: cfg.review.mode as ReviewMode, maxReviews: cfg.review.maxReviews };
 }
 
@@ -90,7 +90,7 @@ export function browserArgsOf(cfg: Pick<CanvasConfig, "observerArgs" | "pageMode
   return a;
 }
 
-export function runFromConfig(cfg: CanvasConfig, root: string) {
+export function runFromConfig(cfg: CanvasConfig, root: string, { handleBrowserSignals = true } = {}) {
   const singleUser = singleUserOf(cfg);
   const browserArgs = browserArgsOf(cfg);
   const contract = readFileSync(join(root, "docs/artwork-contract-v1.md"), "utf8");
@@ -106,13 +106,13 @@ export function runFromConfig(cfg: CanvasConfig, root: string) {
       new CanvasService({
         store: new Store(cfg.dataDir ? resolve(root, cfg.dataDir) : null),
         model: makeModel(cfg.model, root),
-        observer: new PlaywrightObserver(hostOrigin, (b) => tokens.issue(b), browserArgs),
+        observer: new PlaywrightObserver(hostOrigin, (b) => tokens.issue(b), browserArgs, handleBrowserSignals),
         contract,
         datasets: loadDatasets(cfg, root),
         runTimeoutMs: cfg.runTimeoutMs,
         singleUser,
         pageMode: cfg.pageMode === true,
-        review: makeReview({ ...cfg, observerArgs: browserArgs }, hostOrigin, (b) => tokens.issue(b)),
+        review: makeReview({ ...cfg, observerArgs: browserArgs }, hostOrigin, (b) => tokens.issue(b), handleBrowserSignals),
       }),
   });
   return app;
@@ -122,7 +122,28 @@ if (import.meta.main) {
   const root = resolve(import.meta.dir, "../..");
   const file = process.argv[2] ?? join(root, "canvas.config.json");
   const cfg = JSON.parse(readFileSync(file, "utf8")) as CanvasConfig;
-  const app = runFromConfig(cfg, root);
+  const app = runFromConfig(cfg, root, { handleBrowserSignals: false });
+  let stopping = false;
+  const stop = (exitCode: number) => {
+    if (stopping) return;
+    stopping = true;
+    app.stop();
+    const deadline = setTimeout(() => {
+      console.error("検証ホストの終了処理が時間内に完了しませんでした");
+      process.exit(1);
+    }, 5000);
+    void app.service.close().then(() => {
+      clearTimeout(deadline);
+      process.exit(exitCode);
+    }, () => {
+      clearTimeout(deadline);
+      console.error("検証ホストの終了処理に失敗しました");
+      process.exit(1);
+    });
+  };
+  process.on("SIGINT", () => stop(130));
+  process.on("SIGTERM", () => stop(0));
+  process.on("SIGHUP", () => stop(129));
   console.log(`検証ホスト ${app.hostOrigin}（プレビュー ${app.previewOrigin}）`);
   console.log(singleUserOf(cfg) ? "単一利用者モード（全ブラウザで作品一覧を共有）" : "所有者ごとに作品を分けるモード");
   console.log(app.logDir ? `診断ログ ${app.logDir}/server.log・client.log` : "診断ログ なし（dataDir・logDir が未設定）");

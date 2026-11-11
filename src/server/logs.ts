@@ -48,10 +48,9 @@ export function openLogs(dir: string | null | undefined, maxBytes = LOG_MAX_BYTE
   return { dir, server: new JsonlLog(join(dir, "server.log"), maxBytes), client: new JsonlLog(join(dir, "client.log"), maxBytes) };
 }
 
-/** 記録用のパス。問い合わせの値は落としてキー名だけ残し、Worker のトークンは伏せる。 */
+/** 記録用のパス。問い合わせの値は落としてキー名だけ残し、プレビューのトークンは伏せる。 */
 export function logPath(url: URL, rawUrl = url.href): string {
-  let p = url.pathname;
-  if (p.startsWith("/w/")) p = "/w/[token]";
+  const p = url.pathname.replace(/^(\/(?:w|p|pw)\/).*/u, "$1[token]");
   const keys = [...new Set([...url.searchParams.keys()])];
   if (keys.length) return `${p}?${keys.map((k) => encodeURIComponent(k)).join("&")}`;
   // 空の問い合わせ（名前の無いフォームの既定送信で付く "/?"）も区別して残す

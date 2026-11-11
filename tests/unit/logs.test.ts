@@ -14,6 +14,7 @@ const dir = mkdtempSync(join(tmpdir(), "canvas-logs-"));
 const app = startCanvasApp({
   hostPort: 4430,
   previewPort: 4431,
+  pageMode: true,
   logDir: join(dir, "logs"),
   makeService: () => new CanvasService({ store: new Store(null), model: new RecordedProvider([P1]), observer: new FakeObserver(), contract: "c" }),
 });
@@ -30,9 +31,11 @@ describe("書式と伏せ字", () => {
   test("時刻は時差付きの ISO 8601", () => {
     expect(isoWithOffset(new Date("2026-11-09T13:00:00.000Z"))).toMatch(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}[+-]\d\d:\d\d$/);
   });
-  test("問い合わせはキー名だけ、Worker のトークンは伏せる", () => {
+  test("問い合わせはキー名だけ、プレビューのトークンは伏せる", () => {
     expect(logPath(new URL("http://x/?clock=manual&t=secret"))).toBe("/?clock&t");
     expect(logPath(new URL("http://x/w/abcDEF123"))).toBe("/w/[token]");
+    expect(logPath(new URL("http://x/p/abcDEF123"))).toBe("/p/[token]");
+    expect(logPath(new URL("http://x/pw/abcDEF123?source=secret"))).toBe("/pw/[token]?source");
     expect(logPath(new URL("http://x/?"), "http://x/?")).toBe("/?");
     expect(logPath(new URL("http://x/"))).toBe("/");
   });
@@ -98,5 +101,22 @@ describe("/api/client-log と server.log", () => {
     expect(w.status).toBe(200);
     expect(w.sec_fetch_dest).toBe("worker");
     expect(serverLog().some((l) => l.event === "start")).toBe(true);
+  });
+
+  test("ページのプレビュートークンは成功・拒否・使用済みのログで伏せる", async () => {
+    const token = app.tokens.issue({ title: "t", entry: "canvasApp.start(() => ({}));", runtime: "page" });
+    const load = (path: string, dest: string) => fetch(app.previewOrigin + path + token, { headers: { "sec-fetch-dest": dest } });
+    expect((await load("/p/", "document")).status).toBe(403);
+    expect((await load("/p/", "iframe")).status).toBe(200);
+    expect((await load("/p/", "iframe")).status).toBe(410);
+    expect((await load("/pw/", "document")).status).toBe(403);
+    expect((await load("/pw/", "script")).status).toBe(200);
+    expect((await load("/pw/", "script")).status).toBe(410);
+
+    expect(readFileSync(join(dir, "logs/server.log"), "utf8")).not.toContain(token);
+    for (const path of ["/p/[token]", "/pw/[token]"]) {
+      const statuses = serverLog().filter((line) => line.server === "preview" && line.path === path).map((line) => line.status);
+      expect(statuses).toEqual([403, 200, 410]);
+    }
   });
 });

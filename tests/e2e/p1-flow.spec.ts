@@ -124,6 +124,218 @@ test("取消した依頼の結果は後から届いても表示・採用しな�
   await expect(page.locator("#artworks li")).toHaveCount(0);
 });
 
+test("同時実行の上限で受付を断られても候補と入力を保持する", async ({ page }) => {
+  await openHost(page);
+  await ask(page, "落ち物ゲームを作って");
+  await waitCandidate(page);
+  await page.route("**/api/runs", (route) => route.fulfill({
+    status: 429,
+    json: { code: "run-capacity", error: "制作の同時実行数が上限です" },
+  }), { times: 1 });
+  const draft = "落下の間隔を長くして";
+  await ask(page, draft);
+  await expect(page.locator("#run-status")).toHaveText("受け付けられませんでした");
+  await expect(page.locator("#message")).toHaveValue(draft);
+  await waitCandidate(page);
+  await save(page, 1);
+  await page.locator("#send").click();
+  await waitCandidate(page);
+  await save(page, 2);
+});
+
+test("保存後の一覧取得に失敗しても保存済みを示し、キーボードで再取得できる", async ({ page }) => {
+  await openHost(page);
+  await ask(page, "落ち物ゲームを作って");
+  await waitCandidate(page);
+  await page.route("**/api/artworks", (route) => route.fulfill({ status: 503, json: { error: "一覧の取得に失敗" } }), { times: 1 });
+  await page.locator("#save").click();
+  await expect(page.locator("#artworks-status")).toContainText("作品一覧を取得できませんでした");
+  await expect(page.locator("#save-status")).toHaveText("保存しました（r1）");
+  await expect(page.locator("#save")).toBeDisabled();
+  await expect(page.locator("#current")).toHaveText("落ち物ゲーム（現在 r1）");
+  const refresh = page.getByRole("button", { name: "作品情報を再取得" });
+  await refresh.focus();
+  await page.keyboard.press("Enter");
+  const saved = page.locator("#artworks").getByRole("button", { name: "落ち物ゲーム（r1）" });
+  await expect(saved).toHaveAttribute("aria-current", "true");
+  await expect(page.locator("#artworks-status")).toBeEmpty();
+  await expect(refresh).toBeFocused();
+});
+
+test("復元後に一覧と履歴の取得が失敗しても確定した版を再生できる", async ({ page }) => {
+  await openHost(page);
+  await ask(page, "落ち物ゲームを作って");
+  await waitCandidate(page);
+  await save(page, 1);
+  await ask(page, "落下の間隔を長くして");
+  await waitCandidate(page);
+  await save(page, 2);
+  const id = await page.locator("#artworks").getByRole("button", { name: "落ち物ゲーム（r2）" }).getAttribute("data-artwork-id");
+  expect(id).toBeTruthy();
+  for (const url of ["**/api/artworks", `**/api/artworks/${id}`]) {
+    await page.route(url, (route) => route.fulfill({ status: 503, json: { error: "作品情報の取得に失敗" } }), { times: 1 });
+  }
+  await page.locator('#revisions [data-revision="1"]').getByRole("button", { name: "この版を復元" }).click();
+  await expect(page.locator("#restore-status")).toHaveText("r1 を r3 として復元しました");
+  await expect(page.locator("#artworks-status")).toContainText("作品一覧を取得できませんでした");
+  await expect(page.locator("#revisions-status")).toContainText("版の履歴を取得できませんでした");
+  await expect(page.locator("#preview-label")).toHaveText("保存版 r3");
+  await previewReady(page);
+  expect((await fallCells(page, 3200)).cells).toBe(4);
+  await page.getByRole("button", { name: "作品情報を再取得" }).click();
+  await expect(page.locator('#revisions [data-revision="3"]')).toContainText("r1 から復元");
+  await expect(page.locator("#artworks-status")).toBeEmpty();
+  await expect(page.locator("#revisions-status")).toBeEmpty();
+});
+
+test("保存の応答を受け取れなくても、再試行で同じ受領結果を確認できる", async ({ page }) => {
+  await openHost(page);
+  await ask(page, "落ち物ゲームを作って");
+  await waitCandidate(page);
+  await page.route("**/api/candidates/*/save", async (route) => {
+    const committed = await route.fetch();
+    expect(committed.status()).toBe(200);
+    expect(await committed.json()).toMatchObject({ revision: 1, replay: false });
+    await route.abort();
+  }, { times: 1 });
+  await page.locator("#save").click();
+  await expect(page.locator("#save-status")).toContainText("保存結果を確認できませんでした");
+  const response = page.waitForResponse((r) => r.request().method() === "POST" && r.url().endsWith("/save"));
+  await save(page, 1);
+  expect(await (await response).json()).toMatchObject({ revision: 1, replay: true });
+  await expect(page.locator("#revisions li")).toHaveCount(1);
+});
+
+test("復元応答が途切れた後に版が進んでも、同じ操作の再試行で現在版を戻さない", async ({ page }) => {
+  await openHost(page);
+  await ask(page, "落ち物ゲームを作って");
+  await waitCandidate(page);
+  await save(page, 1);
+  await ask(page, "落下の間隔を長くして");
+  await waitCandidate(page);
+  await save(page, 2);
+  const restore = page.locator('#revisions [data-revision="1"]').getByRole("button", { name: "この版を復元" });
+  await page.route("**/api/artworks/*/restore", async (route) => {
+    const committed = await route.fetch();
+    expect(committed.status()).toBe(200);
+    expect(await committed.json()).toMatchObject({ revision: 3, replay: false });
+    await route.abort();
+  }, { times: 1 });
+  await restore.click();
+  await expect(page.locator("#restore-status")).toContainText("復元結果を確認できませんでした");
+  const id = await page.locator('#artworks button[aria-current="true"]').getAttribute("data-artwork-id");
+  const otherEdit = await page.evaluate(async (artworkId) => {
+    const response = await fetch(`/api/artworks/${artworkId}/restore`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ revision: 2, expectedRevision: 3, idempotencyKey: "other-edit" }),
+    });
+    return response.json();
+  }, id);
+  expect(otherEdit).toMatchObject({ revision: 4 });
+  await page.getByRole("button", { name: "作品情報を再取得" }).click();
+  await expect(page.locator("#current")).toHaveText("落ち物ゲーム（現在 r4）");
+  const release = Promise.withResolvers<void>();
+  await page.route(`**/api/artworks/${id}`, async (route) => {
+    await release.promise;
+    await route.continue();
+  }, { times: 1 });
+  const refreshed = page.waitForResponse(`**/api/artworks/${id}`);
+  try {
+    const response = page.waitForResponse((r) => r.request().method() === "POST" && r.url().endsWith("/restore"));
+    await restore.click();
+    expect(await (await response).json()).toMatchObject({ revision: 3, replay: true });
+    await expect(page.locator("#restore-status")).toHaveText("r1 を r3 として復元しました");
+    await expect(page.locator("#current")).toHaveText("落ち物ゲーム（現在 r4）");
+  } finally {
+    release.resolve();
+  }
+  await (await refreshed).finished();
+  await expect(page.locator("#revisions li")).toHaveCount(4);
+});
+
+test("作品を開いている途中で新規作成すると、先に選んだ作品に戻らない", async ({ page }) => {
+  await openHost(page);
+  await ask(page, "落ち物ゲームを作って");
+  await waitCandidate(page);
+  await save(page, 1);
+  const artwork = page.locator("#artworks button", { hasText: "落ち物ゲーム（r1）" });
+  const id = await artwork.getAttribute("data-artwork-id");
+  const arrived = Promise.withResolvers<void>();
+  const release = Promise.withResolvers<void>();
+  await page.route(`**/api/artworks/${id}`, async (route) => {
+    const response = await route.fetch();
+    arrived.resolve();
+    await release.promise;
+    await route.fulfill({ response });
+  }, { times: 1 });
+  await artwork.click();
+  await arrived.promise;
+  await page.locator("#new-artwork").click();
+  const response = page.waitForResponse(`**/api/artworks/${id}`);
+  release.resolve();
+  await (await response).finished();
+  // 次の通信を往復させ、先に届いた作品応答の処理も終わった画面を見る。
+  await page.evaluate(async () => { await (await fetch("/api/config")).json(); });
+  await expect(page.locator("#current")).toHaveText("新規の作品");
+  await expect(page.locator("#revisions li")).toHaveCount(0);
+});
+
+test("新規作成の後に届いた生成結果で候補や会話を上書きしない", async ({ page }) => {
+  await openHost(page);
+  const arrived = Promise.withResolvers<void>();
+  const release = Promise.withResolvers<void>();
+  await page.route("**/api/runs/*", async (route) => {
+    const response = await route.fetch();
+    if ((await response.json()).state === "presented") {
+      arrived.resolve();
+      await release.promise;
+    }
+    await route.fulfill({ response });
+  });
+  await ask(page, "落ち物ゲームを作って");
+  await arrived.promise;
+  await page.locator("#new-artwork").click();
+  const response = page.waitForResponse("**/api/runs/*");
+  release.resolve();
+  await (await response).finished();
+  await page.evaluate(async () => { await (await fetch("/api/config")).json(); });
+  await expect(page.locator("#candidate")).toBeHidden();
+  await expect(page.locator("#messages li")).toHaveCount(0);
+  await expect(page.locator("#run-status")).toBeEmpty();
+  await expect(page.locator("#cancel")).toBeDisabled();
+});
+
+test("古い保存版のプレビュー応答が後に届いても最後に選んだ版を表示する", async ({ page }) => {
+  await openHost(page);
+  await ask(page, "落ち物ゲームを作って");
+  await waitCandidate(page);
+  await save(page, 1);
+  await ask(page, "落下の間隔を長くして");
+  await waitCandidate(page);
+  await save(page, 2);
+
+  const arrived = Promise.withResolvers<void>();
+  const release = Promise.withResolvers<void>();
+  await page.route("**/api/previews", async (route) => {
+    const response = await route.fetch();
+    arrived.resolve();
+    await release.promise;
+    await route.fulfill({ response });
+  }, { times: 1 });
+  await page.locator('#revisions [data-revision="1"]').getByRole("button", { name: "表示" }).click();
+  await arrived.promise;
+  await page.locator('#revisions [data-revision="2"]').getByRole("button", { name: "表示" }).click();
+  await expect(page.locator("#preview-label")).toHaveText("保存版 r2");
+  await previewReady(page);
+  const response = page.waitForResponse("**/api/previews");
+  release.resolve();
+  await (await response).finished();
+  await page.evaluate(async () => { await (await fetch("/api/config")).json(); });
+  await expect(page.locator("#preview-label")).toHaveText("保存版 r2");
+  expect((await fallCells(page, 3200)).cells).toBe(2);
+});
+
 test("同時編集の競合：後から保存した候補は競合になり、候補は残る", async ({ page, context }) => {
   test.setTimeout(120_000);
   await openHost(page);

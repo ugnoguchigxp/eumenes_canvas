@@ -18,7 +18,7 @@ function fakeFetch(replies: ({ status?: number; content?: string; raw?: string }
       return new Promise<never>((_, reject) => init.signal.addEventListener("abort", () => reject(new Error("The operation was aborted"))));
     const status = r.status ?? 200;
     const text = r.raw ?? JSON.stringify({ choices: [{ message: { content: r.content } }] });
-    return { ok: status >= 200 && status < 300, status, text: async () => text };
+    return new Response(text, { status });
   };
   return { sent, fetch };
 }
@@ -106,9 +106,18 @@ describe("HttpChannel", () => {
     expect(f.sent[1].body.messages[1].content).toContain("応答が長すぎる");
   });
 
-  test("HTTP の失敗", async () => {
-    const f = fakeFetch([{ status: 500, raw: "internal error" }]);
-    await expect(new HttpChannel(OPTS, { fetch: f.fetch, env: {} }).complete(REQ, hasX, sig())).rejects.toThrow("モデルの応答が得られない: 500 internal error");
+  test("HTTP の失敗は接続先の本文を表示せず、状態コードを返す", async () => {
+    const f = fakeFetch([{ status: 500, raw: "provider diagnostic context" }]);
+    await expect(new HttpChannel(OPTS, { fetch: f.fetch, env: {} }).complete(REQ, hasX, sig())).rejects.toMatchObject({
+      message: "モデルの応答が得られない: 500",
+    });
+  });
+
+  test("形式違いの応答は、受信した本文を診断に含めない", async () => {
+    const f = fakeFetch([{ raw: JSON.stringify({ report: "provider diagnostic context" }) }]);
+    await expect(new HttpChannel(OPTS, { fetch: f.fetch, env: {} }).complete(REQ, hasX, sig())).rejects.toMatchObject({
+      message: "モデルの応答が得られない: 200 応答の形式が違います",
+    });
   });
 
   test("中断", async () => {
@@ -120,6 +129,74 @@ describe("HttpChannel", () => {
     // 時間切れ
     const q = new HttpChannel({ ...OPTS, timeoutMs: 20 }, { fetch: fakeFetch(["hang"]).fetch, env: {} }).complete(REQ, hasX, sig());
     await expect(q).rejects.toThrow("モデルの応答が得られない: 時間切れ");
+  });
+
+  test("本文の上限で受信を止め、次の要求は処理できる", async () => {
+    let cancelled = false;
+    let first = true;
+    const ch = new HttpChannel(OPTS, { fetch: async () => {
+      if (!first) return Response.json({ choices: [{ message: { content: '{"x": 2}' } }] });
+      first = false;
+      return new Response(new ReadableStream({
+        start(c) { c.enqueue(new Uint8Array(2 * 1024 * 1024 + 1)); },
+        pull(c) { c.close(); },
+        cancel() { cancelled = true; },
+      }, { highWaterMark: 0 }));
+    } });
+    await expect(ch.complete(REQ, hasX, sig())).rejects.toThrow("応答本文が大きすぎる");
+    expect(cancelled).toBe(true);
+    expect(await ch.complete(REQ, hasX, sig())).toEqual({ x: 2 });
+  });
+
+  test("本文受信中の時間切れと接続中断を区別し、次の要求を処理できる", async () => {
+    let attempts = 0;
+    let cancelled = false;
+    const ch = new HttpChannel({ ...OPTS, timeoutMs: 30 }, { fetch: async (_url, { signal }) => {
+      attempts++;
+      if (attempts === 3) return Response.json({ choices: [{ message: { content: '{"x": 2}' } }] });
+      return new Response(new ReadableStream({
+        start(c) {
+          c.enqueue(new TextEncoder().encode("{"));
+          if (attempts === 2) c.error(new Error("connection reset"));
+          else signal.addEventListener("abort", () => {
+            if (!cancelled) c.error(new Error("read aborted"));
+          }, { once: true });
+        },
+        cancel() { cancelled = true; },
+      }));
+    } });
+    await expect(ch.complete(REQ, hasX, sig())).rejects.toThrow("モデルの応答が得られない: 時間切れ");
+    await expect(ch.complete(REQ, hasX, sig())).rejects.toThrow("モデルの応答が得られない: 通信を完了できませんでした");
+    expect(await ch.complete(REQ, hasX, sig())).toEqual({ x: 2 });
+    expect(attempts).toBe(3);
+  });
+
+  test("ローカルの接続先で本文が止まっても、同じクライアントで次の要求に成功する", async () => {
+    let attempts = 0;
+    let redirected = 0;
+    const server = Bun.serve({ hostname: "127.0.0.1", port: 0, async fetch(req) {
+      await req.text();
+      if (new URL(req.url).pathname === "/redirected") {
+        redirected++;
+        return new Response();
+      }
+      attempts++;
+      if (attempts === 1) return new Response(new ReadableStream({
+        start(c) { c.enqueue(new TextEncoder().encode("{")); },
+      }));
+      if (attempts === 2) return new Response(null, { status: 307, headers: { location: "/redirected" } });
+      return Response.json({ choices: [{ message: { content: '{"x": 2}' } }] });
+    } });
+    try {
+      const ch = new HttpChannel({ ...OPTS, baseUrl: `http://127.0.0.1:${server.port}`, timeoutMs: 150 }, { env: {} });
+      await expect(ch.complete(REQ, hasX, sig())).rejects.toThrow("モデルの応答が得られない: 時間切れ");
+      await expect(ch.complete(REQ, hasX, sig())).rejects.toThrow("モデルの応答が得られない");
+      expect(await ch.complete(REQ, hasX, sig())).toEqual({ x: 2 });
+      expect(attempts).toBe(3);
+      expect(redirected).toBe(0);
+    } finally {
+      server.stop(true);
+    }
   });
 
   test("fenced", async () => {

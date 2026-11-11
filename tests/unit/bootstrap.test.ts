@@ -160,4 +160,32 @@ describe("ブートストラップ（偽の Worker 環境）", () => {
     w.send({ type: "tick", t: 116 });
     expect(st(w.posted)).toEqual([[0, 0], [0, 0], [16, 16]]);
   });
+  // 実行時間の予算（execution-budget.js）：advance は 1 つのタスクの中で frame を何度も呼ぶ
+  test("advance：1 フレームが遅くないなら、合計が 750ms を超えても予算エラーにしない", async () => {
+    // frame は 1 回あたり約 20ms 使うループを持つ。advance 1000ms は 63 フレーム（合計で約 1.2 秒）
+    const w = boot(
+      "canvasApp.start((api) => ({ frame() { const end = performance.now() + 20; while (performance.now() < end) { api.random(); } } }));",
+    );
+    w.send(INIT);
+    // 別のタスクを挟む（実際の Worker では init の処理が終わった時点で予算の期限が解除される）
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const started = performance.now();
+    w.send({ type: "advance", ms: 1000, seq: 1 });
+    const elapsed = performance.now() - started;
+    expect(errorsOf(w.posted)).toEqual([]);
+    expect(elapsed).toBeGreaterThan(1000); // 試験の前提：実時間で 750ms を超えている
+    expect(w.posted[w.posted.length - 1]).toEqual({ type: "advanced", seq: 1 });
+  });
+  test("advance：1 回の frame が 750ms を超えるループなら、予算エラーにする", async () => {
+    // 1 回目の frame（init の dt=0）は速く、advance の中の 2 回目以降で 1 回の呼び出しの中に長いループを置く
+    const w = boot(
+      "let n = 0;\ncanvasApp.start((api) => ({ frame() { n++; if (n < 3) return; const end = performance.now() + 1500; while (performance.now() < end) { api.random(); } } }));",
+    );
+    w.send(INIT);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    w.send({ type: "advance", ms: 100, seq: 2 });
+    const errs = errorsOf(w.posted);
+    expect(errs.length).toBeGreaterThan(0);
+    expect(errs[0]).toContain("ループが 750ms 以内に制御を返さなかった");
+  });
 });

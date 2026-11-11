@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { artworkDigest, checkArtwork } from "../../src/contract/artwork";
 import { HOST_LIBRARIES, resolveLibraries } from "../../src/contract/libraries";
-import { assembleWorkerScript, librarySource, loadLibraries, shellCsp, WORKER_CSP } from "../../src/server/preview";
+import { assemblePageScript, assembleWorkerScript, librarySource, loadLibraries, shellCsp, WORKER_CSP } from "../../src/server/preview";
 import { startApp } from "../../src/server/app";
 import { checkWorkerToShell, LIMITS } from "../../src/shared/messages.js";
 import { ROOT } from "./support";
@@ -83,6 +83,16 @@ describe("Worker スクリプトの組み立て", () => {
       console.log(`${l.id}: ${src.length} bytes`);
     }
     expect(await librarySource(HOST_LIBRARIES[0])).toBe(await librarySource(HOST_LIBRARIES[0])); // 2 回目はメモリから
+  });
+  test("Worker とページの配信コードに宣言ライブラリの通知が残る", async () => {
+    for (const lib of await loadLibraries(HOST_LIBRARIES.map((l) => l.id))) {
+      const notice = readFileSync(join(ROOT, "node_modules", lib.lib.pkg, "LICENSE"), "utf8").trimEnd();
+      const scripts = [assembleWorkerScript(entry, [lib]), assemblePageScript(entry, [lib])];
+      for (const script of scripts) {
+        const comments = script.split("\n").filter((line) => line.startsWith("// ")).map((line) => line.slice(3)).join("\n");
+        expect(comments).toContain(notice.replaceAll("\r\n", "\n"));
+      }
+    }
   });
 });
 

@@ -7,6 +7,56 @@ import type { Shot } from "./pixels";
 export type IssueToken = (body: ArtworkBody) => string;
 export interface StartResult { type: string; message?: string } // "ready" | "error" | "violation" | "timeout"
 
+function browserEnvironment(): Record<string, string> {
+  const env: Record<string, string> = {};
+  // ブラウザが使う OS の情報だけを渡す。制作・検証モデルのキー名は設定により変わる。
+  for (const key of ["HOME", "USER", "LOGNAME", "PATH", "TMPDIR", "TMP", "TEMP", "LANG", "LC_ALL",
+    "DISPLAY", "WAYLAND_DISPLAY", "XDG_RUNTIME_DIR", "XAUTHORITY",
+    "SystemRoot", "WINDIR", "USERPROFILE", "LOCALAPPDATA"]) {
+    const value = process.env[key];
+    if (value !== undefined) env[key] = value;
+  }
+  return env;
+}
+
+/** 観測ごとの文脈を分けながら、起動中・接続中の Chromium を再利用する。 */
+export class ObservationBrowser {
+  private connection: Promise<Browser> | null = null;
+
+  constructor(private launchArgs: string[], private handleProcessSignals = true) {}
+
+  get(): Promise<Browser> {
+    if (this.connection) return this.connection;
+    const launch = import("@playwright/test").then(({ chromium }) =>
+      chromium.launch({
+        // Linux ではユーザー名前空間などの環境条件を検証してから既定を変える。
+        chromiumSandbox: process.platform === "darwin",
+        handleSIGINT: this.handleProcessSignals,
+        handleSIGTERM: this.handleProcessSignals,
+        handleSIGHUP: this.handleProcessSignals,
+        env: browserEnvironment(),
+        args: ["--mute-audio", ...this.launchArgs],
+      }),
+    );
+    this.connection = launch;
+    const reset = () => {
+      if (this.connection === launch) this.connection = null;
+    };
+    void launch.then((browser) => {
+      browser.once("disconnected", reset);
+      if (!browser.isConnected()) reset();
+    }, reset);
+    return launch;
+  }
+
+  async close(): Promise<void> {
+    const connection = this.connection;
+    this.connection = null;
+    const browser = await connection?.catch(() => null);
+    await browser?.close();
+  }
+}
+
 /** 入力の名前（KeyboardEvent.code の形）を Playwright のキー名にする。KeyR → r、Digit1 → 1、ほかはそのまま。 */
 export function playwrightKey(input: string): string {
   if (/^Key[A-Z]$/.test(input)) return input.slice(3).toLowerCase();
@@ -32,8 +82,10 @@ export class HarnessSession {
     return this.page;
   }
 
-  async open(): Promise<void> {
+  async open(signal?: AbortSignal): Promise<void> {
+    signal?.throwIfAborted();
     this.ctx = await this.browser.newContext({ viewport: { width: 640, height: 480 }, deviceScaleFactor: 1 });
+    signal?.throwIfAborted();
     this.page = await this.ctx.newPage();
     await this.page.goto(this.hostOrigin + "/harness.html");
     await this.page.waitForFunction(() => document.title === "ready", null, { timeout: 10_000 });

@@ -1,5 +1,7 @@
 // ホスト観測：宣言されたキー、描画領域のクリック、段階ごとの比較。
-import { afterAll, expect, test } from "bun:test";
+import { afterAll, expect, spyOn, test } from "bun:test";
+import { chromium } from "@playwright/test";
+import { ObservationBrowser } from "../../src/core/harness-session";
 import { OBSERVER_SUITE, PAINTED_CLICKS, PlaywrightObserver, paintedTargets } from "../../src/core/observer";
 import { CanvasService } from "../../src/core/service";
 import { Store } from "../../src/core/store";
@@ -36,6 +38,26 @@ afterAll(async () => {
   app.stop();
 });
 const sig = () => new AbortController().signal;
+
+test("観測用の Chromium にサーバーのモデルキーを渡さない", async () => {
+  const key = "CANVAS_TEST_MODEL_KEY";
+  const previous = process.env[key];
+  process.env[key] = "synthetic-test-value";
+  const launch = spyOn(chromium, "launch");
+  const browser = new ObservationBrowser([]);
+  try {
+    expect((await browser.get()).isConnected()).toBe(true);
+    const env = launch.mock.calls[0][0]?.env;
+    expect(env).toBeDefined();
+    expect(env?.[key]).toBeUndefined();
+    expect(env?.HOME).toBe(process.env.HOME);
+  } finally {
+    launch.mockRestore();
+    if (previous === undefined) delete process.env[key];
+    else process.env[key] = previous;
+    await browser.close();
+  }
+}, 60_000);
 
 // 固定点に当たらない小さなボタン（x 452〜472, y 160〜176）を押したときだけ色が変わる。時間では変わらない。
 const OFF_GRID_TOGGLE = `canvasApp.start((api) => {
@@ -74,6 +96,11 @@ const HOLD_ONLY = `canvasApp.start((api) => {
     },
   };
 });`;
+
+test("取消済みの必須観測は起動しない", async () => {
+  const reason = new Error("事前に取消");
+  await expect(observer.observe({ title: "t", entry: HOLD_ONLY }, null, AbortSignal.abort(reason))).rejects.toBe(reason);
+}, 60_000);
 
 test("押している間だけ変わる作品も、キーを押し続ける段階で responds が合格する", async () => {
   const r = await observer.observe({ title: "t", entry: HOLD_ONLY }, null, sig());

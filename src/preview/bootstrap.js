@@ -109,6 +109,8 @@ var __canvasApp = (function () {
 
   function call(name, args) {
     if (!handlers || typeof handlers[name] !== "function") return;
+    // ループの実行時間の予算は、作品の関数 1 回の呼び出しごとに数える（execution-budget.js はこのファイルの後ろに連結されるので、呼ぶ時に探す）
+    if (typeof __canvasResetExecution === "function") __canvasResetExecution();
     try {
       handlers[name].apply(handlers, args);
     } catch (e) {

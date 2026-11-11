@@ -33,6 +33,11 @@ const state = {
   mode: "frame",
   returnFocus: null,
 };
+let selection = 0;
+let artworkRequest = 0;
+let listRequest = 0;
+let previewRequest;
+let restoreAttempt;
 
 // quiet: 定期の状態確認など。成功は記録せず、失敗だけ残す
 async function api(path, { method = "GET", body, quiet = false } = {}) {
@@ -110,12 +115,13 @@ function showConnection(st, err) {
 }
 
 $("preview-retry").addEventListener("click", async () => {
+  const request = previewRequest;
   try {
     await ctl.reconnect();
   } catch {
     return; // 失敗の表示は showConnection が出す
   }
-  if (state.previewSource) await showPreview(state.previewSource, $("preview-label").textContent);
+  if (request === previewRequest && state.previewSource) await showPreview(state.previewSource, $("preview-label").textContent);
 });
 
 // ---- 表示モード ----
@@ -180,16 +186,27 @@ $("exit-mode").addEventListener("click", exitMode);
 
 // ---- プレビュー ----
 async function showPreview(source, label) {
+  previewRequest?.abort();
+  const request = new AbortController();
+  previewRequest = request;
   frame.setAttribute("aria-label", "作品プレビュー");
-  const p = await api("/api/previews", { method: "POST", body: source });
   state.previewSource = source;
   host.dataset.ready = "0";
   $("preview-label").textContent = label;
-  const page = p.runtime === "page";
   const warn = $("page-warning");
-  warn.hidden = !page;
+  warn.hidden = true;
   warn.textContent = "";
+  let p;
+  try {
+    p = await api("/api/previews", { method: "POST", body: source });
+  } catch (err) {
+    if (!request.signal.aborted) notice("プレビューを準備できませんでした: " + err.message);
+    return;
+  }
+  if (request.signal.aborted) return;
+  const page = p.runtime === "page";
   if (page) {
+    warn.hidden = false;
     const refuse = pageRefusal({ pageMode: PAGE_MODE, chromium: isChromium(navigator.userAgent) });
     if (refuse) {
       warn.textContent = refuse;
@@ -201,24 +218,32 @@ async function showPreview(source, label) {
   }
   let r;
   try {
-    r = await ctl.start({ token: p.token, data: p.data, seed: 1, clock: CLOCK, direct: DIRECT && !page, ...(page ? { runtime: "page" } : {}) });
+    // 実際の利用（raf）では起動のたびに別の乱数列にする。固定の 1 だと api.random() が毎回同じ展開になるため。manual（試験・観測）は 1 のまま
+    const seed = CLOCK === "raf" ? crypto.getRandomValues(new Uint32Array(1))[0] : 1;
+    r = await ctl.start({ token: p.token, data: p.data, seed, clock: CLOCK, direct: DIRECT && !page, signal: request.signal, ...(page ? { runtime: "page" } : {}) });
   } catch (err) {
+    if (request.signal.aborted) return;
     if (!(err instanceof PreviewConnectError)) throw err;
     host.dataset.ready = "0";
     notice("プレビューに接続できないため表示できません。上の「再接続」を試してください。");
     clog("preview.start", { result: "connect-failed", label });
     return { type: "connect-failed", message: err.message };
   }
+  if (request.signal.aborted) return;
   clog("preview.start", { result: r.type, message: r.message, label });
   host.dataset.ready = r.type === "ready" ? "1" : "0";
   if (r.type === "ready") frame.setAttribute("aria-label", `${label}のプレビュー表示中`);
   if (r.type !== "ready") notice("起動できませんでした: " + (r.message || r.type));
   return r;
 }
-$("stop").addEventListener("click", () => {
+function stopPreview() {
+  previewRequest?.abort();
+  previewRequest = undefined;
+  host.dataset.ready = "0";
   frame.setAttribute("aria-label", "作品プレビュー");
   ctl.stop().catch(() => {});
-});
+}
+$("stop").addEventListener("click", stopPreview);
 $("restart").addEventListener("click", () => state.previewSource && showPreview(state.previewSource, $("preview-label").textContent));
 
 // ---- 会話 ----
@@ -236,20 +261,30 @@ function setRunStatus(t) {
 
 $("composer").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const text = $("message").value.trim();
+  const input = $("message");
+  const draft = input.value;
+  const text = draft.trim();
   clog("ui.submit", { length: text.length });
-  if (!text) return;
-  $("message").value = "";
+  const send = $("send");
+  if (!text || send.disabled) return;
+  const selected = selection;
+  send.disabled = true;
+  input.value = "";
   addMessage("user", text);
-  hideCandidate();
   let run;
   try {
     run = await api("/api/runs", { method: "POST", body: { message: text, artworkId: state.artworkId, conversation: state.conversation } });
   } catch (err) {
+    if (selected !== selection) return;
+    if (input.value === "") input.value = draft;
     setRunStatus("受け付けられませんでした");
     addMessage("assistant", "受け付けられませんでした: " + err.message);
     return;
+  } finally {
+    if (selected === selection) send.disabled = false;
   }
+  if (selected !== selection) return;
+  hideCandidate();
   state.conversation.push({ role: "user", text });
   state.runId = run.id;
   clog("run.state", { runId: run.id, state: run.state, attempts: run.attempts });
@@ -282,6 +317,7 @@ async function pollRun(id) {
     } catch {
       continue;
     }
+    if (state.runId !== id) return;
     if (run.state !== last || run.attempts !== lastAttempts) {
       clog("run.state", { runId: id, state: run.state, attempts: run.attempts, failureHead: run.failure ? run.failure.split(":")[0].slice(0, 80) : undefined }); // 失敗の詳細は依頼の一部を含みうるため、見出しだけ
       last = run.state;
@@ -385,44 +421,104 @@ function showCandidate(c, run) {
 $("save").addEventListener("click", async () => {
   const c = state.candidate;
   if (!c) return;
+  const selected = selection;
   $("save").disabled = true;
+  let saved;
   try {
-    const r = await api(`/api/candidates/${c.id}/save`, { method: "POST", body: { expectedRevision: c.baseRevision, idempotencyKey: state.saveKey } });
-    state.artworkId = r.artworkId;
-    state.currentRevision = r.revision;
-    $("save-status").textContent = `保存しました（r${r.revision}）`;
-    await refreshArtworks();
-    await loadArtwork(r.artworkId, { keepPreview: true });
+    saved = await commitRevision(`/api/candidates/${c.id}/save`, { expectedRevision: c.baseRevision, idempotencyKey: state.saveKey });
   } catch (err) {
+    if (selected !== selection || state.candidate !== c) return;
     if (err.info?.code === "conflict") $("save-status").textContent = `競合: 現在版は r${err.info.currentRevision}。候補は残っています。現在版を開いて確認してください。`;
-    else $("save-status").textContent = "保存できませんでした: " + err.message;
+    else $("save-status").textContent = commitFailure("保存", err);
     $("save").disabled = false;
+    return;
   }
+  void refreshArtworks();
+  if (selected !== selection || state.candidate !== c) return;
+  showCommittedRevision(saved.artworkId, saved.revision, c.title);
+  $("save-status").textContent = `保存しました（r${saved.revision}）`;
+  await refreshRevisions(saved.artworkId);
 });
+
+async function commitRevision(path, body) {
+  const result = await api(path, { method: "POST", body });
+  if (typeof result?.artworkId !== "string" || !Number.isSafeInteger(result.revision) || result.revision < 1) {
+    throw new Error("版の受領結果がありません");
+  }
+  return result;
+}
+
+function commitFailure(action, err) {
+  if (!err.status || err.status >= 500) return `${action}結果を確認できませんでした。同じ操作で結果を確認できます。`;
+  return `${action}できませんでした: ${err.message}`;
+}
 
 // ---- 作品一覧・版 ----
 async function refreshArtworks() {
-  const list = await api("/api/artworks");
+  const request = ++listRequest;
+  const status = $("artworks-status");
+  let list;
+  try {
+    list = await api("/api/artworks");
+    if (!Array.isArray(list)) throw new Error("作品一覧の形式が違います");
+  } catch {
+    if (request === listRequest) status.textContent = "作品一覧を取得できませんでした。作品情報を再取得できます。";
+    return;
+  }
+  if (request !== listRequest) return;
   const ul = $("artworks");
+  const focusedId = ul.contains(document.activeElement) ? document.activeElement.dataset.artworkId : null;
   ul.textContent = "";
+  let focus;
   for (const a of list) {
     const li = document.createElement("li");
-    if (a.id === state.artworkId) li.className = "active";
     const b = document.createElement("button");
     b.type = "button";
     b.textContent = `${a.title}（r${a.currentRevision}）`;
     b.dataset.artworkId = a.id;
     b.addEventListener("click", () => openArtwork(a.id));
+    if (focusedId === a.id) focus = b;
     li.appendChild(b);
     ul.appendChild(li);
   }
+  markSelectedArtwork();
+  if (focusedId) (focus ?? $("refresh-artworks")).focus();
+  status.textContent = "";
 }
 
-async function loadArtwork(id, { keepPreview = false } = {}) {
-  const a = await api(`/api/artworks/${id}`);
-  state.artworkId = a.id;
-  state.currentRevision = a.currentRevision;
-  $("current").textContent = `${a.title}（現在 r${a.currentRevision}）`;
+function markSelectedArtwork() {
+  for (const button of $("artworks").querySelectorAll("button[data-artwork-id]")) {
+    const active = button.dataset.artworkId === state.artworkId;
+    button.parentElement.classList.toggle("active", active);
+    if (active) button.setAttribute("aria-current", "true");
+    else button.removeAttribute("aria-current");
+  }
+}
+
+function setCurrentRevision(id, revision, title) {
+  state.artworkId = id;
+  state.currentRevision = revision;
+  $("current").textContent = `${title}（現在 r${revision}）`;
+  markSelectedArtwork();
+}
+
+function showCommittedRevision(id, revision, title) {
+  if (state.artworkId === id && state.currentRevision > revision) return;
+  setCurrentRevision(id, revision, title);
+}
+
+async function loadArtwork(id) {
+  const selected = selection;
+  const request = ++artworkRequest;
+  let a;
+  try {
+    a = await api(`/api/artworks/${id}`);
+  } catch (err) {
+    if (selected !== selection || request !== artworkRequest) return;
+    throw err;
+  }
+  if (selected !== selection || request !== artworkRequest) return;
+  setCurrentRevision(a.id, a.currentRevision, a.title);
   const ol = $("revisions");
   ol.textContent = "";
   for (const r of [...a.revisions].reverse()) {
@@ -438,51 +534,108 @@ async function loadArtwork(id, { keepPreview = false } = {}) {
       const rs = document.createElement("button");
       rs.type = "button";
       rs.textContent = "この版を復元";
-      rs.addEventListener("click", () => restore(a.id, r.revision));
+      rs.addEventListener("click", () => restore(a.id, r.revision, r.title));
       li.appendChild(rs);
     }
     ol.appendChild(li);
   }
-  await refreshArtworks();
-  if (!keepPreview) await showPreview({ artworkId: a.id }, `保存版 r${a.currentRevision}`);
+  $("revisions-status").textContent = "";
+  return a;
 }
 
-async function openArtwork(id) {
-  if (state.artworkId !== id) {
+async function refreshRevisions(id) {
+  const selected = selection;
+  try {
+    await loadArtwork(id);
+  } catch {
+    if (selected === selection) $("revisions-status").textContent = "版の履歴を取得できませんでした。作品情報を再取得できます。";
+  }
+}
+
+$("refresh-artworks").addEventListener("click", () => {
+  void refreshArtworks();
+  if (state.artworkId) void refreshRevisions(state.artworkId);
+});
+
+function selectArtwork(id) {
+  const selected = ++selection;
+  if (!id || state.artworkId !== id) {
     state.conversation = [];
     $("messages").textContent = "";
   }
+  state.artworkId = null;
+  state.currentRevision = 0;
+  state.runId = null;
+  state.previewSource = null;
+  restoreAttempt = undefined;
+  $("send").disabled = !!id;
+  $("cancel").disabled = true;
+  setRunStatus("");
+  $("restore-status").textContent = "";
+  $("revisions-status").textContent = "";
+  $("revisions").textContent = "";
+  $("current").textContent = id ? "作品を読み込み中…" : "新規の作品";
+  $("preview-label").textContent = "";
+  $("page-warning").hidden = true;
+  notice("");
   hideCandidate();
-  await loadArtwork(id);
+  markSelectedArtwork();
+  stopPreview();
+  return selected;
 }
 
-async function restore(id, revision) {
+async function openArtwork(id) {
+  const selected = selectArtwork(id);
   try {
-    await api(`/api/artworks/${id}/restore`, { method: "POST", body: { revision, expectedRevision: state.currentRevision, idempotencyKey: rid() } });
-    notice(`r${revision} を新しい版として復元しました`);
-    await loadArtwork(id);
+    const a = await loadArtwork(id);
+    if (selected !== selection || !a) return;
+    $("send").disabled = false;
+    await showPreview({ artworkId: a.id }, `保存版 r${a.currentRevision}`);
   } catch (err) {
-    notice("復元できませんでした: " + err.message);
+    if (selected !== selection) return;
+    selectArtwork(null);
+    notice("作品を開けませんでした: " + err.message);
   }
 }
 
+async function restore(id, revision, title) {
+  const selected = selection;
+  if (restoreAttempt?.inFlight) return;
+  if (restoreAttempt?.id !== id || restoreAttempt.body.revision !== revision) {
+    restoreAttempt = { id, body: { revision, expectedRevision: state.currentRevision, idempotencyKey: rid() }, inFlight: false };
+  }
+  const attempt = restoreAttempt;
+  attempt.inFlight = true;
+  const status = $("restore-status");
+  let restored;
+  try {
+    restored = await commitRevision(`/api/artworks/${id}/restore`, attempt.body);
+  } catch (err) {
+    if (selected === selection) {
+      if (err.status && err.status < 500) restoreAttempt = undefined;
+      status.textContent = commitFailure("復元", err);
+    }
+    return;
+  } finally {
+    attempt.inFlight = false;
+  }
+  void refreshArtworks();
+  if (selected !== selection) return;
+  restoreAttempt = undefined;
+  showCommittedRevision(id, restored.revision, title);
+  status.textContent = `r${revision} を r${restored.revision} として復元しました`;
+  void refreshRevisions(id);
+  await showPreview({ artworkId: id, revision: restored.revision }, `保存版 r${restored.revision}`).catch((err) => {
+    if (selected === selection) notice("復元した版を表示できませんでした: " + err.message);
+  });
+}
+
 $("new-artwork").addEventListener("click", () => {
-  state.artworkId = null;
-  state.currentRevision = 0;
-  state.conversation = [];
-  $("messages").textContent = "";
-  $("revisions").textContent = "";
-  $("current").textContent = "新規の作品";
-  hideCandidate();
-  refreshArtworks();
+  selectArtwork(null);
 });
 
 // 操作をすべて登録してから接続を始める。接続の成否を待たずに画面を使えるようにする。
 ctl.mount().catch(() => {});
-try {
-  await refreshArtworks();
-} catch (err) {
-  notice("作品一覧を読めませんでした: " + err.message);
-}
+await refreshArtworks();
 document.body.dataset.ready = "1";
 clog("page.ready");

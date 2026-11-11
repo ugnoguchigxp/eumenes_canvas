@@ -13,8 +13,12 @@
 <main class="layout">
   <aside class="sidebar">
     <div class="side-head"><h2>作品</h2><button id="new-artwork" type="button">新規</button></div>
+    <button id="refresh-artworks" type="button">作品情報を再取得</button>
+    <div id="artworks-status" role="status"></div>
     <ul id="artworks" aria-label="作品一覧"></ul>
     <h2>版</h2>
+    <div id="restore-status" role="status"></div>
+    <div id="revisions-status" role="status"></div>
     <ol id="revisions" aria-label="版の履歴"></ol>
   </aside>
   <section class="chat" aria-label="会話">

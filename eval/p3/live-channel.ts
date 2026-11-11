@@ -1,6 +1,7 @@
 import { appendFileSync } from "node:fs";
 import type { InferenceChannel, InferenceRequest, Validate } from "../../src/core/inference";
-import { HttpChannel, type HttpChannelOptions } from "../../src/server/http-channel";
+import { HttpChannel, InferenceLimitError, MAX_MODEL_RESPONSE_BYTES, type HttpChannelOptions } from "../../src/server/http-channel";
+import { readBoundedText } from "../../src/server/read-body";
 
 export const LIVE_TASK_MS = 180_000;
 export const LIVE_REQUEST_BYTES = 65_536;
@@ -22,10 +23,10 @@ export class LiveChannel implements InferenceChannel {
     if (!options.apiKeyEnv || !process.env[options.apiKeyEnv]) throw new Error("実モデルの API キーの環境変数が設定されていない");
     this.channel = new HttpChannel(options, {
       fetch: async (url, init) => {
-        if (this.taskCalls >= limits.task || this.turnCalls >= limits.turn || this.calls >= maxCalls) throw new Error("実モデルの呼び出し上限");
-        if (Buffer.byteLength(init.body) > LIVE_REQUEST_BYTES) throw new Error("実モデルに送る本文が上限を超えた");
+        if (this.taskCalls >= limits.task || this.turnCalls >= limits.turn || this.calls >= maxCalls) throw new InferenceLimitError("calls");
+        if (Buffer.byteLength(init.body) > LIVE_REQUEST_BYTES) throw new InferenceLimitError("request");
         const remainingMs = Math.ceil(this.deadline - performance.now());
-        if (remainingMs <= 0) throw new Error("課題の時間上限");
+        if (remainingMs <= 0) throw new InferenceLimitError("time");
         this.calls++;
         this.taskCalls++;
         this.turnCalls++;
@@ -34,11 +35,18 @@ export class LiveChannel implements InferenceChannel {
         let receipt: { status?: number; model?: string; usage?: unknown; finish?: string } = {};
         try {
           const r = await fetch(url, { ...init, signal, redirect: "error" });
-          const text = await r.text();
+          receipt.status = r.status;
+          if (!r.ok) {
+            void r.body?.cancel().catch(() => {});
+            return new Response(null, { status: r.status });
+          }
+          const text = await readBoundedText(r, MAX_MODEL_RESPONSE_BYTES, signal);
           let d;
           try { d = JSON.parse(text); } catch { d = null; }
-          receipt = { status: r.status, model: d?.model, usage: d?.usage, finish: d?.choices?.[0]?.finish_reason };
-          return { ok: r.ok, status: r.status, text: async () => text };
+          if (typeof d?.choices?.[0]?.message?.content === "string") {
+            receipt = { status: r.status, model: d.model, usage: d.usage, finish: d.choices[0].finish_reason };
+          }
+          return new Response(text || null, { status: r.status });
         } finally {
           const ms = performance.now() - t0;
           this.waitedMs += ms;
