@@ -1,7 +1,10 @@
-// ホスト観測 host-smoke/2：描画領域のクリック、段階ごとの比較、観測の文（固定点の座標は書かない）。
+// ホスト観測：宣言されたキー、描画領域のクリック、段階ごとの比較。
 import { afterAll, expect, test } from "bun:test";
 import { OBSERVER_SUITE, PAINTED_CLICKS, PlaywrightObserver, paintedTargets } from "../../src/core/observer";
+import { CanvasService } from "../../src/core/service";
+import { Store } from "../../src/core/store";
 import { startApp } from "../../src/server/app";
+import { runToEnd } from "./support";
 
 function png(w: number, h: number, bg: [number, number, number], rects: { x: number; y: number; w: number; h: number; c: [number, number, number] }[]) {
   const data = new Uint8Array(w * h * 4);
@@ -77,10 +80,50 @@ test("押している間だけ変わる作品も、キーを押し続ける段�
   expect(r.checks.find((c) => c.id === "responds")?.pass).toBe(true);
 }, 60_000);
 
-test("suite は host-smoke/2", () => {
+test("suite は host-smoke/3", () => {
   expect(observer.suite).toBe(OBSERVER_SUITE);
-  expect(OBSERVER_SUITE).toBe("host-smoke/2");
+  expect(OBSERVER_SUITE).toBe("host-smoke/3");
 });
+
+test("制作担当が宣言したキーを通常の候補提示で入力する", async () => {
+  const body = { title: "モードと表示", entry: `canvasApp.start((api) => {
+    let selected = false, sorted = false;
+    return {
+      frame() {
+        const c = api.ctx;
+        c.fillStyle = "#000000"; c.fillRect(0, 0, api.width, api.height);
+        c.fillStyle = sorted ? "#00ff00" : "#ff0000"; c.fillRect(30, 40, 30, 60);
+      },
+      input(e) {
+        if (e.type === "keyup" && e.code === "Digit7") selected = true;
+        if (e.type === "keyup" && e.code === "KeyQ" && selected) sorted = true;
+      },
+    };
+  });` };
+  const withoutDeclaration = await observer.observe(body, null, sig());
+  expect(withoutDeclaration.checks.find((c) => c.id === "responds")?.pass).toBe(false);
+  const svc = new CanvasService({
+    store: new Store(null), contract: "契約", observer,
+    model: {
+      label: "固定応答",
+      async generate() {
+        return { body, changes: "", unconfirmed: [], reply: "", spec: {
+          requirements: ["7で選択してからQを離すと色が変わる"],
+          controls: [
+            { kind: "key", input: "F5", action: "無効な宣言", always: true },
+            { kind: "key", input: "Digit7", action: "選択", always: true },
+            { kind: "key", input: "KeyQ", action: "色を変える", always: false },
+          ],
+        } };
+      },
+    },
+  });
+  const run = await runToEnd(svc, "owner", "session", { message: "モードの表示を作って" });
+  expect(run.state).toBe("presented");
+  expect(run.candidates).toHaveLength(1);
+  expect(run.candidates[0].spec?.controls.map((c) => c.input)).toEqual(["Digit7", "KeyQ"]);
+  expect(run.candidates[0].verification?.checks.find((c) => c.id === "responds")?.pass).toBe(true);
+}, 60_000);
 
 test("固定点に当たらない描画領域のボタンでも、描画領域のクリックで responds が合格する", async () => {
   // ボタンは固定点（x=40+80i, y=45+90j）のどれにも当たらない

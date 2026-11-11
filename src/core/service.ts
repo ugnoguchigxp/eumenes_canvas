@@ -282,7 +282,7 @@ export class CanvasService {
         const data = this.datasetFor(out.body);
         let obs;
         try {
-          obs = await this.o.observer.observe(out.body, data, signal);
+          obs = await this.o.observer.observe(out.body, data, signal, candidate.spec?.controls);
         } catch (e) {
           if (!this.live(runId)) return;
           if (best) return this.present(runId, best.id);

@@ -1,5 +1,5 @@
 // ハーネス（検証ホストの /harness.html）で作品を 1 つ動かす操作のまとめ。性質の観測（host-probe）と検証担当の台本の実行が使う。
-// src/core/observer.ts（host-smoke/2）と eval/lib/env.ts（評価）が直接書いている操作と同じ組み合わせ。observer.ts はこれを使わない（host-smoke/2 の動作を変えないため）。
+// 必須観測と台本実行で、キー名からPlaywrightの入力への変換を共有する。
 import type { Browser, BrowserContext, Page } from "@playwright/test";
 import type { ArtworkBody } from "../contract/artwork";
 import type { Shot } from "./pixels";
