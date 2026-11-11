@@ -44,7 +44,7 @@ export class HarnessSession {
     this.eventsFrom = await page.evaluate(() => (window as any).harness.events.length as number);
     this.t = 0;
     const token = this.issue(body);
-    return (await page.evaluate((a) => (window as any).harness.startToken(a), { token, data, seed, clock: "manual" })) as StartResult;
+    return (await page.evaluate((a) => (window as any).harness.startToken(a), { token, data, seed, clock: "manual", ...(body.runtime === "page" ? { runtime: "page" } : {}) })) as StartResult;
   }
 
   /** 入力やリサイズがシェルに届く前に時間を進めないよう、シェルの requestAnimationFrame を 2 回待つ。 */

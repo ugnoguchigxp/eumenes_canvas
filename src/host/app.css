@@ -36,6 +36,8 @@ h2 { font-size: 14px; margin: 6px 0; }
 #cand-review li.fail, #cand-review li.blocking { color: #b00020; }
 #cand-review li.warning { color: #9a6a00; }
 #cand-review li.unknown, #cand-review li.info { color: #888; }
+/* ページ直接モード（design.md §8）の警告。作品を開くたびに出す */
+.page-warning { margin-top: 8px; padding: 8px; border: 1px solid #d08000; border-radius: 6px; background: #fff7e6; color: #6a3d00; font-size: 13px; }
 .notice { min-height: 1.2em; color: #a05a00; font-size: 12px; }
 .preview-error { margin-top: 8px; padding: 8px; border: 1px solid #e0a0a0; border-radius: 6px; background: #fff3f3; color: #8a1020; font-size: 13px; }
 .preview-error p { margin: 0 0 6px; }

@@ -158,12 +158,20 @@ P1 の実装では次のように具体化した（[P1 結果](docs/p1-results.m
 - **作品の形。** 契約 `canvas-artwork/2`（[artwork-contract-v2-page.md](docs/artwork-contract-v2-page.md)）。作品に `runtime: "page"` を足す。`runtime` の無い作品は今の Worker の方式（`canvas-artwork/1`）。digest は `runtime` があるときだけ、`contract: "canvas-artwork/2"` と `runtime` を入れて計算する（保存済みの作品の digest は変わらない）。
 - **入れ子の iframe。** ホスト → シェル（プレビューオリジン、`sandbox="allow-scripts allow-same-origin"`）→ 作品の文書 `/p/<token>`（`sandbox="allow-scripts"`、不透明オリジン、10 §2 の CSP）。作品の文書には固定の実行時コード（`/page-runtime.js`）だけが入り、実行時コードが初期化（データ・seed・時計）を受けてから作品の本文（`/pw/<token>`、1 回だけ読める）を読み込む。作品の本文の前には、宣言したライブラリ（`THREE`・`CANNON`）を連結する。
 - **書き方。** 画面いっぱいの `<canvas id="stage">` がある文書で、作品の本文が普通のスクリプトとして動く。`document`・`requestAnimationFrame`・`addEventListener`・Web Audio を使える。ホストからのデータは `canvasHost.data`、seed 固定の乱数は `Math.random`（差し替え済み）。
-- **通知。** 実行時コードは、シェルから受け取った専用のポートで `ready`・`advanced`・`status`・`error`・`escape` だけを送る。シェルは型・大きさ・頻度を検査してホストへ中継する（Worker の作品と同じ上限）。作品はこのポートを横取りできる（S4）が、ホストの検査（`checkShellToHost`）を通るのは今ある型と上限のものだけで、権限は増えない。`escape` は作品が偽れる（表示モードを抜けるだけ）。
-- **時計。** 実時間（`raf`）では差し替えない。観測（`manual`）では、実行時コードが `requestAnimationFrame`・`setTimeout`・`setInterval`・`performance.now`・`Date.now` を仮想の時計に差し替え、ホストの `advance` で 16ms ずつ進める。`poke`（時間を進めない描き直し）は何もせずに `advanced` を返す（03 の dt = 0 の観測は対象外）。
+- **通知。** 実行時コードは、シェルから受け取った専用のポートで `ready`・`advanced`・`status`・`error`・`escape` だけを送る。ポートは作品の本文を読み込む前に受け取り、実行時コードの中に閉じて持つ（作品はメッセージの受け取りでポートを得られない）。ただし作品は同じ文書で動くので、`MessagePort.prototype.postMessage` を書き換えるなどして通知を偽れる（S4）。シェルは作品の文書からの通知を `checkPageToShell` で型・大きさ・頻度を検査し（Worker の作品と同じ上限）、ホストはさらに `checkShellToHost` で検査する。通るのは今ある型と上限のものだけで、権限は増えない。`escape` は作品が偽れる（表示モードを抜けるだけ）。
+- **例外の内容。** 作品の本文は不透明オリジンの文書から見て別オリジンなので、そのままでは例外が "Script error." に伏せられる。実行時コードは本文を CORS（`crossorigin="anonymous"`）で読み、`/pw/<token>` は `Access-Control-Allow-Origin: null`（不透明オリジンだけ）を返す。`/pw/`・`/page-runtime.js` には、不透明オリジンから読めるよう `Cross-Origin-Resource-Policy` を付けない。
+- **時計。** 実時間（`raf`）では差し替えない。観測（`manual`）では、実行時コードが `requestAnimationFrame`・`setTimeout`・`setInterval`・`performance.now`・`Date.now` を仮想の時計に差し替え、ホストの `advance` で 16ms ずつ進める。`poke`（時間を進めない描き直し）は何もせずに `advanced` を返す（03 の dt = 0 の観測は対象外）。観測では、本文を読み込んだあと最初の 1 回の `requestAnimationFrame` を時刻 0 で呼んでから `ready` を送る（Worker の作品が `frame(0)` のあとに `ready` を送るのと同じ。ここでの例外は起動の失敗になる）。
 - **停止。** シェルが作品の iframe を外す。シェルが 300ms 以内に応答しなければ、ホストがシェルの iframe を読み直す（今と同じ）。
-- **入力。** 利用者の入力は作品の文書に直接届く。Esc は実行時コードが捕まえてシェルへ渡す。
+- **観測・検証のブラウザ。** ページ直接モードが有効な設定では、観測（`PlaywrightObserver`）と検証（`PlaywrightProber`）の Chromium を `--site-per-process` で起動する（既定の headless shell は別サイトの iframe を同じプロセスに入れ、作品の無限ループで観測のホストごと固まる。境界の文書の H の補足）。無効な設定の起動引数は変えない。
+- **入力。** 利用者の入力は作品の文書に直接届く。Esc は実行時コードが最初に捕まえてシェルへ渡し、作品には渡さない（契約 v1 と同じ）。
 
-### 8.3 推定と未測定
+### 8.3 実装の確認（2026-11-11、Playwright 1.56.1：Chromium 141・WebKit 26.0）
+
+- `tests/e2e/page-mode.spec.ts`（有効にした検証ホスト 4325）：描画・データ・seed・仮想の時計（1000ms で rAF 62 回）・入力・Esc、Three.js、起動時と実行中の例外、通信（fetch・WebSocket・画像・Worker・入れ子の iframe・親の遷移）がカナリアに届かないこと、無限ループの作品の停止（`--site-per-process` の Chromium で 2 秒以内、ホストは操作でき、次の作品が動く）、窓への偽のメッセージ、制作の流れ（観測に合格し、開くたびに警告）、WebKit の画面が開かずに理由を出すこと、既定の検証ホストが `runtime` を拒否すること。
+- `tests/unit/page-mode.test.ts`：無効のときの契約・CSP・config・経路が従来と同じこと、有効なときの契約・digest・トークン・配信。
+
+### 8.4 推定と未測定
 
 - デスクトップの実際の Chrome での停止（H1・H2）、実機の Safari・Firefox は未測定（境界の文書の 4 節）。
-- 制作担当がページ直接モードの作品を作る手順（制作手順・契約の版を設定で選ぶこと）は、この段階では作っていない。ページ直接モードの作品は、固定応答・開発用の登録（ハーネス）から入る。
+- 製品の経路（/p/・/pw/）での WebRTC・DNS・WebKit の wasm は測り直していない。境界の測定と同じく止まらないと見込む（受け入れた危険）。
+- 制作担当がページ直接モードの作品を作る手順（制作手順・契約の版を設定で選ぶこと）は、この段階では作っていない。ページ直接モードの作品は、固定応答（記録の `output.runtime`）・開発用の登録（ハーネス）から入る。

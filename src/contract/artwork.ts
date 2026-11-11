@@ -2,6 +2,8 @@
 // 任意で、ホストが同梱する固定版ライブラリ（src/contract/libraries.ts）を宣言できる。
 import { HOST_LIBRARIES, MAX_LIBRARIES, libraryById, resolveLibraries } from "./libraries";
 export const CONTRACT_VERSION = "canvas-artwork/1";
+/** ページ直接モード（runtime: "page"）の作品の契約の版（docs/artwork-contract-v2-page.md）。設定で有効なときだけ受け付ける。 */
+export const PAGE_CONTRACT_VERSION = "canvas-artwork/2";
 export const MAX_ENTRY_BYTES = 128 * 1024;
 export const MAX_DATA_BYTES = 64 * 1024;
 export const MAX_TITLE_CHARS = 80;
@@ -13,6 +15,8 @@ export interface ArtworkBody {
   dataRef?: string;
   /** ホストが同梱する固定版ライブラリの id（任意。例 "three@0.187.0"）。 */
   libraries?: string[];
+  /** ページ直接モードの作品だけ "page"（design.md §8）。無い作品は Worker の方式。 */
+  runtime?: "page";
 }
 const DATA_REF = /^[a-z0-9][a-z0-9-]{0,39}$/;
 
@@ -32,11 +36,18 @@ function wellFormed(s: string): boolean {
   return (s as unknown as { isWellFormed?: () => boolean }).isWellFormed?.() ?? !/[\uD800-\uDFFF]/.test(s);
 }
 
-export function checkArtwork(body: unknown): ContractResult {
+export interface CheckOptions {
+  /** ページ直接モードを受け付けるか（既定 false。false のとき runtime は従来どおり未定義の項目として拒否する）。 */
+  pageMode?: boolean;
+}
+
+export function checkArtwork(body: unknown, opts: CheckOptions = {}): ContractResult {
   const errors: string[] = [];
   if (!body || typeof body !== "object") return { ok: false, errors: ["作品はオブジェクトでなければならない"] };
   const b = body as Record<string, unknown>;
-  const extra = Object.keys(b).filter((k) => k !== "title" && k !== "entry" && k !== "dataRef" && k !== "libraries");
+  const page = opts.pageMode === true && b.runtime !== undefined;
+  if (page && b.runtime !== "page") errors.push('runtime は "page" だけ');
+  const extra = Object.keys(b).filter((k) => k !== "title" && k !== "entry" && k !== "dataRef" && k !== "libraries" && !(page && k === "runtime"));
   let libs: string[] = [];
   if (b.libraries !== undefined) {
     if (!Array.isArray(b.libraries) || b.libraries.some((x) => typeof x !== "string")) errors.push("libraries は文字列の配列");
@@ -64,7 +75,9 @@ export function checkArtwork(body: unknown): ContractResult {
     // 実行せずに構文だけを確認する。関数本体として解析できない場合（import 宣言など）は拒否する。
     try {
       // 実行時と同じ引数（canvasApp と宣言したライブラリ）で解析する。引数と同名の let・const は構文エラーになる。
-      new Function("canvasApp", ...resolveLibraries(libs).map((l) => l.param), `"use strict";\n${entry}`);
+      // ページ直接モードの作品は普通のスクリプト（strict ではない）で、canvasApp は無い。ライブラリは同じ名前で先に置かれる。
+      if (page) new Function(...resolveLibraries(libs).map((l) => l.param), entry);
+      else new Function("canvasApp", ...resolveLibraries(libs).map((l) => l.param), `"use strict";\n${entry}`);
     } catch (e) {
       errors.push(`構文エラー: ${(e as Error).message}`);
     }
@@ -92,8 +105,11 @@ export function checkData(data: unknown): ContractResult {
 /** ホストが保存した実体と契約の版から digest を計算する。 */
 export async function artworkDigest(body: ArtworkBody): Promise<string> {
   // libraries を宣言しない作品の digest は従来と同じ（保存済み作品の digest を保つ）。
-  const base = { contract: CONTRACT_VERSION, title: body.title, entry: body.entry, dataRef: body.dataRef ?? null };
-  const canonical = JSON.stringify(body.libraries && body.libraries.length ? { ...base, libraries: resolveLibraries(body.libraries).map((l) => l.id) } : base);
+  // runtime（ページ直接モード）は、あるときだけ版を canvas-artwork/2 にして入れる（無い作品の digest は変わらない）。
+  const page = body.runtime === "page";
+  const base = { contract: page ? PAGE_CONTRACT_VERSION : CONTRACT_VERSION, title: body.title, entry: body.entry, dataRef: body.dataRef ?? null };
+  const withLibs = body.libraries && body.libraries.length ? { ...base, libraries: resolveLibraries(body.libraries).map((l) => l.id) } : base;
+  const canonical = JSON.stringify(page ? { ...withLibs, runtime: "page" } : withLibs);
   const h = await crypto.subtle.digest("SHA-256", enc.encode(canonical));
   return "sha256:" + Buffer.from(h).toString("hex");
 }

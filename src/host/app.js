@@ -1,6 +1,6 @@
 // 検証ホストの画面。会話・作品一覧・プレビュー・3 表示モード・候補の保存と復元。
 import { clog } from "/client-log.js";
-import { PreviewController, PreviewConnectError } from "/preview-client.js";
+import { PreviewController, PreviewConnectError, PAGE_WARNING, isWebKitOnly, pageRefusal } from "/preview-client.js";
 
 const $ = (id) => document.getElementById(id);
 const cfg = await (await fetch("/api/config")).json();
@@ -15,8 +15,10 @@ function rid(n = 12) {
 // 試験では ?clock=manual で時計をホストから進める
 const CLOCK = new URLSearchParams(location.search).get("clock") === "manual" ? "manual" : "raf";
 // 直接描画は実時間の時計で、設定が有効で、WebKit だけのブラウザでないときだけ（WebKit では Worker から描いた内容が表示に出ないことがある）
-const WEBKIT_ONLY = /AppleWebKit/.test(navigator.userAgent) && !/Chrome|Chromium|Edg\//.test(navigator.userAgent);
+const WEBKIT_ONLY = isWebKitOnly(navigator.userAgent);
 const DIRECT = CLOCK === "raf" && cfg.directRender === true && !WEBKIT_ONLY;
+// ページ直接モード（design.md §8）は設定が有効で、WebKit だけのブラウザでないときだけ開く（WebKit では作品が無限ループするとホストごと固まる）
+const PAGE_MODE = cfg.pageMode === true;
 const session = sessionStorage.getItem("canvas-session") || rid();
 sessionStorage.setItem("canvas-session", session);
 
@@ -180,9 +182,24 @@ async function showPreview(source, label) {
   state.previewSource = source;
   host.dataset.ready = "0";
   $("preview-label").textContent = label;
+  const page = p.runtime === "page";
+  const warn = $("page-warning");
+  warn.hidden = !page;
+  warn.textContent = "";
+  if (page) {
+    // 設定で無効、または WebKit だけのブラウザでは開かない（理由を出す）
+    const refuse = pageRefusal({ pageMode: PAGE_MODE, webkitOnly: WEBKIT_ONLY });
+    if (refuse) {
+      warn.textContent = refuse;
+      host.dataset.ready = "0";
+      clog("preview.start", { result: "page-refused", label });
+      return { type: "page-refused", message: refuse };
+    }
+    warn.textContent = PAGE_WARNING;
+  }
   let r;
   try {
-    r = await ctl.start({ token: p.token, data: p.data, seed: 1, clock: CLOCK, direct: DIRECT });
+    r = await ctl.start({ token: p.token, data: p.data, seed: 1, clock: CLOCK, direct: DIRECT && !page, ...(page ? { runtime: "page" } : {}) });
   } catch (err) {
     if (!(err instanceof PreviewConnectError)) throw err;
     host.dataset.ready = "0";

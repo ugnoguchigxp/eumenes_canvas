@@ -49,7 +49,7 @@ export class PlaywrightObserver implements ObserverPort {
       await page.goto(this.hostOrigin + "/harness.html");
       await page.waitForFunction(() => document.title === "ready", null, { timeout: 10_000 });
       const token = this.issue(body);
-      const r = await page.evaluate((a: any) => (window as any).harness.startToken(a), { token, data, seed: 1, clock: "manual" });
+      const r = await page.evaluate((a: any) => (window as any).harness.startToken(a), { token, data, seed: 1, clock: "manual", ...(body.runtime === "page" ? { runtime: "page" } : {}) });
       const errors = async () => (await page.evaluate(() => (window as any).harness.events.filter((e: any) => e.type === "error" || e.type === "violation"))) as any[];
       if (r.type !== "ready") {
         const errs = await errors();

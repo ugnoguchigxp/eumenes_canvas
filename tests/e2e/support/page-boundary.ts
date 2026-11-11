@@ -1,5 +1,6 @@
 // 10：ページ直接モード（作品を DOM のある文書のメインスレッドで動かす方式）の境界を測るための、試験用の配信。
-// 製品コード（src/）からは参照しない。製品のプレビューに内側の iframe の経路は足さない（docs/agent-plan/10-page-mode.md）。
+// 製品コード（src/）からは参照しない。10 の測定のときの形のまま残す（利用者の受け入れのあと、製品のページ直接モードは
+// src/preview/page-runtime.js と src/server/preview.ts の /p/・/pw/ に別に作った。design.md §8）。
 //
 // ホスト（http://localhost:<hostPort>/?t=<token>&clock=manual|raf）
 //   └─ iframe：シェル（http://127.0.0.1:<previewPort>/shell.html）  sandbox="allow-scripts allow-same-origin"

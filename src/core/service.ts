@@ -39,6 +39,8 @@ export interface ServiceOptions {
   now?: () => number;
   /** 候補の検証。省略・mode が off なら従来どおり（必須の検査に通った最初の候補を提示する）。 */
   review?: { reviewer: ReviewerPort; mode: ReviewMode; maxReviews?: number };
+  /** ページ直接モード（design.md §8）の作品を受け付けるか。既定は偽（runtime は契約の未定義の項目として不合格）。 */
+  pageMode?: boolean;
 }
 
 export class ServiceError extends Error {
@@ -242,7 +244,7 @@ export class CanvasService {
       this.o.store.tx(() => {
         run.attempts = attempt + 1;
       });
-      const contract = checkArtwork(out.body);
+      const contract = checkArtwork(out.body, { pageMode: this.o.pageMode === true });
       const digest = contract.ok ? await artworkDigest(out.body) : "sha256:invalid";
       const candidate: Candidate = {
         id: id("c_"),

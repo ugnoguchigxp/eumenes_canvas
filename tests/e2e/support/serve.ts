@@ -50,4 +50,7 @@ const GAME_TITLES = ["テトリス", "オセロ", "インベーダーゲーム",
 const seeded = await seedDemo({ host: single.hostOrigin, titles: GAME_TITLES, log: (s) => console.log(`[seed] ${s}`) });
 if (seeded.results.some((r) => r.result !== "saved") || seeded.results.length !== GAME_TITLES.length) throw new Error("デモの投入に失敗: " + JSON.stringify(seeded.results));
 const app = createTestApp({ hostPort: HOST_PORT, previewPort: PREVIEW_PORT });
+// ページ直接モード（design.md §8）を有効にした検証ホスト。既定の検証ホスト（上）は無効のまま
+const PAGE_HOST_PORT = Number(process.env.PAGE_HOST_PORT ?? 4325);
+createTestApp({ hostPort: PAGE_HOST_PORT, previewPort: PAGE_HOST_PORT + 1, pageMode: true, extraModelFiles: ["fixtures/page/recordings.json"] });
 console.log(`host ${app.hostOrigin} preview ${app.previewOrigin} canary http://127.0.0.1:${CANARY_PORT} single-user ${single.hostOrigin}`);

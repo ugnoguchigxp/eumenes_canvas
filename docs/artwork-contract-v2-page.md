@@ -10,7 +10,8 @@
 ## 形式
 
 - 作品は `title`（80 文字以内）・`entry`（単一の JavaScript、UTF-8 で 128 KiB 以内）・`runtime: "page"` からなる。任意で `dataRef`・`libraries`（v1 と同じ表）を指定できる。
-- `entry` は普通のスクリプト（classic script、strict mode ではない）として、文書の最後に 1 回だけ実行される。`canvasApp.start` は無い。
+- `entry` は普通のスクリプト（classic script、strict mode ではない）として、ホストの初期化（`canvasHost` の用意）のあとに 1 回だけ実行される。`canvasApp.start` は無い。
+- 本文の実行中の例外は起動の失敗になる。観測では、本文のあと最初の 1 回の `requestAnimationFrame` を時刻 0 で呼んでから起動の完了（ready）とするので、そこでの例外も起動の失敗になる。それより後の例外は実行時エラーとしてホストに届く。
 - `import` 宣言・動的 `import()`・`importScripts`・`eval`・`new Function`・Worker・serviceWorker・通信（fetch・XHR・WebSocket・EventSource）・保存 API（localStorage・indexedDB・caches・cookie）・`window.open`・遷移は使えない（CSP と sandbox で止まる）。
 - 宣言したライブラリは、作品の本文より前に `THREE`・`CANNON` という名前で置かれる。同じ名前を `const`・`let` で宣言すると構文エラーになる。
 
@@ -37,7 +38,7 @@ Math.random()      // seed 固定の乱数に差し替え済み
 
 ## 入力
 
-- キー・ポインター・ホイールは、作品の文書に直接届く（`addEventListener("keydown", …)` など）。Esc はホストが使う（表示モードの退出）。Tab はフォーカスの移動に使われる。
+- キー・ポインター・ホイールは、作品の文書に直接届く（`addEventListener("keydown", …)` など）。Esc はホストが使う（表示モードの退出）ので、作品には渡らない。Tab はフォーカスの移動に使われる。
 - キーは `code` と `key` の両方で受ける（v1 と同じ）。
 
 ## 例

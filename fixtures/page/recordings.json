@@ -1,0 +1,17 @@
+{
+  "author": "Grok Bot が代行して作成（ページ直接モードの試験用の固定応答）",
+  "recordings": [
+    {
+      "note": "ページ直接モード：跳ねる四角",
+      "input": { "request": "ページ直接モードで跳ねる四角を作って", "conversation": [], "attempt": 0 },
+      "output": {
+        "title": "跳ねる四角（ページ直接モード）",
+        "entryFile": "artworks/page-bounce.js",
+        "runtime": "page",
+        "changes": "画面の中を四角が跳ねる。クリックで色が変わり、←→ で横の速さが変わる。",
+        "unconfirmed": ["四角の大きさ"],
+        "reply": "跳ねる四角を作りました（ページ直接モード）。"
+      }
+    }
+  ]
+}

@@ -26,6 +26,11 @@ export interface CanvasConfig {
   singleUser?: boolean;
   /** 直接描画（実時間の表示で画面の canvas を作品 Worker に渡す。Chromium 系だけ）。項目が無ければ偽。 */
   directRender?: boolean;
+  /**
+   * ページ直接モード（design.md §8。作品を DOM のある文書で動かす。Chromium だけ）。項目が無ければ偽。
+   * 利用者が残る危険（WebRTC の外部通信、WebKit の wasm、WebKit でのホストの固まり）を受け入れたときだけ真にする。
+   */
+  pageMode?: boolean;
   /** 観測のブラウザ（Chromium）に足す起動引数。既定は空。 */
   observerArgs?: string[];
   /** 候補の検証。省略時は off。 */
@@ -75,26 +80,39 @@ export function makeReview(cfg: Pick<CanvasConfig, "review" | "observerArgs" | "
 
 export const singleUserOf = (cfg: Pick<CanvasConfig, "singleUser">) => cfg.singleUser !== false;
 
+/**
+ * 観測・検証のブラウザの起動引数。ページ直接モードが有効なときだけ --site-per-process を足す
+ * （既定の headless shell では別サイトの iframe が同じプロセスに入り、作品の無限ループで観測のホストごと固まる。10 の測定 H1・H2）。
+ */
+export function browserArgsOf(cfg: Pick<CanvasConfig, "observerArgs" | "pageMode">): string[] {
+  const a = [...(cfg.observerArgs ?? [])];
+  if (cfg.pageMode === true && !a.includes("--site-per-process")) a.push("--site-per-process");
+  return a;
+}
+
 export function runFromConfig(cfg: CanvasConfig, root: string) {
   const singleUser = singleUserOf(cfg);
+  const browserArgs = browserArgsOf(cfg);
   const contract = readFileSync(join(root, "docs/artwork-contract-v1.md"), "utf8");
   const app = startCanvasApp({
     hostPort: cfg.hostPort,
     previewPort: cfg.previewPort,
     devHarness: cfg.devHarness,
     directRender: cfg.directRender,
+    pageMode: cfg.pageMode === true,
     singleUser,
     logDir: cfg.logDir ? resolve(root, cfg.logDir) : cfg.dataDir ? resolve(root, cfg.dataDir, "logs") : null,
     makeService: ({ tokens, hostOrigin, singleUser }) =>
       new CanvasService({
         store: new Store(cfg.dataDir ? resolve(root, cfg.dataDir) : null),
         model: makeModel(cfg.model, root),
-        observer: new PlaywrightObserver(hostOrigin, (b) => tokens.issue(b), cfg.observerArgs ?? []),
+        observer: new PlaywrightObserver(hostOrigin, (b) => tokens.issue(b), browserArgs),
         contract,
         datasets: loadDatasets(cfg, root),
         runTimeoutMs: cfg.runTimeoutMs,
         singleUser,
-        review: makeReview(cfg, hostOrigin, (b) => tokens.issue(b)),
+        pageMode: cfg.pageMode === true,
+        review: makeReview({ ...cfg, observerArgs: browserArgs }, hostOrigin, (b) => tokens.issue(b)),
       }),
   });
   return app;

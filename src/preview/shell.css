@@ -2,3 +2,5 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
 #stage { width: 100%; height: 100%; position: relative; }
 /* 直接描画では 3D の面（下）と 2D の面（上）を左上に重ねる */
 canvas { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; outline: none; touch-action: none; }
+/* ページ直接モード：作品の文書（内側の iframe）を画面いっぱいに置く */
+.page-frame { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: 0; }

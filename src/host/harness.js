@@ -16,14 +16,14 @@ document.getElementById("probe-button").addEventListener("click", () => {
 
 window.harness = {
   events,
-  async start({ entry, title = "probe", data = null, seed = 1, clock = "manual", libraries, direct = false }) {
-    const body = libraries ? { title, entry, libraries } : { title, entry };
+  async start({ entry, title = "probe", data = null, seed = 1, clock = "manual", libraries, direct = false, runtime = undefined }) {
+    const body = { title, entry, ...(libraries ? { libraries } : {}), ...(runtime !== undefined ? { runtime } : {}) };
     const r = await fetch("/api/dev/preview", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     const j = await r.json();
     if (!r.ok) return { type: "rejected", errors: j.errors };
-    return ctl.start({ token: j.token, data, seed, clock, direct });
+    return ctl.start({ token: j.token, data, seed, clock, direct, runtime });
   },
-  startToken: ({ token, data = null, seed = 1, clock = "manual", direct = false }) => ctl.start({ token, data, seed, clock, direct }),
+  startToken: ({ token, data = null, seed = 1, clock = "manual", direct = false, runtime = undefined }) => ctl.start({ token, data, seed, clock, direct, runtime }),
   advance: (ms) => ctl.advance(ms),
   poke: (count) => ctl.poke(count),
   stop: () => ctl.stop(),

@@ -16,6 +16,7 @@ export interface BodyRef {
   entryFile: string;
   dataRef?: string;
   libraries?: string[];
+  runtime?: "page";
 }
 
 export interface Recording {
@@ -31,6 +32,8 @@ export interface Recording {
     entryFile: string; // 記録ファイルからの相対パス
     dataRef?: string;
     libraries?: string[];
+    /** ページ直接モードの作品（design.md §8）。ページ直接モードが有効な設定でだけ契約に通る。 */
+    runtime?: "page";
     changes: string;
     unconfirmed: string[];
     reply: string;
@@ -94,7 +97,7 @@ export class RecordedProvider implements ModelPort {
       const j = JSON.parse(readFileSync(f, "utf8")) as RecordingFile;
       const dir = dirname(f);
       const digestOf = async (b: BodyRef) =>
-        artworkDigest({ title: b.title, entry: readFileSync(join(dir, b.entryFile), "utf8"), ...(b.dataRef ? { dataRef: b.dataRef } : {}), ...(b.libraries?.length ? { libraries: b.libraries } : {}) });
+        artworkDigest({ title: b.title, entry: readFileSync(join(dir, b.entryFile), "utf8"), ...(b.dataRef ? { dataRef: b.dataRef } : {}), ...(b.libraries?.length ? { libraries: b.libraries } : {}), ...(b.runtime === "page" ? { runtime: "page" as const } : {}) });
       for (const rec of j.recordings) {
         const entry = readFileSync(join(dir, rec.output.entryFile), "utf8");
         const i = rec.input;
@@ -126,7 +129,7 @@ export class RecordedProvider implements ModelPort {
     }
     const o = hit.rec.output;
     return {
-      body: { title: o.title, entry: hit.entry, ...(o.dataRef ? { dataRef: o.dataRef } : {}), ...(o.libraries?.length ? { libraries: o.libraries } : {}) },
+      body: { title: o.title, entry: hit.entry, ...(o.dataRef ? { dataRef: o.dataRef } : {}), ...(o.libraries?.length ? { libraries: o.libraries } : {}), ...(o.runtime === "page" ? { runtime: "page" as const } : {}) },
       changes: o.changes,
       unconfirmed: o.unconfirmed,
       reply: o.reply,

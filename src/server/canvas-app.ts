@@ -25,6 +25,8 @@ export interface CanvasAppOptions {
   singleUser?: boolean;
   /** 直接描画を有効にするか（startApp に渡す）。 */
   directRender?: boolean;
+  /** ページ直接モードを有効にするか（startApp に渡す。既定は無効）。 */
+  pageMode?: boolean;
   makeService: (deps: { tokens: PreviewTokens; hostOrigin: string; singleUser: boolean }) => CanvasService;
 }
 
@@ -37,6 +39,7 @@ export function startCanvasApp(o: CanvasAppOptions) {
     devHarness: o.devHarness,
     logDir: o.logDir,
     directRender: o.directRender,
+    pageMode: o.pageMode,
     tokens,
     onPage: (req): Record<string, string> => (o.singleUser || cookieOwner(req) ? {} : { "set-cookie": `${OWNER_COOKIE}=${randomBytes(18).toString("base64url")}; Path=/; HttpOnly; SameSite=Strict` }),
     extraRoutes: async (req, url) => {
@@ -70,7 +73,7 @@ export function startCanvasApp(o: CanvasAppOptions) {
         if (parts[1] === "previews" && m === "POST") {
           const b = (await readJson(req)) as any;
           const { body, data } = svc.resolvePreview(owner, { candidateId: b.candidateId, artworkId: b.artworkId, revision: b.revision === undefined ? undefined : Number(b.revision) });
-          return json({ token: tokens.issue(body), data, title: body.title });
+          return json({ token: tokens.issue(body), data, title: body.title, ...(body.runtime === "page" ? { runtime: "page" } : {}) });
         }
       } catch (e) {
         if (e instanceof ServiceError) throw new HttpError(e.status, e.message, e.extra);

@@ -15,6 +15,27 @@ export class PreviewConnectError extends Error {
   }
 }
 
+/** ページ直接モード（design.md §8）の作品を開くときの警告。作品を開くたびに出す。 */
+export const PAGE_WARNING =
+  "この作品はページ直接モードで動いています（作品をブラウザの文書で直接動かす方式）。通常の方式より隔離が弱く、" +
+  "WebRTC による外部への通信は止められません。信頼できない作品は開かないでください。";
+
+/** WebKit だけのブラウザ（Safari など）か。Chromium 系は UA に Chrome・Chromium・Edg/ を含む。 */
+export function isWebKitOnly(ua) {
+  return /AppleWebKit/.test(ua) && !/Chrome|Chromium|Edg\//.test(ua);
+}
+
+/**
+ * ページ直接モードの作品を開かない理由。開いてよいときは null。
+ * 設定で無効なとき、WebKit だけのブラウザ（作品の無限ループでホストの画面ごと固まる。10 の測定）では開かない。
+ */
+export function pageRefusal({ pageMode, webkitOnly }) {
+  if (!pageMode) return "ページ直接モードは設定で無効になっているため、この作品は開けません。";
+  if (webkitOnly)
+    return "ページ直接モードの作品は、作品の無限ループでホストの画面ごと固まるおそれがあるため、Safari（WebKit）では開きません。Chromium 系のブラウザで開いてください。";
+  return null;
+}
+
 let seqCounter = 0;
 function newRunId() {
   const a = new Uint8Array(9);
@@ -174,13 +195,14 @@ export class PreviewController {
   }
 
   /** 作品を起動する。ready・error・timeout のいずれかで解決する。 */
-  async start({ token, data = null, seed = 1, clock = "raf", direct = false }) {
+  async start({ token, data = null, seed = 1, clock = "raf", direct = false, runtime = undefined }) {
     await this.mount();
     this.runId = newRunId();
     this.lastStart = { data, seed, clock, direct };
     const wait = this._wait("ready", 10_000);
-    // direct（直接描画）は真のときだけ項目を入れる（偽のときは既存のメッセージと同じ形）
-    this.port.postMessage({ type: "start", runId: this.runId, token, data, seed, clock, ...(direct ? { direct: true } : {}) });
+    // direct（直接描画）・runtime（ページ直接モード）は使うときだけ項目を入れる（使わないときは既存のメッセージと同じ形）
+    const page = runtime === "page";
+    this.port.postMessage({ type: "start", runId: this.runId, token, data, seed, clock, ...(direct && !page ? { direct: true } : {}), ...(page ? { runtime: "page" } : {}) });
     return wait;
   }
 

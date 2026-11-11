@@ -5,7 +5,7 @@ import { e2eDataDir } from "./paths";
 
 const ROOT = resolve(import.meta.dir, "../../..");
 
-export function createTestApp(o: { hostPort: number; previewPort: number; singleUser?: boolean; extraModelFiles?: string[] }) {
+export function createTestApp(o: { hostPort: number; previewPort: number; singleUser?: boolean; extraModelFiles?: string[]; pageMode?: boolean }) {
   // 試験からログを読めるよう、ポートで決まる場所に置く（起動時に空にし、終了時に消す）
   const dataDir = e2eDataDir(o.hostPort);
   rmSync(dataDir, { recursive: true, force: true });
@@ -22,6 +22,7 @@ export function createTestApp(o: { hostPort: number; previewPort: number; single
       runTimeoutMs: 180_000,
       // P1 の試験（別所有者の参照を含む）は所有者を分けるモードで動かす。単一利用者モードは別のポートで試す
       singleUser: !!o.singleUser,
+      ...(o.pageMode ? { pageMode: true } : {}),
       model: { provider: "recorded", label: "p1-fixtures", files: ["fixtures/p1/recordings.json", ...(o.extraModelFiles ?? [])] },
       datasets: [{ ref: "synthetic-sales", description: "合成売上", file: "fixtures/data/synthetic-sales.json" }],
     },

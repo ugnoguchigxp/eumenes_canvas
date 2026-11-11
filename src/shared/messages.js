@@ -47,9 +47,11 @@ export function checkHostToShell(m) {
   if (byteLength(m) > LIMITS.hostToShellBytes) return null;
   switch (m.type) {
     case "start":
-      if (!onlyKeys(m, ["type", "runId", "token", "data", "seed", "clock", "direct"])) return null;
+      if (!onlyKeys(m, ["type", "runId", "token", "data", "seed", "clock", "direct", "runtime"])) return null;
       // direct（直接描画）はあるときだけ真偽値
       if ("direct" in m && m.direct !== true && m.direct !== false) return null;
+      // runtime（ページ直接モード、design.md §8）はあるときだけ "page"。直接描画とは同時に使わない
+      if ("runtime" in m && (m.runtime !== "page" || m.direct === true)) return null;
       if (!RUN_ID.test(m.runId) || !TOKEN.test(m.token)) return null;
       if (!finiteIn(m.seed, 0, 2 ** 32 - 1) || !Number.isInteger(m.seed)) return null;
       if (m.clock !== "raf" && m.clock !== "manual") return null;
@@ -116,6 +118,24 @@ export function checkWorkerToShell(m) {
     case "svg":
       if (!onlyKeys(m, ["type", "id", "svg"]) || !Number.isInteger(m.id) || !finiteIn(m.id, 1, 2 ** 31)) return null;
       return typeof m.svg === "string" && m.svg.length > 0 && m.svg.length <= LIMITS.svgChars ? m : null;
+    case "error":
+      return onlyKeys(m, ["type", "message"]) && typeof m.message === "string" ? { type: "error", message: m.message.slice(0, LIMITS.errorMessageChars) } : null;
+    default:
+      return null;
+  }
+}
+
+/** ページ直接モードの作品の文書（実行時コード）からシェルへのメッセージを検査する。作品はポートを横取りできるので信頼しない。 */
+export function checkPageToShell(m) {
+  if (!plain(m) || typeof m.type !== "string") return null;
+  switch (m.type) {
+    case "ready":
+    case "escape":
+      return onlyKeys(m, ["type"]) ? m : null;
+    case "advanced":
+      return onlyKeys(m, ["type", "seq"]) && Number.isInteger(m.seq) ? m : null;
+    case "status":
+      return onlyKeys(m, ["type", "value"]) && byteLength(m.value) <= LIMITS.statusBytes ? m : null;
     case "error":
       return onlyKeys(m, ["type", "message"]) && typeof m.message === "string" ? { type: "error", message: m.message.slice(0, LIMITS.errorMessageChars) } : null;
     default:

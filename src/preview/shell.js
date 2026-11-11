@@ -1,8 +1,9 @@
 // 固定プレビューシェル。プレビューオリジンで動き、作品 Worker を起動・停止・中継する。
-// HOST_ORIGIN はサーバーが配信時に先頭へ定数として埋め込む。
-import { PROTOCOL_VERSION, LIMITS, checkHostToShell, checkWorkerToShell, byteLength, makeRateWindow } from "/shared/messages.js";
+// HOST_ORIGIN・PAGE_MODE はサーバーが配信時に先頭へ定数として埋め込む。
+// PAGE_MODE が真（設定でページ直接モードを有効にしたとき）だけ、runtime: "page" の作品を内側の iframe（/p/<token>）で動かす（design.md §8）。
+import { PROTOCOL_VERSION, LIMITS, checkHostToShell, checkWorkerToShell, checkPageToShell, byteLength, makeRateWindow } from "/shared/messages.js";
 
-/* global HOST_ORIGIN */
+/* global HOST_ORIGIN, PAGE_MODE */
 const stage = document.getElementById("stage");
 let port = null;
 let worker = null;
@@ -18,6 +19,8 @@ const statusRate = makeRateWindow();
 const svgRate = makeRateWindow();
 let svgActive = 0;
 const hardRate = makeRateWindow();
+let pageFrame = null; // ページ直接モードの作品の文書（sandbox="allow-scripts"、不透明オリジン）
+let pagePort = null; // 作品の文書の実行時コードとの専用のポート
 
 const PASS_KEYS = new Set(["Tab", "Escape"]);
 const PREVENT_KEYS = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"]);
@@ -33,6 +36,16 @@ function stopWorker(reason) {
   rafHandle = 0;
   if (resizeObs) resizeObs.disconnect();
   resizeObs = null;
+  if (pagePort) {
+    pagePort.onmessage = null;
+    pagePort.close();
+  }
+  pagePort = null;
+  if (pageFrame) {
+    pageFrame.onload = null;
+    pageFrame.remove(); // 文書を外すと、作品のスクリプト・タイマー・接続は止まる
+  }
+  pageFrame = null;
   if (worker) {
     worker.onmessage = null;
     worker.onerror = null;
@@ -68,9 +81,56 @@ function pointerEv(type, e) {
   return { type, x: e.clientX - r.left, y: e.clientY - r.top, button: e.button, pointerType: e.pointerType || "mouse", id: e.pointerId };
 }
 
+// ページ直接モード：作品の文書を内側の iframe に置き、読み込み後に専用のポートと初期化（データ・seed・時計）を渡す。
+// 作品の文書から来るメッセージは、作品が実行時コードを書き換えられるので信頼せず、型・大きさ・頻度を検査してからホストへ流す。
+function startPage(m) {
+  const thisRun = runId;
+  if (!PAGE_MODE) {
+    send({ type: "error", runId: thisRun, message: "ページ直接モードは設定で無効になっている" });
+    runId = null;
+    return;
+  }
+  const f = document.createElement("iframe");
+  f.setAttribute("sandbox", "allow-scripts");
+  f.setAttribute("allow", "");
+  f.setAttribute("referrerpolicy", "no-referrer");
+  f.setAttribute("title", "作品（ページ直接モード）");
+  f.className = "page-frame";
+  pageFrame = f;
+  let connected = false;
+  f.onload = () => {
+    if (connected || runId !== thisRun) return;
+    connected = true;
+    const ch = new MessageChannel();
+    pagePort = ch.port1;
+    pagePort.onmessage = (e) => {
+      if (runId !== thisRun) return;
+      const n = hardRate.hit();
+      if (n > LIMITS.workerMessagesPerSecondHard || byteLength(e.data) > LIMITS.workerMessageBytesHard) {
+        stopWorker("violation");
+        send({ type: "violation", runId: thisRun, message: n > LIMITS.workerMessagesPerSecondHard ? "message-rate" : "message-size" });
+        return;
+      }
+      const msg = checkPageToShell(e.data);
+      if (!msg) return;
+      if (msg.type === "status" && statusRate.hit() > LIMITS.statusPerSecond) return;
+      if (msg.type === "advanced" || msg.type === "ready") {
+        requestAnimationFrame(() => requestAnimationFrame(() => runId === thisRun && send({ ...msg, runId: thisRun })));
+        return;
+      }
+      send({ ...msg, runId: thisRun });
+    };
+    // 不透明オリジンの文書へは "*" でしか送れない。送り先は今置いた iframe の窓に限る
+    f.contentWindow.postMessage({ type: "page-init", data: m.data ?? null, seed: m.seed, clock: m.clock }, "*", [ch.port2]);
+  };
+  f.src = "/p/" + encodeURIComponent(m.token);
+  stage.appendChild(f);
+}
+
 function start(m) {
   stopWorker("restart");
   runId = m.runId;
+  if (m.runtime === "page") return startPage(m);
   // 直接描画はホストが direct を渡し、実時間の時計で、ブラウザが canvas を Worker に渡せるときだけ（シェルが自分で判断しない）
   const direct = m.direct === true && m.clock === "raf" && typeof HTMLCanvasElement.prototype.transferControlToOffscreen === "function";
   if (direct) {
@@ -238,8 +298,13 @@ function onHostMessage(e) {
   else if (m.type === "stop" && m.runId === runId) {
     stopWorker("stop");
     send({ type: "stopped", runId: m.runId });
-  } else if (m.type === "advance" && m.runId === runId) toWorker({ type: "advance", seq: m.seq, ms: m.ms });
-  else if (m.type === "poke" && m.runId === runId) toWorker({ type: "poke", seq: m.seq, count: m.count });
+  } else if (m.type === "advance" && m.runId === runId) {
+    if (pagePort) pagePort.postMessage({ type: "advance", seq: m.seq, ms: m.ms });
+    else toWorker({ type: "advance", seq: m.seq, ms: m.ms });
+  } else if (m.type === "poke" && m.runId === runId) {
+    if (pagePort) pagePort.postMessage({ type: "poke", seq: m.seq });
+    else toWorker({ type: "poke", seq: m.seq, count: m.count });
+  }
 }
 
 // ホストは 1 回だけポートを渡す。送信元とオリジンを照合する。

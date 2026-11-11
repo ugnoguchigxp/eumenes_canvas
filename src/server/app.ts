@@ -21,6 +21,8 @@ export interface AppOptions {
   logDir?: string | null;
   /** 直接描画（実時間の表示で画面の canvas を作品 Worker に渡す）を有効にするか。/api/config で画面に伝える。 */
   directRender?: boolean;
+  /** ページ直接モード（design.md §8）を有効にするか。既定は無効で、無効なら従来と同じ（runtime は契約で拒否、シェルに iframe を許さない）。 */
+  pageMode?: boolean;
 }
 
 export function hostCsp(previewOrigin: string): string {
@@ -96,7 +98,7 @@ export function startApp(opts: AppOptions) {
   const logRequest = (server: "host" | "preview", req: Request, url: URL, status: number, t0: number, extra: Record<string, unknown> = {}) =>
     logs?.server.write({ server, pid: process.pid, ...requestFields(req, url), status, ms: Math.round((performance.now() - t0) * 10) / 10, ...extra });
 
-  const servePreview = previewHandler({ hostOrigin, tokens });
+  const servePreview = previewHandler({ hostOrigin, tokens, pageMode: opts.pageMode === true });
   const preview = Bun.serve({
     port: opts.previewPort,
     hostname: previewName,
@@ -143,7 +145,7 @@ export function startApp(opts: AppOptions) {
           if (ext === ".html" && opts.onPage) Object.assign(headers, opts.onPage(req));
           return new Response(readFileSync(join(SRC, file), "utf8"), { headers });
         }
-        if (url.pathname === "/api/config") return json({ previewOrigin, hostOrigin, ...(opts.directRender ? { directRender: true } : {}) }); // directRender は有効なときだけ（既定の返事の形は変えない）
+        if (url.pathname === "/api/config") return json({ previewOrigin, hostOrigin, ...(opts.directRender ? { directRender: true } : {}), ...(opts.pageMode ? { pageMode: true } : {}) }); // directRender は有効なときだけ（既定の返事の形は変えない）
         if (url.pathname === "/api/client-log" && req.method === "POST") {
           // 所有者 cookie は要求しない（cookie が届かない状態の診断にも使う）。Origin の照合は上で済んでいる
           if (!clientLimiter.hit()) throw new HttpError(429, "診断ログの送信が多すぎる");
@@ -155,9 +157,9 @@ export function startApp(opts: AppOptions) {
         }
         if (opts.devHarness && url.pathname === "/api/dev/preview" && req.method === "POST") {
           const body = (await readJson(req)) as Record<string, unknown>;
-          const c = checkArtwork(body);
+          const c = checkArtwork(body, { pageMode: opts.pageMode === true });
           if (!c.ok) return json({ errors: c.errors }, 422);
-          return json({ token: tokens.issue(body as { title: string; entry: string; libraries?: string[] }) });
+          return json({ token: tokens.issue(body as { title: string; entry: string; libraries?: string[]; runtime?: "page" }) });
         }
         if (opts.extraRoutes) {
           const r = await opts.extraRoutes(req, url, { tokens, hostOrigin, previewOrigin });

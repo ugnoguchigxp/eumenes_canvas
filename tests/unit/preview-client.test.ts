@@ -3,7 +3,7 @@ import { afterAll, describe, expect, mock, test } from "bun:test";
 import * as messages from "../../src/shared/messages.js";
 
 mock.module("/shared/messages.js", () => messages);
-const { PreviewController, PreviewConnectError, CONNECT_TIMEOUT_MS } = await import("../../src/host/preview-client.js");
+const { PreviewController, PreviewConnectError, CONNECT_TIMEOUT_MS, pageRefusal, isWebKitOnly, PAGE_WARNING } = await import("../../src/host/preview-client.js");
 
 const ORIGIN = "http://127.0.0.1:49999";
 
@@ -79,5 +79,35 @@ describe("PreviewController の接続", () => {
     const err = await ctl.start({ token: "a".repeat(32) }).then(() => null, (e: unknown) => e);
     expect(err).toBeInstanceOf(PreviewConnectError);
     expect(ctl.runId).toBeNull();
+  });
+});
+
+describe("ページ直接モード（design.md §8）", () => {
+  const SAFARI = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15";
+  const CHROME = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36";
+  test("WebKit だけのブラウザと設定で無効なときは開かない。Chromium 系で設定が有効なときだけ開く", () => {
+    expect(isWebKitOnly(SAFARI)).toBe(true);
+    expect(isWebKitOnly(CHROME)).toBe(false);
+    expect(pageRefusal({ pageMode: false, webkitOnly: false })).toContain("無効");
+    expect(pageRefusal({ pageMode: true, webkitOnly: true })).toContain("Safari");
+    expect(pageRefusal({ pageMode: true, webkitOnly: false })).toBeNull();
+  });
+  test("警告は WebRTC の外部通信が止められないことを伝える", () => expect(PAGE_WARNING).toContain("WebRTC"));
+  test("start は runtime を page のときだけ送り、直接描画と同時には送らない", async () => {
+    const env = fakeDocument({ reply: true });
+    const ctl: any = new PreviewController(env.container, { previewOrigin: ORIGIN, connectTimeoutMs: 200 });
+    await ctl.mount();
+    const sent: any[] = [];
+    const orig = ctl.port.postMessage.bind(ctl.port);
+    ctl.port.postMessage = (m: any) => { sent.push(m); orig(m); };
+    ctl._wait = () => Promise.resolve({ type: "timeout" });
+    await ctl.start({ token: "a".repeat(32), clock: "raf", direct: true, runtime: "page" });
+    await ctl.start({ token: "a".repeat(32), clock: "raf", direct: true });
+    await ctl.start({ token: "a".repeat(32), clock: "raf" });
+    expect(sent[0].runtime).toBe("page");
+    expect("direct" in sent[0]).toBe(false);
+    expect("runtime" in sent[1]).toBe(false);
+    expect(sent[1].direct).toBe(true);
+    expect(Object.keys(sent[2]).sort()).toEqual(["clock", "data", "runId", "seed", "token", "type"]);
   });
 });
